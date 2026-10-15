@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f3a5f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>לימוד יומי</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div id="heb" class="heb"></div>
+  <div id="greg" class="greg"></div>
+  <div id="streak" class="streak"></div>
+  <button id="locbtn" type="button" class="loc"></button>
+  <div id="locmsg" class="greg"></div>
+</header>
+<main>
+  <section>
+    <h2>לימוד יומי <span id="dcount" class="cnt"></span></h2>
+    <ul id="daily" class="list"></ul>
+  </section>
+  <section>
+    <h2>לימוד שבועי <span id="wcount" class="cnt"></span></h2>
+    <ul id="weekly" class="list"></ul>
+  </section>
+  <section>
+    <h2>30 הימים האחרונים</h2>
+    <div id="hist" class="hist"></div>
+    <div class="legend"><i class="d full"></i> הכול בוצע <i class="d part"></i> חלקית <i class="d none"></i> לא בוצע</div>
+  </section>
+  <section>
+    <h2>הוספת נושא</h2>
+    <form id="add">
+      <input id="newname" type="text" placeholder="שם הנושא" required maxlength="60">
+      <select id="newtype"><option value="daily">יומי</option><option value="weekly">שבועי</option></select>
+      <button type="submit">הוסף</button>
+    </form>
+    <p class="hint">לחיצה ארוכה על נושא שהוספת מוחקת אותו.</p>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>
