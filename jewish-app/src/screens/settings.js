@@ -1,19 +1,21 @@
-import { h, openPage, openSheet, confirmBox, seg, field, sel, txt, toggle, toast } from '../ui.js';
+import { h, openPage, openSheet, actionSheet, confirmBox, seg, field, sel, txt, toggle, toast, icon } from '../ui.js';
 import { ctx, commit } from '../core.js';
 import { PALETTES, exportJson, replaceAll, reset } from '../lib/store.js';
 import { getLoc, METHODS } from '../lib/zm.js';
 import { dkey, addDays, parseKey, hebrewDate } from '../lib/dates.js';
-import { saveFile, shareText, copyText } from '../lib/native.js';
+import { saveFile, shareText, copyText, pickSound, testAlarm } from '../lib/native.js';
+import { chabadList, HMONTHS, monthName } from '../lib/chabad.js';
+import { uid } from '../lib/store.js';
 import { openLocation, openHealth, openYahrzeits, openCompass } from './extras.js';
 import { dayStatus, activeTracks, firstKey } from '../lib/tracks.js';
 
 const row = (label, sub, control, onclick) => h('div', { class: 'row' + (onclick ? ' tap' : ''), onclick }, h('div', { class: 'grow' }, h('div', { class: 't' }, label), sub ? h('div', { class: 's' }, sub) : null), control);
 const sw = (label, sub, obj, key, after) => row(label, sub, toggle(!!obj[key], (v) => { obj[key] = v; commit(); after && after(); }));
-const arrow = () => h('span', { class: 'muted' }, '‹');
+const arrow = () => h('span', { class: 'muted' }, icon('left', 26));
 
 export function settingsMain() {
   const groups = [
-    ['כללי', 'מראה, גודל כתב, תחילת שבוע', general],
+    ['כללי', 'מראה וגודל כתב', general],
     ['עיצוב ונראות', 'פלטת צבע, צפיפות, ניגודיות, פינות', design],
     ['לימוד', 'השלמות, חלון השלמה, שעות חלקי יום', learning],
     ['זמנים', 'מיקום, שיטת חישוב, צאת הכוכבים, החלפת יום', zmanim],
@@ -24,8 +26,7 @@ export function settingsMain() {
     ['אודות ועזרה', 'גרסה ושאלות נפוצות', about],
   ];
   openPage('הגדרות', () => h('div', null,
-    h('div', { class: 'list' }, groups.map(([t, s, fn], i) => h('div', { class: 'row tap', onclick: () => fn() }, h('div', { class: 'grow' }, h('div', { class: 't' }, (i + 1) + '. ' + t), h('div', { class: 's' }, s)), arrow()))),
-    h('button', { class: 'btn sec block', onclick: () => openCompass() }, 'מצפן לבית המקדש')));
+    h('div', { class: 'list' }, groups.map(([t, s, fn], i) => h('div', { class: 'row tap', onclick: () => fn() }, h('div', { class: 'grow' }, h('div', { class: 't' }, (i + 1) + '. ' + t), h('div', { class: 's' }, s)), arrow())))));
 }
 
 function general() {
@@ -33,8 +34,7 @@ function general() {
     const { s } = ctx();
     return h('div', null,
       h('label', { class: 'f' }, 'מראה'), seg([['auto', 'אוטומטי'], ['light', 'בהיר'], ['dark', 'כהה']], s.theme, (v) => { s.theme = v; commit(); }),
-      h('label', { class: 'f' }, 'גודל כתב'), seg([[0.9, 'קטן'], [1, 'רגיל'], [1.15, 'גדול'], [1.3, 'גדול מאוד']], s.fontScale, (v) => { s.fontScale = v; commit(); }),
-      h('label', { class: 'f' }, 'תחילת השבוע ביומן'), seg([[0, 'יום ראשון'], [1, 'יום שני']], s.weekStart, (v) => { s.weekStart = v; commit(); }));
+      h('label', { class: 'f' }, 'גודל כתב'), seg([[0.9, 'קטן'], [1, 'רגיל'], [1.15, 'גדול'], [1.3, 'גדול מאוד']], s.fontScale, (v) => { s.fontScale = v; commit(); }));
   });
 }
 function design() {
@@ -50,17 +50,28 @@ function design() {
         sw('צבע שונה לכל לשונית', 'היום זהב, לימוד ירוק, זמנים כחול, יומן סגול', s, 'tabColors')));
   });
 }
+// שדה שעה: בחירה מהירה + הקלדה חופשית (HH:MM). השעה נשמרת כמספר שעות (24 = חצות)
+const hourStr = (v) => { const x = v >= 24 ? 0 : v; const hh = Math.floor(x), mm = Math.round((x - hh) * 60); return String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0'); };
+function hourField(label, s, key, presets, allowMidnight) {
+  const set = (v) => { s[key] = v; commit(); };
+  return h('div', { class: 'card' },
+    h('div', { style: 'font-weight:700;margin-bottom:6px' }, label),
+    h('div', { class: 'chips' }, presets.map(([v, l]) => h('button', { class: 'chip' + (Number(s[key]) === v ? ' on' : ''), onclick: () => set(v) }, l))),
+    h('div', { class: 'inline' }, h('label', { class: 'f', style: 'flex:none;margin:0' }, 'או הקלדת שעה:'),
+      h('input', { type: 'time', value: hourStr(s[key]), onchange: (e) => { const [hh, mm] = (e.target.value || '').split(':').map(Number); if (isNaN(hh)) return; let v = hh + (mm || 0) / 60; if (v === 0 && allowMidnight) v = 24; if (v === 0) return; set(v); } })));
+}
 function learning() {
   openPage('לימוד', () => {
     const { s } = ctx();
-    const hours = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => [a + i, (a + i) + ':00']);
     return h('div', null,
       h('div', { class: 'list' }, sw('השלמה באיחור נספרת', 'נספרת ברצף ובאחוזים, עם תווית "באיחור"', s, 'countLate')),
-      h('label', { class: 'f' }, 'חלון השלמה (כמה ימים אחורה מוצגים כחסרים)'), seg([[7, '7 ימים'], [14, '14 ימים'], [30, '30 ימים']], s.lateWindow, (v) => { s.lateWindow = v; commit(); }),
-      h('div', { class: 'inline' },
-        field('בוקר עד שעה', sel(hours(9, 14), s.partMorning, (v) => { s.partMorning = Number(v); commit(); })),
-        field('אחה״צ עד שעה', sel(hours(15, 20), s.partAfternoon, (v) => { s.partAfternoon = Number(v); commit(); }))),
-      h('p', { class: 'dim small' }, 'חלקי היום משמשים לסידור המסלולים במסך היום.'));
+      h('label', { class: 'f' }, 'חלון השלמה (כמה אחורה מוצגים כחסרים)'),
+      h('div', { class: 'chips' }, [[7, '7 ימים'], [14, '14 ימים'], [30, '30 ימים'], ['month', 'החודש העברי הנוכחי'], ['year', 'שנה (מתחילת השנה העברית)']].map(([v, l]) => h('button', { class: 'chip' + (s.lateWindow === v ? ' on' : ''), onclick: () => { s.lateWindow = v; commit(); } }, l))),
+      h('div', { class: 'section-title' }, 'חלקי היום (עד איזו שעה כל חלק)'),
+      hourField('בוקר עד', s, 'partMorning', [[10, '10:00'], [11, '11:00'], [12, '12:00'], [13, '13:00']]),
+      hourField('אחר הצהריים עד', s, 'partAfternoon', [[16, '16:00'], [17, '17:00'], [18, '18:00'], [19, '19:00']]),
+      hourField('ערב ולילה עד', s, 'partEvening', [[22, '22:00'], [23, '23:00'], [24, '12 בלילה (חצות)']], true),
+      h('p', { class: 'dim small' }, 'חלקי היום משמשים לסידור המסלולים במסך היום. ברירת המחדל: הלילה נמשך עד 12 בלילה.'));
   });
 }
 function zmanim() {
@@ -79,6 +90,9 @@ function alerts() {
     const { s } = ctx();
     return h('div', null,
       h('div', { class: 'list' },
+        row('צליל ההתראה', s.soundName || 'צליל השעון של המכשיר (ברירת מחדל)', arrow(), () => chooseSound()),
+        row('בדיקת צלצול עכשיו', 'מצלצל בעוד כמה שניות עם הצליל שבחרת', arrow(), () => testAlarm('ring'))),
+      h('div', { class: 'list', style: 'margin-top:10px' },
         sw('עוצמה עולה בהדרגה', 'הצלצול מתחיל חלש ועולה', s, 'ramp'),
         sw('רטט', '', s, 'vibrate'),
         sw('חוזרת עד כיבוי (ברירת מחדל)', 'צלצול ממשיך עד שמכבים', s, 'repeatUntilOff'),
@@ -91,7 +105,8 @@ function alerts() {
         sw('ערב שבת / חג', 'ביום שישי וערב חג בצהריים', s.auto, 'erevShabbat'),
         sw('הדלקת נרות', 'לפני זמן ההדלקה', s.auto, 'candles'),
         sw('ספירת העומר', 'בערבי הספירה', s.auto, 'omer'),
-        sw('תאריכי חב״ד', 'י״ט כסלו, י״א ניסן, ג׳ תמוז ועוד', s, 'chabadDates'),
+        sw('תאריכי חב״ד', 'מתריע בתאריכים שנבחרו ברשימה', s, 'chabadDates'),
+        row('רשימת תאריכי חב״ד', chabadList(s).filter((x) => x.on !== false).length + ' מתוך ' + chabadList(s).length + ' פעילים · בחירה, עריכה והוספה', arrow(), () => openChabad()),
         sw('אבני דרך שקטות', 'הודעה על רצף 7, 30, 100', s, 'milestones')),
       field('הדלקת נרות: להתריע לפני (דקות)', sel([[10, '10'], [20, '20'], [30, '30'], [45, '45']], s.candleBefore, (v) => { s.candleBefore = Number(v); commit(); })));
   });
@@ -172,4 +187,40 @@ function about() {
       h('div', { class: 'row' }, h('div', { class: 'grow' }, h('div', { class: 't' }, 'ההתראה לא צלצלה?'), h('div', { class: 's' }, 'הגדרות > הרשאות ואמינות, ולבצע את התיקונים המוצעים.'))),
       h('div', { class: 'row' }, h('div', { class: 'grow' }, h('div', { class: 't' }, 'בלי אינטרנט?'), h('div', { class: 's' }, 'הכל מחושב בטלפון. הזמנים תואמים ל-Hebcal לדקה.'))),
       h('div', { class: 'row' }, h('div', { class: 'grow' }, h('div', { class: 't' }, 'ספירת הימים בשבת'), h('div', { class: 's' }, 'אפשר להשלים במוצאי שבת/חג והלימוד נרשם בתאריך הנכון, לא כאיחור.'))))));
+}
+
+async function chooseSound() {
+  const { s } = ctx();
+  const r = await pickSound(s.soundUri || '');
+  if (!r || r.cancelled) return;
+  s.soundUri = r.uri || ''; s.soundName = r.name || '';
+  commit(); toast('הצליל נבחר' + (s.soundName ? ': ' + s.soundName : ''));
+}
+
+// ---- תאריכי חב״ד: בחירה, עריכה והוספה ----
+function openChabad() {
+  openPage('תאריכי חב״ד', () => {
+    const { s } = ctx();
+    const list = chabadList(s);
+    const ordered = list.slice().sort((a, b) => ((a.m + 5) % 12) - ((b.m + 5) % 12) || a.d - b.d);
+    return h('div', null,
+      h('p', { class: 'muted' }, 'בוחרים על אילו תאריכים להתריע (בשעה 08:00), ואפשר לערוך, למחוק ולהוסיף.'),
+      h('div', { class: 'list' }, ordered.map((c) => h('div', { class: 'row tap', style: c.on === false ? 'opacity:.55' : '', onclick: () => editChabad(c) },
+        h('div', { class: 'grow' }, h('div', { class: 't' }, c.t), h('div', { class: 's' }, c.d + ' ב' + monthName(c.m))),
+        toggle(c.on !== false, (v) => { c.on = v; commit(); })))),
+      h('button', { class: 'btn block', onclick: () => editChabad(null) }, '+ הוספת תאריך'),
+      h('button', { class: 'btn ghost block', style: 'margin-top:8px', onclick: async () => { if (await confirmBox('להחזיר את רשימת תאריכי חב״ד לברירת המחדל? שינויים שעשית יימחקו.', 'החזרה', true)) { s.chabadList = null; commit(); } } }, 'החזרה לרשימת ברירת המחדל'));
+  });
+}
+function editChabad(c) {
+  const { s } = ctx();
+  const d = c ? Object.assign({}, c) : { id: uid('c'), m: 9, d: 1, t: '', on: true };
+  openSheet(c ? 'עריכת תאריך' : 'תאריך חדש', (sh) => h('div', null,
+    field('תיאור (מה יוצג בהתראה)', txt(d.t, (v) => (d.t = v), 'למשל: י״ט כסלו - ראש השנה לחסידות')),
+    h('div', { class: 'inline' },
+      field('יום בחודש', txt(d.d, (v) => (d.d = Math.max(1, Math.min(30, Number(v) || 1))), '', 'number')),
+      field('חודש עברי', sel(HMONTHS, d.m, (v) => (d.m = Number(v))))),
+    h('div', { class: 'inline', style: 'margin-top:12px' },
+      c ? h('button', { class: 'btn danger', onclick: () => { s.chabadList = chabadList(s).filter((x) => x.id !== c.id); sh.close(); commit(); } }, 'מחיקה') : null,
+      h('button', { class: 'btn', onclick: () => { if (!d.t.trim()) { toast('צריך תיאור'); return; } const L = chabadList(s); if (c) Object.assign(L.find((x) => x.id === c.id), d); else L.push(d); sh.close(); commit(); } }, 'שמירה'))));
 }

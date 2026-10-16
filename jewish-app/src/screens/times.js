@@ -1,4 +1,4 @@
-import { h, openPage, openSheet, actionSheet, confirmBox, seg, chips, field, sel, txt, toggle, toast } from '../ui.js';
+import { navBar, h, openPage, openSheet, actionSheet, confirmBox, seg, chips, field, sel, txt, toggle, toast } from '../ui.js';
 import { ctx, commit, nav } from '../core.js';
 import { ZMAN_DEFS, zmanimFor, zmanName, METHODS, timedOn, dayEvents, parshaOfWeek, isRestDay } from '../lib/zm.js';
 import { hhmm, weekdayName, hebrewDate, addDays, dkey, parseKey, WD_LETTER } from '../lib/dates.js';
@@ -28,10 +28,7 @@ function zmanLines(c, d) {
 function dayView(c) {
   const d = addDays(c.today, offset);
   const root = h('div', null);
-  root.appendChild(h('div', { class: 'inline', style: 'margin-bottom:6px' },
-    h('button', { class: 'btn sec sm', style: 'flex:none', onclick: () => { offset++; commit(); } }, '←'),
-    h('div', { style: 'text-align:center;flex:3' }, h('b', null, weekdayName(d)), h('div', { class: 'muted small' }, hebrewDate(d))),
-    h('button', { class: 'btn sec sm', style: 'flex:none', onclick: () => { offset--; commit(); } }, '→')));
+  root.appendChild(navBar(h('div', { style: 'text-align:center' }, h('b', null, weekdayName(d)), h('div', { class: 'muted small' }, hebrewDate(d))), () => { offset--; commit(); }, () => { offset++; commit(); }));
   if (offset) root.appendChild(h('button', { class: 'btn ghost sm block', style: 'margin-bottom:8px', onclick: () => { offset = 0; commit(); } }, 'חזרה להיום'));
   root.appendChild(h('div', { class: 'h-sub' }, c.loc.name + ' · שיטת ' + METHODS[c.s.method]));
   const ev = dayEvents(d, c.loc, c.s);
@@ -52,7 +49,6 @@ function dayView(c) {
   root.appendChild(list);
   root.appendChild(h('p', { class: 'dim small', style: 'text-align:center' }, 'לחיצה על זמן: הוספת התראה'));
   root.appendChild(h('div', { class: 'inline' },
-    h('button', { class: 'btn sec', onclick: () => openCompass() }, 'מצפן לבית המקדש'),
     h('button', { class: 'btn sec', onclick: async () => { const r = await shareText('זמני היום', dayText(c, d)); if (r === 'copied') toast('הזמנים הועתקו ללוח'); } }, 'שיתוף זמנים')));
   return root;
 }
@@ -64,10 +60,7 @@ function weekView(c) {
   const cols = ['alot', 'netz', 'shma', 'tfila', 'chatzot', 'gedola', 'plag', 'shkiah', 'tzeit'];
   const start = addDays(c.today, -c.today.getDay() + offset * 7);
   const root = h('div', null);
-  root.appendChild(h('div', { class: 'inline', style: 'margin-bottom:6px' },
-    h('button', { class: 'btn sec sm', style: 'flex:none', onclick: () => { offset++; commit(); } }, '←'),
-    h('div', { style: 'text-align:center;flex:3' }, h('b', null, 'שבוע של ' + start.getDate() + '.' + (start.getMonth() + 1)), h('div', { class: 'muted small' }, c.loc.name + ' · ' + METHODS[c.s.method])),
-    h('button', { class: 'btn sec sm', style: 'flex:none', onclick: () => { offset--; commit(); } }, '→')));
+  root.appendChild(navBar(h('div', { style: 'text-align:center' }, h('b', null, 'שבוע של ' + start.getDate() + '.' + (start.getMonth() + 1)), h('div', { class: 'muted small' }, c.loc.name + ' · ' + METHODS[c.s.method])), () => { offset--; commit(); }, () => { offset++; commit(); }));
   const names = (id) => ZMAN_DEFS.find((z) => z.id === id).name;
   const tbl = h('table', { class: 'wk' }, h('thead', null, h('tr', null, h('th', null, 'יום'), cols.map((id) => h('th', null, names(id))))),
     h('tbody', null, [0, 1, 2, 3, 4, 5, 6].map((i) => {
@@ -82,14 +75,21 @@ function weekView(c) {
   return root;
 }
 
+export function newAlarmSheet() {
+  const back = () => newAlarmSheet();
+  openSheet('התראה חדשה', (sh) => h('div', null,
+    h('button', { class: 'opt', onclick: () => { sh.close(); editAlarm(null, 'fixed', null, back); } }, h('div', null, h('b', null, 'התראה כללית בשעה קבועה'), h('div', { class: 's muted small' }, 'אפשר גם בתאריך מסוים בלבד (כמו אירוע ביומן)'))),
+    h('button', { class: 'opt', onclick: () => { sh.close(); editAlarm(null, 'zman', null, back); } }, 'לפי זמן הלכתי (לפני / בזמן / אחרי)'),
+    h('button', { class: 'opt', onclick: () => { sh.close(); editAlarm(null, 'learning', null, back); } }, 'תזכורת לימוד (רק אם לא סומן)'),
+    h('div', { class: 'section-title' }, 'תבניות מוכנות'),
+    ALARM_TEMPLATES.map((t) => h('button', { class: 'opt', onclick: () => { sh.close(); const a = Object.assign(newAlarm(t.a.type), t.a); editAlarm(null, a.type, a, back); } }, t.name))));
+}
+nav.newAlarm = newAlarmSheet;
+nav.timesView = (v) => { view = v; };
+
 function alarmsView(c) {
   const root = h('div', null);
-  root.appendChild(h('button', { class: 'btn block', style: 'margin-bottom:12px', onclick: () => openSheet('התראה חדשה', (sh) => h('div', null,
-    h('button', { class: 'opt', onclick: () => { sh.close(); editAlarm(null, 'zman'); } }, 'לפי זמן הלכתי (לפני / בזמן / אחרי)'),
-    h('button', { class: 'opt', onclick: () => { sh.close(); editAlarm(null, 'fixed'); } }, 'שעה קבועה'),
-    h('button', { class: 'opt', onclick: () => { sh.close(); editAlarm(null, 'learning'); } }, 'תזכורת לימוד (רק אם לא סומן)'),
-    h('div', { class: 'section-title' }, 'תבניות מוכנות'),
-    ALARM_TEMPLATES.map((t) => h('button', { class: 'opt', onclick: () => { sh.close(); const a = Object.assign(newAlarm(t.a.type), t.a); a.id = a.id; editAlarm(null, a.type, a); } }, t.name)))) }, '+ התראה חדשה'));
+  root.appendChild(h('button', { class: 'btn block', style: 'margin-bottom:12px', onclick: () => newAlarmSheet() }, '+ התראה חדשה'));
   if (!c.st.alarms.length) root.appendChild(h('div', { class: 'card empty-note' }, 'אין התראות עדיין. אפשר ללחוץ על זמן במסך הזמנים, או על "התראה חדשה".'));
   const nextAt = {};
   for (const i of buildInstances(c.st, c.now, 14)) { const m = /^A\|([^|]+)\|/.exec(i.id); if (m && !nextAt[m[1]]) nextAt[m[1]] = i.t; }
@@ -98,7 +98,7 @@ function alarmsView(c) {
     const nt = nextAt[a.id];
     list.appendChild(h('div', { class: 'row tap', style: a.enabled ? '' : 'opacity:.55', onclick: () => editAlarm(a.id, a.type) },
       h('div', { class: 'grow' }, h('div', { class: 't' }, alarmTitle(a, c.st)),
-        h('div', { class: 's' }, daysLabel(a.days) + (a.type === 'fixed' ? ' · ' + a.time : '') + (nt ? ' · הבאה ' + hhmm(new Date(nt)) : '') + (a.noRest !== false ? ' · לא בשבת וחג' : '') + (a.ring === false ? ' · התראה שקטה' : ''))),
+        h('div', { class: 's' }, daysLabel(a.days, a.date) + (a.type === 'fixed' ? ' · ' + a.time : '') + (nt ? ' · הבאה ' + hhmm(new Date(nt)) : '') + (a.noRest !== false ? ' · לא בשבת וחג' : '') + (a.ring === false ? ' · התראה שקטה' : ''))),
       toggle(a.enabled, (v) => { a.enabled = v; commit(); }),
       h('button', { class: 'iconbtn', onclick: (e) => { e.stopPropagation(); alarmMenu(a); } }, '⋮')));
   });
@@ -119,11 +119,12 @@ function alarmMenu(a) {
 function quickAlarm(l) {
   const opts = [[30, 'before'], [15, 'before'], [0, 'at'], [10, 'after']];
   openSheet(l.name + ' - הוספת התראה', (sh) => h('div', null,
-    opts.map(([m, rel]) => h('button', { class: 'opt', onclick: () => { sh.close(); const a = Object.assign(newAlarm('zman'), { zman: l.id, rel, mins: m }); editAlarm(null, 'zman', a); } }, rel === 'at' ? 'בזמן ' + l.name : m + ' דקות ' + REL[rel] + ' ' + l.name)),
-    h('button', { class: 'opt', onclick: () => { sh.close(); const a = Object.assign(newAlarm('zman'), { zman: l.id }); editAlarm(null, 'zman', a); } }, 'התאמה אישית...')));
+    opts.map(([m, rel]) => h('button', { class: 'opt', onclick: () => { sh.close(); const a = Object.assign(newAlarm('zman'), { zman: l.id, rel, mins: m }); editAlarm(null, 'zman', a, () => quickAlarm(l)); } }, rel === 'at' ? 'בזמן ' + l.name : m + ' דקות ' + REL[rel] + ' ' + l.name)),
+    h('button', { class: 'opt', onclick: () => { sh.close(); const a = Object.assign(newAlarm('zman'), { zman: l.id }); editAlarm(null, 'zman', a, () => quickAlarm(l)); } }, 'התאמה אישית...')));
 }
 
-export function editAlarm(id, type, preset) {
+export function editAlarm(id, type, preset, back) {
+  let saved = false;
   const c = ctx();
   const orig = id ? c.st.alarms.find((a) => a.id === id) : null;
   const d = JSON.parse(JSON.stringify(orig || preset || newAlarm(type || 'zman')));
@@ -146,8 +147,14 @@ export function editAlarm(id, type, preset) {
       else root.appendChild(zmanPick());
       root.appendChild(h('p', { class: 'dim small' }, 'מצלצלת/מתריעה רק אם המסלול עדיין לא סומן, ושותקת אם כבר למדת.'));
     } else {
-      root.appendChild(h('label', { class: 'f' }, 'ימים'));
-      root.appendChild(chips(WD_LETTER.map((l, i) => [i, l]), d.days, (v) => { d.days = d.days.includes(v) ? d.days.filter((x) => x !== v) : d.days.concat(v).sort(); pg.refresh(); }));
+      root.appendChild(h('label', { class: 'f' }, 'תאריך מסוים (לא חובה): ההתראה תפעל רק בו'));
+      root.appendChild(h('div', { class: 'inline' },
+        h('input', { type: 'date', value: d.date || '', onchange: (e) => { d.date = e.target.value || ''; pg.refresh(); } }),
+        d.date ? h('button', { class: 'btn sec sm', style: 'flex:none', onclick: () => { d.date = ''; pg.refresh(); } }, 'ניקוי תאריך') : null));
+      if (!d.date) {
+        root.appendChild(h('label', { class: 'f' }, 'ימים'));
+        root.appendChild(chips(WD_LETTER.map((l, i) => [i, l]), d.days, (v) => { d.days = d.days.includes(v) ? d.days.filter((x) => x !== v) : d.days.concat(v).sort(); pg.refresh(); }));
+      }
     }
     const sw = (label, key, def = true) => h('div', { class: 'row' }, h('div', { class: 'grow' }, label), toggle(d[key] === undefined ? def : d[key], (v) => { d[key] = v; pg.refresh(); }));
     root.appendChild(h('div', { class: 'list' },
@@ -157,11 +164,13 @@ export function editAlarm(id, type, preset) {
       sw('אפשר נודניק', 'snooze', true)));
     root.appendChild(h('button', { class: 'btn block', onclick: () => {
       if (d.type === 'learning' && !d.trackId) { toast('צריך לבחור מסלול'); return; }
+      if (d.date && d.type !== 'learning' && d.date < c.tk) { toast('התאריך כבר עבר'); return; }
       if (orig) Object.assign(orig, d); else c.st.alarms.push(d);
+      saved = true;
       pg.close(); commit(); toast('ההתראה נשמרה');
     } }, 'שמירה'));
     if (orig) root.appendChild(h('button', { class: 'btn ghost block', style: 'margin-top:10px', onclick: () => testAlarm(d.ring === false ? 'notify' : 'ring') }, 'בדיקה: צלצול בעוד 10 שניות'));
     return root;
-  });
+  }, { onClose: () => { if (!saved && back) setTimeout(back, 40); } });
 }
 nav.openAlarmEdit = editAlarm;

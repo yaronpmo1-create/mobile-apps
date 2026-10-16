@@ -1,4 +1,4 @@
-import { h, openPage, openSheet, actionSheet, confirmBox, seg, chips, field, sel, txt, toggle, toast } from '../ui.js';
+import { dragSort, h, openPage, openSheet, actionSheet, confirmBox, seg, chips, field, sel, txt, toggle, toast } from '../ui.js';
 import { ctx, commit, nav } from '../core.js';
 import { TEMPLATES, AUTO_KINDS, PARTS, addTemplate, newTrack, progressOf, trackPct, streak } from '../lib/tracks.js';
 import { ZMAN_DEFS } from '../lib/zm.js';
@@ -29,22 +29,22 @@ export function learn() {
   const list = h('div', { class: 'list' });
   act.forEach((t, i) => {
     const pr = progressOf(t);
-    list.appendChild(h('div', { class: 'row tap', style: t.paused ? 'opacity:.6' : '', onclick: () => editTrack(t.id) },
+    list.appendChild(h('div', { class: 'row tap', 'data-id': t.id, style: t.paused ? 'opacity:.6' : '', onclick: () => editTrack(t.id) },
       h('div', { class: 'grow' },
         h('div', { class: 't' }, t.name, t.paused ? h('span', { class: 'tag blue' }, 'מושהה') : null),
         h('div', { class: 's' }, trackSummary(t, c) + (t.paused ? '' : ' · הצלחה 30 יום: ' + trackPct(st, t, 30, c.tk) + '%')),
         pr != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(pr * 100) + '%' })) : null),
-      h('div', { style: 'display:flex;flex-direction:column' },
-        h('button', { class: 'iconbtn', style: 'height:22px;width:36px;font-size:.9rem', disabled: i === 0, onclick: (e) => { e.stopPropagation(); move(act, i, -1); } }, '▲'),
-        h('button', { class: 'iconbtn', style: 'height:22px;width:36px;font-size:.9rem', disabled: i === act.length - 1, onclick: (e) => { e.stopPropagation(); move(act, i, 1); } }, '▼')),
-      h('button', { class: 'iconbtn', onclick: (e) => { e.stopPropagation(); trackMenu(t); } }, '⋮')));
+      h('button', { class: 'iconbtn nodrag', onclick: (e) => { e.stopPropagation(); trackMenu(t); } }, '⋮')));
   });
-  if (act.length) root.appendChild(list);
+  if (act.length) {
+    dragSort(list, (ids) => { ids.forEach((id, k) => { const tr = st.tracks.find((x) => x.id === id); if (tr) tr.order = k; }); commit(); });
+    root.appendChild(list);
+  }
   if (arch.length) {
     root.appendChild(h('div', { class: 'section-title' }, 'ארכיון'));
     root.appendChild(h('div', { class: 'list' }, arch.map((t) => h('div', { class: 'row tap', onclick: () => trackMenu(t) }, h('div', { class: 'grow' }, h('div', { class: 't' }, t.name), h('div', { class: 's' }, 'בארכיון. ההיסטוריה נשמרה'))))));
   }
-  root.appendChild(h('p', { class: 'dim small', style: 'text-align:center;margin-top:12px' }, 'החיצים משנים סדר · ⋮ להשהיה, שכפול וארכיון'));
+  root.appendChild(h('p', { class: 'dim small', style: 'text-align:center;margin-top:12px' }, 'לחיצה ארוכה על מסלול וגרירה משנות סדר · ⋮ להשהיה, שכפול וארכיון'));
   return root;
 }
 

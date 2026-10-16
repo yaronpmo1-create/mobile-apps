@@ -60,7 +60,7 @@ export function openPage(title, build, opts = {}) {
   const body = h('div', { class: 'body' });
   const titleEl = h('h2', null, title);
   const head = h('div', { class: 'phead' },
-    h('button', { class: 'iconbtn', 'aria-label': 'חזרה', onclick: () => api.close() }, '→'), titleEl,
+    h('button', { class: 'iconbtn big', 'aria-label': 'חזרה', onclick: () => api.close() }, icon('right', 34)), titleEl,
     (opts.actions || []).map((a) => h('button', { class: 'btn sm', onclick: () => a.fn(api) }, a.label)));
   const el = h('div', { class: 'page' }, head, body);
   document.body.appendChild(el);
@@ -141,4 +141,62 @@ export function press(el, onTap, onLong) {
   el.addEventListener('click', (e) => { if (fired) { e.preventDefault(); fired = false; return; } onTap && onTap(e); });
   el.addEventListener('contextmenu', (e) => e.preventDefault());
   return el;
+}
+
+// ---- חיצים ----
+// כיוון פיזי על המסך: 'right' מצביע ימינה, 'left' שמאלה (SVG, לא מתהפך ב-RTL)
+export function icon(dir, size = 30) {
+  const s = h('span', { class: 'ico', 'aria-hidden': 'true' });
+  const p = dir === 'left' ? 'M15 5 8 12l7 7' : 'M9 5l7 7-7 7';
+  s.innerHTML = '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="' + p + '"/></svg>';
+  return s;
+}
+// שורת ניווט: חץ ימני (הקודם) | אמצע | חץ שמאלי (הבא)
+export const navBar = (mid, onPrev, onNext) => h('div', { class: 'navbar' },
+  h('button', { class: 'navbtn', 'aria-label': 'הקודם', onclick: onPrev }, icon('right', 34)),
+  mid,
+  h('button', { class: 'navbtn', 'aria-label': 'הבא', onclick: onNext }, icon('left', 34)));
+
+// גרירה לשינוי סדר בלחיצה ארוכה. לכל שורה data-id; onDone מקבל מערך מזהים בסדר החדש
+export function dragSort(container, onDone) {
+  let timer = null, active = null, sy = 0, pid = null;
+  const lift = (row, y) => {
+    active = row; row.classList.add('dragging');
+    if (navigator.vibrate) try { navigator.vibrate(25); } catch (e) { /* */ }
+    follow(y);
+  };
+  const follow = (y) => {
+    const rows = [...container.children].filter((r) => r !== active && r.dataset && r.dataset.id);
+    let before = null;
+    for (const r of rows) { const b = r.getBoundingClientRect(); if (y < b.top + b.height / 2) { before = r; break; } }
+    if (before) { if (active.nextSibling !== before) container.insertBefore(active, before); } else if (container.lastChild !== active) container.appendChild(active);
+    active.style.transform = '';
+    const b = active.getBoundingClientRect();
+    active.style.transform = 'translateY(' + (y - (b.top + b.height / 2)) + 'px)';
+  };
+  const end = (cancel) => {
+    clearTimeout(timer);
+    if (!active) return;
+    const row = active; active = null;
+    row.classList.remove('dragging'); row.style.transform = '';
+    const swallow = (e) => { e.stopPropagation(); e.preventDefault(); };
+    row.addEventListener('click', swallow, { capture: true, once: true });
+    setTimeout(() => row.removeEventListener('click', swallow, true), 400);
+    if (!cancel) onDone([...container.children].filter((r) => r.dataset && r.dataset.id).map((r) => r.dataset.id));
+  };
+  container.addEventListener('pointerdown', (e) => {
+    const row = e.target.closest('[data-id]');
+    if (!row || row.parentNode !== container || e.target.closest('.nodrag')) return;
+    sy = e.clientY; pid = e.pointerId;
+    clearTimeout(timer);
+    timer = setTimeout(() => lift(row, sy), 450);
+  });
+  container.addEventListener('pointermove', (e) => {
+    if (active) { e.preventDefault(); follow(e.clientY); sy = e.clientY; }
+    else if (timer && Math.abs(e.clientY - sy) > 9) { clearTimeout(timer); timer = null; }
+  });
+  container.addEventListener('touchmove', (e) => { if (active) { e.preventDefault(); follow(e.touches[0].clientY); } }, { passive: false });
+  ['pointerup'].forEach((ev) => container.addEventListener(ev, () => end(false)));
+  ['pointercancel'].forEach((ev) => container.addEventListener(ev, () => { clearTimeout(timer); if (active) end(false); }));
+  container.addEventListener('contextmenu', (e) => e.preventDefault());
 }

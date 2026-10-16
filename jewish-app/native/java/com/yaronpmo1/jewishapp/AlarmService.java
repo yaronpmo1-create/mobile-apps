@@ -113,12 +113,15 @@ public class AlarmService extends Service {
 
     private void startSound() {
         try {
-            Uri uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+            Uri uri = null;
+            String snd = item.optString("snd", "");
+            if (snd != null && !snd.isEmpty()) { try { uri = Uri.parse(snd); } catch (Exception ignored) { } }
+            if (uri == null) uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
             if (uri == null) uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE);
             player = new MediaPlayer();
             player.setAudioAttributes(new AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
-            player.setDataSource(this, uri);
+            try { player.setDataSource(this, uri); } catch (Exception bad) { player.reset(); player.setDataSource(this, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)); }
             player.setLooping(true);
             player.prepare();
             ramp = item.optBoolean("ramp", true);

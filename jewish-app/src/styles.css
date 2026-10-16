@@ -118,3 +118,22 @@ hr{border:0;border-top:1px solid var(--line);margin:12px 0}
 a{color:var(--info)}
 .empty-note{text-align:center;color:var(--muted);padding:22px 8px}
 [data-contrast="1"] .card,[data-contrast="1"] .list{border:2px solid var(--line)}
+
+.ico{display:inline-flex;line-height:0}
+.iconbtn.big{width:52px;height:52px;color:var(--accent)}
+.navbar{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.navbar>div{flex:1;text-align:center}
+.navbtn{flex:none;width:60px;height:60px;border-radius:18px;background:var(--card2);color:var(--accent);display:inline-flex;align-items:center;justify-content:center;border:2px solid var(--line)}
+.navbtn:active{background:var(--accentSoft);border-color:var(--accent)}
+.sechead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:16px 2px 8px}
+.sechead h2{margin:0;font-size:1.15rem;font-weight:800;color:var(--accent)}
+.sechead .acts{display:flex;gap:6px}
+.row.dragging{position:relative;z-index:10;background:var(--card2);box-shadow:0 8px 24px #0008;border-radius:var(--radiusS);opacity:.97}
+.chk.pend{box-shadow:0 0 0 3px var(--accent)}
+.confirmbar{position:sticky;bottom:6px;z-index:6;display:flex;gap:10px;background:var(--card);border:2px solid var(--accent);border-radius:var(--radius);padding:10px;margin-top:10px;box-shadow:0 6px 24px #0007}
+.confirmbar .btn{flex:1}
+.drag-hint{display:inline-block;color:var(--dim);font-size:1.3rem;padding:0 6px;touch-action:none}
+#splash{position:fixed;inset:0;z-index:999;background:#0A101B;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .35s}
+#splash.out{opacity:0;pointer-events:none}
+#splash h1{margin:0;color:#E8C26A;font-size:2rem;font-weight:800;letter-spacing:.5px}
+#splash p{margin:0;color:#AEB9CC;font-size:1rem}

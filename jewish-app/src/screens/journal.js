@@ -1,4 +1,4 @@
-import { h, openPage, openSheet, actionSheet, confirmBox, toggle, toast, press } from '../ui.js';
+import { navBar, h, openPage, openSheet, actionSheet, confirmBox, toggle, toast, press } from '../ui.js';
 import { ctx, commit, nav } from '../core.js';
 import { HDate } from '@hebcal/core';
 import { dkey, parseKey, addDays, hebrewDate, hebrewMonthYear, hebrewMonthDays, hd, stripNikud, WD_LETTER, weekdayName, WEEKDAYS } from '../lib/dates.js';
@@ -27,12 +27,9 @@ export function journal() {
   const root = h('div', null);
   const anchor = mOff === 0 ? c.today : monthAnchor(c);
   const days = hebrewMonthDays(anchor);
-  root.appendChild(h('div', { class: 'inline', style: 'margin-bottom:8px' },
-    h('button', { class: 'btn sec sm', style: 'flex:none', onclick: () => { mOff++; commit(); } }, '←'),
-    h('div', { style: 'text-align:center;flex:3' }, h('b', { style: 'font-size:1.2rem' }, hebrewMonthYear(days[0])), h('div', { class: 'muted small' }, mOff ? 'חזרה להיום בלחיצה' : 'החודש הנוכחי')),
-    h('button', { class: 'btn sec sm', style: 'flex:none', onclick: () => { mOff--; commit(); } }, '→')));
+  root.appendChild(navBar(h('div', { style: 'text-align:center' }, h('b', { style: 'font-size:1.2rem' }, hebrewMonthYear(days[0])), h('div', { class: 'muted small' }, mOff ? 'חזרה להיום בלחיצה' : 'החודש הנוכחי')), () => { mOff--; commit(); }, () => { mOff++; commit(); }));
   if (mOff) root.lastChild.children[1].onclick = () => { mOff = 0; commit(); };
-  const ws = c.s.weekStart || 0;
+  const ws = 0;
   const grid = h('div', { class: 'cal' });
   for (let i = 0; i < 7; i++) grid.appendChild(h('div', { class: 'wd' }, WD_LETTER[(i + ws) % 7]));
   const lead = (days[0].getDay() - ws + 7) % 7;

@@ -1,0 +1,54 @@
+<title>תצוגת אפליקציה יהודית</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+:root{--bg:#F3F1EC;--fg:#1B2433;--dim:#566074;--line:#D9D4C8;--card:#FFFFFF;--accent:#8A6410;--btn:#1B2433;--btnfg:#FFFFFF;--frame:#0A101B}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0C121D;--fg:#EEEAE2;--dim:#9AA6BA;--line:#25314A;--card:#141E31;--accent:#E8C26A;--btn:#E8C26A;--btnfg:#0A101B;--frame:#05080F;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0C121D;--fg:#EEEAE2;--dim:#9AA6BA;--line:#25314A;--card:#141E31;--accent:#E8C26A;--btn:#E8C26A;--btnfg:#0A101B;--frame:#05080F;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:"Segoe UI",Roboto,Arial,sans-serif;direction:rtl;padding-block:20px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));font-size:15px;line-height:1.6}
+.wrap{max-width:980px;margin:0 auto;display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+.side{flex:1 1 300px;min-width:0;max-width:440px}
+h1{margin:0 0 4px;font-size:1.5rem;color:var(--accent)}
+.lead{margin:0 0 14px;color:var(--dim)}
+.box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.box h2{margin:0 0 6px;font-size:1rem}
+.box ul{margin:0;padding-inline-start:20px}
+.box li{margin:2px 0}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+button{font:inherit;background:var(--btn);color:var(--btnfg);border:0;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer;min-height:44px}
+button.sec{background:transparent;color:var(--fg);border:1.5px solid var(--line)}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.phone{flex:0 0 auto;width:min(100%,390px);height:min(78vh,800px);min-height:560px;background:var(--frame);border-radius:34px;padding:10px;box-shadow:0 10px 40px #0005}
+.phone iframe{width:100%;height:100%;border:0;border-radius:26px;background:#0A101B;display:block}
+.warn{color:var(--dim);font-size:.9rem}
+</style>
+<div class="wrap">
+  <div class="phone"><iframe id="app" title="אפליקציה יהודית" sandbox="allow-scripts allow-same-origin allow-forms"></iframe></div>
+  <div class="side">
+    <h1>אפליקציה יהודית</h1>
+    <p class="lead">תצוגה מקדימה בדפדפן, לפני יצירת קובץ ההתקנה. אפשר ללחוץ, לסמן ולגרור כמו בטלפון.</p>
+    <div class="btns">
+      <button id="back" type="button">כפתור חזרה של הטלפון</button>
+      <button id="reset" type="button" class="sec">איפוס נתוני הדוגמה</button>
+    </div>
+    <div class="box">
+      <h2>מה כדאי לבדוק בסבב הזה</h2>
+      <ul>
+        <li>מסך פתיחה, ואז המסך "היום"</li>
+        <li>חיצי ניווט גדולים בזמנים וביומן, וחיצים בהגדרות</li>
+        <li>בחירת לימוד, ואז "אישור"; כפתור "סמן הכל"</li>
+        <li>גרירה בלחיצה ארוכה בלשונית "לימוד"</li>
+        <li>התראה חדשה: שעה קבועה עם תאריך מסוים, וחזרה אחורה אל הווילון</li>
+        <li>הגדרות: לימוד (חלון השלמה, שעות), התראות (תאריכי חב"ד)</li>
+      </ul>
+    </div>
+    <p class="warn">בדפדפן לא פועלים: צלצול על הנעילה, בחירת צליל מהמכשיר, מצפן אמיתי וווידג'טים. אלה נבדקים רק בטלפון. הנתונים כאן הם דוגמה ולא נשמרים אחרי רענון.</p>
+  </div>
+</div>
+<script>
+var DOC = /*DOC*/null;
+var fr = document.getElementById('app');
+function boot() { fr.srcdoc = DOC; }
+boot();
+document.getElementById('back').addEventListener('click', function () { try { fr.contentWindow.history.back(); } catch (e) { /* */ } });
+document.getElementById('reset').addEventListener('click', boot);
+</script>

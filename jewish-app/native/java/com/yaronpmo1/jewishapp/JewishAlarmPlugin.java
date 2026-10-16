@@ -5,11 +5,14 @@ import android.app.AlarmManager;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
+import android.app.Activity;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.PowerManager;
 import android.provider.Settings;
 
+import androidx.activity.result.ActivityResult;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationManagerCompat;
 
@@ -17,6 +20,7 @@ import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
+import com.getcapacitor.annotation.ActivityCallback;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import org.json.JSONArray;
@@ -152,6 +156,7 @@ public class JewishAlarmPlugin extends Plugin {
             it.put("kind", kind);
             it.put("title", kind.equals("learn") ? "זמן לימוד" : "בדיקת צלצול");
             it.put("text", kind.equals("learn") ? "עכשיו תניא - עדיין לא סומן היום" : "כך ייראה ויישמע הצלצול");
+            it.put("snd", call.getString("snd", ""));
             it.put("snooze", 1);
             it.put("rep", false);
             it.put("ramp", true);
@@ -167,6 +172,43 @@ public class JewishAlarmPlugin extends Plugin {
         } catch (Exception e) {
             call.reject(String.valueOf(e.getMessage()));
         }
+    }
+
+    /** בחירת צליל מרשימת הצלילים של המכשיר */
+    @PluginMethod
+    public void pickSound(PluginCall call) {
+        try {
+            Intent i = new Intent(RingtoneManager.ACTION_RINGTONE_PICKER);
+            i.putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM | RingtoneManager.TYPE_RINGTONE);
+            i.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true);
+            i.putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false);
+            i.putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "בחירת צליל התראה");
+            String cur = call.getString("current", "");
+            if (cur != null && !cur.isEmpty()) i.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Uri.parse(cur));
+            else i.putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM));
+            startActivityForResult(call, i, "pickSoundResult");
+        } catch (Exception e) {
+            call.reject(String.valueOf(e.getMessage()));
+        }
+    }
+
+    @ActivityCallback
+    private void pickSoundResult(PluginCall call, ActivityResult result) {
+        JSObject r = new JSObject();
+        if (call == null) return;
+        if (result.getResultCode() != Activity.RESULT_OK || result.getData() == null) {
+            r.put("cancelled", true);
+            call.resolve(r);
+            return;
+        }
+        Uri uri = result.getData().getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI);
+        String name = "";
+        try {
+            if (uri != null) name = RingtoneManager.getRingtone(ctx(), uri).getTitle(ctx());
+        } catch (Exception ignored) { }
+        r.put("uri", uri == null ? "" : uri.toString());
+        r.put("name", uri == null ? "" : name);
+        call.resolve(r);
     }
 
     @PluginMethod

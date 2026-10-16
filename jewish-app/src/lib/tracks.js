@@ -6,7 +6,7 @@ import { getLoc, isRestDay, parshaOfWeek } from './zm.js';
 import { uid } from './store.js';
 
 export const ALIYOT = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שביעי'];
-export const PARTS = { morning: 'בוקר', afternoon: 'אחר הצהריים', evening: 'ערב', any: 'במהלך היום' };
+export const PARTS = { morning: 'בוקר', afternoon: 'אחר הצהריים', evening: 'ערב ולילה', any: 'במהלך היום' };
 
 const CH = 'https://www.chabad.org/dailystudy/';
 // auto = סוג חישוב אוטומטי; counter = מונה ידני; weekly = שיעור שבועי
@@ -190,11 +190,22 @@ export function streak(st, todayK) {
   return { cur, best: Math.max(best, cur) };
 }
 // ימים חסרים (עד חלון ההשלמה) לפני היום
+// כמה ימים אחורה בודקים: 7/14/30, החודש העברי הנוכחי, או השנה העברית
+export function windowDays(s, todayK) {
+  const w = s.lateWindow;
+  if (w === 'month' || w === 'year') {
+    const t = parseKey(todayK), h = new HDate(t);
+    const start = (w === 'month' ? new HDate(1, h.getMonth(), h.getFullYear()) : new HDate(1, 7, h.getFullYear())).greg();
+    return Math.max(0, Math.round((new Date(t.getFullYear(), t.getMonth(), t.getDate()) - new Date(start.getFullYear(), start.getMonth(), start.getDate())) / 86400000));
+  }
+  return Number(w) || 14;
+}
 export function missingDays(st, todayK) {
   const out = [];
   const first = firstKey(st);
   let d = addDays(parseKey(todayK), -1);
-  for (let i = 0; i < st.settings.lateWindow; i++) {
+  const n = windowDays(st.settings, todayK);
+  for (let i = 0; i < n; i++) {
     const k = dkey(d);
     if (k < first) break;
     const s = dayStatus(st, k);

@@ -108,5 +108,16 @@ eq(a2.length, 0, 'learning reminder skipped when done');
 s.loc = { mode: 'city', cityId: 'newyork' };
 eq(getLoc(s).name, 'ניו יורק', 'location from settings');
 ok(buildInstances(st, now, 3).length > 0, 'instances with NY');
+// התראה בתאריך מסוים: מופיעה רק בו
+{
+  const st2 = defaults();
+  const al = Object.assign(newAlarm('fixed'), { time: '09:00', date: '2026-10-20', noRest: false });
+  st2.alarms.push(al);
+  const inst = buildInstances(st2, new Date(2026, 9, 16, 10), 10).filter((i) => i.id.startsWith('A|' + al.id));
+  eq(inst.length, 1, 'dated alarm fires once');
+  eq(inst[0].id.split('|')[2], '2026-10-20', 'dated alarm on right date');
+  st2.settings.chabadList = [{ id: 'x', m: 8, d: 5, t: 'בדיקה', on: false }];
+  eq(buildInstances(st2, new Date(2026, 9, 16, 10), 60).filter((i) => i.id.startsWith('CH|')).length, 0, 'chabad off respected');
+}
 console.log(n + ' בדיקות, ' + fails + ' נכשלו');
 process.exit(fails ? 1 : 0);

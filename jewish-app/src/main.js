@@ -1,18 +1,20 @@
 import { load, get, save, onChange } from './lib/store.js';
 import { applyTheme } from './lib/theme.js';
-import { h, $, layerCount, hasPages } from './ui.js';
+import { h, $, layerCount, hasPages, openLayer, icon } from './ui.js';
 import { setRender, ctx, commit, nav } from './core.js';
 import { today, nextZman, countdown } from './screens/today.js';
 import { learn } from './screens/learn.js';
 import { times } from './screens/times.js';
 import { journal } from './screens/journal.js';
 import { settingsMain } from './screens/settings.js';
-import { firstRun } from './screens/extras.js';
+import { firstRun, openCompass } from './screens/extras.js';
 import { syncNow, takeDone, setWidget, setDone } from './lib/native.js';
-import { dueTracks, getEntry, setEntry } from './lib/tracks.js';
+import { dueTracks, getEntry, setEntry, addTemplate } from './lib/tracks.js';
 import { hhmm } from './lib/dates.js';
 
 load();
+// תצוגה מקדימה בדפדפן: נתוני דוגמה (ערכת חת״ת) כדי שהמסך הראשי לא יהיה ריק
+if (window.__PREVIEW && !get().tracks.length) { addTemplate(get(), 'chitas'); get().first = false; }
 const TABS = [['today', 'היום', '◉'], ['learn', 'לימוד', '☰'], ['times', 'זמנים', '◔'], ['journal', 'יומן', '▦']];
 const TITLES = { today: 'אפליקציה יהודית', learn: 'המסלולים שלי', times: 'זמנים והתראות', journal: 'יומן' };
 const SCREENS = { today, learn, times, journal };
@@ -24,7 +26,7 @@ function render() {
   const st = get();
   applyTheme(st.settings, tab);
   const sc = mainEl ? mainEl.scrollTop : 0;
-  const top = h('div', { class: 'top' }, h('h1', null, TITLES[tab]), h('button', { class: 'iconbtn', 'aria-label': 'הגדרות', onclick: () => settingsMain() }, '⚙'));
+  const top = h('div', { class: 'top' }, h('h1', null, TITLES[tab]), h('div', { style: 'display:flex;gap:2px' }, h('button', { class: 'iconbtn', 'aria-label': 'מצפן לבית המקדש', onclick: () => openCompass() }, '🧭'), h('button', { class: 'iconbtn', 'aria-label': 'הגדרות', onclick: () => settingsMain() }, '⚙')));
   let body;
   try { body = SCREENS[tab](); } catch (e) { body = h('pre', { style: 'white-space:pre-wrap;color:var(--bad)' }, 'שגיאה: ' + e.message + '\n' + (e.stack || '')); console.error(e); }
   const main = h('div', { class: 'main' }, body);
@@ -33,7 +35,15 @@ function render() {
   mainEl = main;
   main.scrollTop = sc;
 }
-function goTab(k) { if (k !== tab) { tab = k; if (mainEl) mainEl.scrollTop = 0; } nav.tab = tab; render(); }
+// כל מעבר בין לשוניות נרשם בהיסטוריה, כך שכפתור "חזרה" של המכשיר חוזר ללשונית הקודמת ולא יוצא
+function goTab(k) {
+  if (k !== tab) {
+    const prev = tab;
+    openLayer(() => { tab = prev; nav.tab = tab; if (mainEl) mainEl.scrollTop = 0; render(); });
+    tab = k; if (mainEl) mainEl.scrollTop = 0;
+  }
+  nav.tab = tab; render();
+}
 nav.goTab = goTab;
 setRender(render);
 
@@ -59,7 +69,7 @@ function pushWidget() {
 }
 
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { intake().then(() => { render(); syncNow(); pushWidget(); }); } });
-setInterval(() => { if (!document.hidden && !hasPages() && layerCount() === 0 && (tab === 'today' || tab === 'times')) render(); }, 60000);
+setInterval(() => { if (!document.hidden && !hasPages() && (tab === 'today' || tab === 'times')) render(); }, 60000);
 setInterval(pushWidget, 15 * 60000);
 try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render); } catch (e) { /* */ }
 
@@ -67,6 +77,9 @@ try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change
 history.replaceState({ base: 1 }, '');
 
 render();
-if (get().first) setTimeout(() => firstRun(() => { render(); }), 50);
+// מסך פתיחה: מוצג עד שהמסך הראשי ("היום") מוכן
+const splash = document.getElementById('splash');
+setTimeout(() => { if (splash) { splash.classList.add('out'); setTimeout(() => splash.remove(), 400); } }, 1100);
+if (get().first) setTimeout(() => firstRun(() => { render(); }), 1300);
 intake().then(() => { syncNow(); pushWidget(); });
 window.__app = { get, render, goTab, ctx, commit };

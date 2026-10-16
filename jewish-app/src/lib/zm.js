@@ -8,7 +8,7 @@ export const METHODS = { baal: 'בעל התניא', gra: 'הגר״א', mga: 'מ�
 // id, שם, פונקציה לפי שיטה
 export const ZMAN_DEFS = [
   { id: 'alot', name: 'עלות השחר', fn: { baal: 'alosBaalHatanya', gra: 'alotHaShachar', mga: 'alotHaShachar72' } },
-  { id: 'misheyakir', name: 'משיכיר', fn: { baal: 'misheyakir', gra: 'misheyakir', mga: 'misheyakir' } },
+  { id: 'misheyakir', name: 'זמן טלית ותפילין', fn: { baal: 'misheyakir', gra: 'misheyakir', mga: 'misheyakir' } },
   { id: 'netz', name: 'זריחה', fn: { baal: 'sunrise', gra: 'sunrise', mga: 'sunrise' } },
   { id: 'shma', name: 'סוף זמן קריאת שמע', fn: { baal: 'sofZmanShmaBaalHatanya', gra: 'sofZmanShma', mga: 'sofZmanShmaMGA' } },
   { id: 'tfila', name: 'סוף זמן תפילה', fn: { baal: 'sofZmanTfilaBaalHatanya', gra: 'sofZmanTfilla', mga: 'sofZmanTfillaMGA' } },

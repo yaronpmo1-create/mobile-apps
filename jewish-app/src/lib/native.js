@@ -29,7 +29,7 @@ export const requestExact = () => isNative() && safe(() => JA.requestExact());
 export const openBattery = () => isNative() && safe(() => JA.openBattery());
 export const requestNotifications = () => isNative() && safe(() => JA.requestNotifications());
 export const requestFullScreen = () => isNative() && safe(() => JA.requestFullScreen());
-export const testAlarm = async (kind) => isNative() && safe(() => JA.testAlarm({ kind }));
+export const testAlarm = async (kind) => isNative() && safe(() => JA.testAlarm({ kind, snd: get().settings.soundUri || '' }));
 export const getPending = async () => (isNative() ? safe(() => JA.getPending(), { count: 0 }) : { count: 0 });
 export const setWidget = async (next, left) => isNative() && safe(() => JA.setWidget({ next, left }));
 
@@ -71,4 +71,10 @@ export async function openLink(url) {
     if (r !== 'fail') return 'opened';
   } else { window.open(url, '_blank'); return 'opened'; }
   return (await copyText(url)) ? 'copied' : 'fail';
+}
+
+// בחירת צליל התראה מרשימת הצלילים של המכשיר. מחזיר {uri, name} או {cancelled:true}
+export async function pickSound(current) {
+  if (!isNative()) return { uri: '', name: 'צליל לדוגמה (בדפדפן אין בחירה אמיתית)' };
+  return safe(() => JA.pickSound({ current: current || '' }), null);
 }

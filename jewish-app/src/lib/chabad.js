@@ -12,3 +12,12 @@ export const CHABAD = [
   { m: 4, d: 13, t: 'י״ג תמוז - חג הגאולה של הרבי הריי״צ' },
   { m: 6, d: 18, t: 'י״ח אלול - יום הולדת הבעש״ט ואדמו״ר הזקן' },
 ];
+
+export const HMONTHS = [[7, 'תשרי'], [8, 'חשוון'], [9, 'כסלו'], [10, 'טבת'], [11, 'שבט'], [12, 'אדר'], [1, 'ניסן'], [2, 'אייר'], [3, 'סיוון'], [4, 'תמוז'], [5, 'אב'], [6, 'אלול']];
+export const monthName = (m) => (HMONTHS.find((x) => x[0] === m) || [0, '?'])[1];
+// הרשימה של המשתמש (ניתנת לעריכה): נוצרת בפעם הראשונה מרשימת ברירת המחדל
+export function chabadList(s) {
+  if (!Array.isArray(s.chabadList)) s.chabadList = CHABAD.map((c, i) => ({ id: 'c' + i, m: c.m, d: c.d, t: c.t, on: true }));
+  return s.chabadList;
+}
+export const chabadOn = (s) => chabadList(s).filter((c) => c.on !== false);

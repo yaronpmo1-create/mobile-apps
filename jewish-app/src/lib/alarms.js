@@ -3,7 +3,7 @@ import { HDate } from '@hebcal/core';
 import { dkey, addDays, hhmm, hebrewDayMonth, stripNikud } from './dates.js';
 import { getLoc, zmanimFor, restIntervals, inRest, isRoshChodesh, isRestDay, omerDay, timedOn, todayKey, zmanName } from './zm.js';
 import { isDue, getEntry, isFreeDay, activeTracks } from './tracks.js';
-import { CHABAD } from './chabad.js';
+import { chabadOn } from './chabad.js';
 
 export const REL = { before: 'לפני', at: 'בזמן', after: 'אחרי' };
 export const DAY_LETTERS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
@@ -11,7 +11,7 @@ export const DAY_LETTERS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 export function newAlarm(type = 'zman') {
   return {
     id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), type, label: '', enabled: true,
-    zman: 'shkiah', rel: 'before', mins: 30, time: '07:30', days: [0, 1, 2, 3, 4, 5, 6], noRest: true, ring: true, repeat: false, snooze: true,
+    zman: 'shkiah', rel: 'before', mins: 30, time: '07:30', date: '', days: [0, 1, 2, 3, 4, 5, 6], noRest: true, ring: true, repeat: false, snooze: true,
   };
 }
 export const ALARM_TEMPLATES = [
@@ -31,7 +31,8 @@ export function alarmTitle(a, st) {
   }
   return (a.rel === 'at' ? '' : a.mins + ' דקות ' + REL[a.rel] + ' ') + zmanName(a.zman);
 }
-export function daysLabel(days) {
+export function daysLabel(days, date) {
+  if (date) { const p = date.split('-'); return 'בתאריך ' + Number(p[2]) + '.' + Number(p[1]) + '.' + p[0]; }
   if (!days || days.length === 7) return 'כל יום';
   return days.map((d) => DAY_LETTERS[d]).join('׳ ') + '׳';
 }
@@ -54,7 +55,7 @@ export function buildInstances(st, now = new Date(), days = 60, max = 480) {
   const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
   const intervals = restIntervals(start, addDays(start, days + 2), loc, s);
   const nowMs = now.getTime();
-  const common = { snooze: s.snoozeMin, rep: s.repeatUntilOff, sound: s.sound, ramp: s.ramp, vib: s.vibrate };
+  const common = { snooze: s.snoozeMin, rep: s.repeatUntilOff, sound: s.sound, snd: s.soundUri || '', ramp: s.ramp, vib: s.vibrate };
   const push = (o) => {
     if (o.t <= nowMs + 1000 || seen.has(o.id)) return;
     if (o.kind === 'ring' && inQuiet(st, o.t)) o.kind = 'notify';
@@ -76,7 +77,7 @@ export function buildInstances(st, now = new Date(), days = 60, max = 480) {
     // התראות רגילות
     for (const a of st.alarms) {
       if (!a.enabled || a.type === 'learning') continue;
-      if (!(a.days || []).includes(dow)) continue;
+      if (a.date) { if (a.date !== key) continue; } else if (!(a.days || []).includes(dow)) continue;
       let t = null;
       if (a.type === 'fixed') t = toMs(date, a.time);
       else if (z[a.zman]) t = relMs(z[a.zman], a.rel, a.mins);
@@ -117,7 +118,7 @@ export function buildInstances(st, now = new Date(), days = 60, max = 480) {
     }
     if (s.chabadDates) {
       const h = new HDate(date);
-      for (const c of CHABAD) {
+      for (const c of chabadOn(s)) {
         if (c.m === h.getMonth() && c.d === h.getDate()) push({ id: 'CH|' + key + c.d, t: toMs(date, '08:00'), kind: 'notify', title: hebrewDayMonth(date), text: c.t });
       }
     }

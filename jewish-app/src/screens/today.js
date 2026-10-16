@@ -1,10 +1,13 @@
-import { h, press, actionSheet, openSheet, toast, txt } from '../ui.js';
-import { ctx, commit, nav } from '../core.js';
+import { h, press, actionSheet, openSheet, toast, txt, icon } from '../ui.js';
+import { ctx, commit, nav, rerender } from '../core.js';
+import { buildInstances } from '../lib/alarms.js';
+import { pickTemplate } from './learn.js';
+import { openCompass } from './extras.js';
 import { hebrewDate, weekdayName, parseKey, addDays, dkey, hhmm, pad } from '../lib/dates.js';
 import { ZMAN_DEFS, zmanimFor, dayEvents, parshaOfWeek, timedOn, omerDay, isRestDay, zmanName } from '../lib/zm.js';
 import { dueTracks, getEntry, setEntry, learnInfo, progressOf, PARTS, markAll, undoMark, missingDays, streak, dayStatus, isFreeDay, isLateMark } from '../lib/tracks.js';
 import { setDone, openLink } from '../lib/native.js';
-import { CHABAD } from '../lib/chabad.js';
+import { chabadOn } from '../lib/chabad.js';
 import { HDate } from '@hebcal/core';
 
 export function nextZman(c) {
@@ -40,8 +43,8 @@ export function markTrack(c, key, track, status) {
   commit();
   return { was, e };
 }
-export function checkbox(e) {
-  const cls = !e ? '' : e.s === 'done' ? ' on' : e.s === 'late' ? ' late' : ' skip';
+export function checkbox(e, pend) {
+  const cls = (!e ? '' : e.s === 'done' ? ' on' : e.s === 'late' ? ' late' : ' skip') + (pend ? ' pend' : '');
   return h('div', { class: 'chk' + cls }, !e ? '' : e.s === 'skip' ? '–' : '✓');
 }
 
@@ -68,15 +71,20 @@ export function trackRow(c, key, track, opts = {}) {
   const e = getEntry(c.st, key, track.id);
   const info = learnInfo(track, parseKey(key), c.st);
   const pr = progressOf(track);
-  const done = e && (e.s === 'done' || e.s === 'late');
+  const isDone0 = e && (e.s === 'done' || e.s === 'late');
+  const pend = opts.pend;
+  const toggled = !!(pend && pend.has(track.id));
+  const eff = toggled ? (isDone0 ? null : { s: 'done' }) : e;
+  const done = eff && (eff.s === 'done' || eff.s === 'late');
   const el = h('div', { class: 'row tap' + (done ? ' done' : '') },
-    checkbox(e),
+    checkbox(eff, toggled),
     h('div', { class: 'grow' },
       h('div', { class: 't' }, info.title, e && e.s === 'late' ? h('span', { class: 'tag' }, 'באיחור') : null),
       info.sub ? h('div', { class: 's' }, info.sub) : null,
       info.where ? h('div', { class: 's' }, 'המשך: ' + info.where) : null,
       pr != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(pr * 100) + '%' })) : null));
   press(el, () => {
+    if (pend) { if (pend.has(track.id)) pend.delete(track.id); else pend.add(track.id); rerender(); return; }
     const r = markTrack(c, key, track, e && e.s !== 'skip' ? null : 'done');
     if (!r.was && r.e && opts.milestone !== false) milestone(c);
   }, () => trackNoteSheet(c, key, track));
@@ -88,6 +96,27 @@ export function milestone(c) {
   if (d.kind !== 'full') return;
   const n = streak(c.st, c.tk).cur;
   if ([7, 30, 100, 365].includes(n)) toast('רצף של ' + n + ' ימים. כל הכבוד!');
+}
+
+const pending = new Set();
+const secHead = (title, acts) => h('div', { class: 'sechead' }, h('h2', null, title), h('div', { class: 'acts' }, acts.map(([l, fn]) => h('button', { class: 'btn sm sec', onclick: fn }, l))));
+
+function confirmPending(c) {
+  const ids = [...pending];
+  let marked = 0;
+  for (const id of ids) {
+    const track = c.st.tracks.find((x) => x.id === id);
+    if (!track) continue;
+    const e = getEntry(c.st, c.tk, id);
+    const isDone = e && (e.s === 'done' || e.s === 'late');
+    setEntry(c.st, c.tk, track, isDone ? null : 'done', c.tk);
+    const n = getEntry(c.st, c.tk, id);
+    setDone(c.tk, id, !!(n && (n.s === 'done' || n.s === 'late' || n.s === 'skip')));
+    if (!isDone) marked++;
+  }
+  pending.clear();
+  commit();
+  if (marked) { toast('נשמר: ' + marked + ' לימודים סומנו'); milestone(c); } else toast('השינויים נשמרו');
 }
 
 export function today() {
@@ -105,7 +134,7 @@ export function today() {
   if (par) extra.push('פרשת ' + par);
   const om = omerDay(d, loc, s);
   if (om) extra.push('היום ' + om + ' בעומר');
-  if (s.chabadDates) for (const cd of CHABAD) if (cd.m === hd.getMonth() && cd.d === hd.getDate()) extra.push(cd.t);
+  if (s.chabadDates) for (const cd of chabadOn(s)) if (cd.m === hd.getMonth() && cd.d === hd.getDate()) extra.push(cd.t);
   for (const y of st.yahrzeits) if ((y.m === hd.getMonth() || (y.m === 12 && hd.getMonth() === 13)) && y.d === hd.getDate()) extra.push((y.type === 'birthday' ? 'יום הולדת עברי: ' : 'יום זיכרון: ') + y.name);
   const tt = timedOn(d, loc, s);
   if (tt.candles) extra.push('הדלקת נרות ' + hhmm(tt.candles, loc.tz));
@@ -113,15 +142,23 @@ export function today() {
   const line = ev.concat(extra);
   if (line.length) root.appendChild(h('p', { class: 'h-sub' }, line.join(' · ')));
 
-  // הזמן הבא
+  // הזמן הבא וההתראה הבאה
+  root.appendChild(secHead('האירוע הבא', [['+ התראה', () => nav.newAlarm()], ['ניהול', () => { nav.timesView('alarms'); nav.goTab('times'); }]]));
   const nz = nextZman(c);
   if (nz) {
     const al = alarmFor(c, nz);
-    root.appendChild(h('div', { class: 'card accent tap', onclick: () => nav.goTab('times') },
-      h('div', { class: 'muted' }, 'הבא: ' + nz.name + ' ' + hhmm(nz.t, loc.tz)),
+    root.appendChild(h('div', { class: 'card accent tap', onclick: () => { nav.timesView('day'); nav.goTab('times'); } },
+      h('div', { class: 'muted' }, 'הזמן הבא: ' + nz.name + ' ' + hhmm(nz.t, loc.tz)),
       h('div', { class: 'big' }, 'בעוד ' + countdown(nz.t - c.now) + (al ? ' · התראה ב-' + hhmm(al, loc.tz) : ''))));
   }
+  let nextAl = null;
+  try { nextAl = buildInstances(st, c.now, 3, 40).find((i) => i.kind !== 'notify' || true); } catch (e) { /* */ }
+  if (nextAl) root.appendChild(h('div', { class: 'card tap', onclick: () => { nav.timesView('alarms'); nav.goTab('times'); } }, h('div', { class: 'muted' }, 'ההתראה הבאה: ' + nextAl.title), h('div', { style: 'font-weight:700' }, hhmm(new Date(nextAl.t)) + (nextAl.text ? ' · ' + nextAl.text : ''))));
+  else root.appendChild(h('div', { class: 'card muted' }, 'אין התראה מתוזמנת בקרוב.'));
+  root.appendChild(h('div', { class: 'card tap', style: 'display:flex;align-items:center;gap:10px', onclick: () => openCompass() }, h('span', { style: 'font-size:1.6rem' }, '🧭'), h('div', { class: 'grow', style: 'flex:1' }, h('div', { style: 'font-weight:700' }, 'מצפן לבית המקדש'), h('div', { class: 'muted small' }, 'כיוון התפילה מהמקום שבו אתם נמצאים')), h('span', { class: 'muted' }, icon('left', 22))));
 
+  // לימוד יומי
+  root.appendChild(secHead('לימוד יומי', [['+ מסלול', () => pickTemplate()], ['ניהול', () => nav.goTab('learn')]]));
   // באנר השלמה
   const miss = missingDays(st, c.tk);
   if (miss.length) {
@@ -145,22 +182,21 @@ export function today() {
   due.forEach((t) => (groups[t.part] || groups.any).push(t));
   for (const k of ['morning', 'afternoon', 'evening', 'any']) {
     if (!groups[k].length) continue;
-    const hr = c.now.getHours(); const curPart = hr < s.partMorning ? 'morning' : hr < s.partAfternoon ? 'afternoon' : 'evening';
+    const hr = c.now.getHours() + c.now.getMinutes() / 60; const curPart = hr < s.partMorning ? 'morning' : hr < s.partAfternoon ? 'afternoon' : hr < (s.partEvening || 24) ? 'evening' : '';
     root.appendChild(h('div', { class: 'section-title', style: k === curPart ? 'color:var(--accent)' : '' }, PARTS[k] + (k === curPart ? ' · עכשיו' : '')));
-    root.appendChild(h('div', { class: 'list' }, groups[k].map((t) => trackRow(c, c.tk, t))));
+    root.appendChild(h('div', { class: 'list' }, groups[k].map((t) => trackRow(c, c.tk, t, { pend: pending }))));
   }
   if (due.length) {
-    const all = dayStatus(st, c.tk).kind === 'full';
-    root.appendChild(h('button', { class: 'btn ' + (all ? 'sec' : '') + ' block', disabled: all, onclick: () => {
-      const ids = markAll(st, c.tk, c.tk);
-      ids.forEach((id) => setDone(c.tk, id, true));
-      commit();
-      toast('סומנו ' + ids.length + ' לימודים', 'ביטול', () => { undoMark(st, c.tk, ids, c.tk); ids.forEach((id) => setDone(c.tk, id, false)); commit(); });
-      milestone(c);
-    } }, all ? 'כל הלימוד של היום סומן ✓' : 'סימנתי הכל'));
+    const undone = due.filter((tr) => { const e = getEntry(st, c.tk, tr.id); return !(e && (e.s === 'done' || e.s === 'late')); });
+    const allSel = undone.length && undone.every((tr) => pending.has(tr.id));
+    root.appendChild(h('button', { class: 'btn sec block', disabled: !undone.length, onclick: () => { if (allSel) undone.forEach((tr) => pending.delete(tr.id)); else undone.forEach((tr) => pending.add(tr.id)); rerender(); } },
+      !undone.length ? 'כל הלימוד של היום סומן ✓' : allSel ? 'ביטול בחירת הכל' : 'סמן הכל'));
     const sk = streak(st, c.tk);
     if (sk.cur) root.appendChild(h('p', { class: 'h-sub', style: 'text-align:center;margin-top:10px' }, 'רצף נוכחי: ' + sk.cur + ' ימים'));
   }
-  root.appendChild(h('p', { class: 'dim small', style: 'text-align:center' }, 'נגיעה מסמנת · לחיצה ארוכה: הערה ו"איפה עצרתי"'));
+  root.appendChild(h('p', { class: 'dim small', style: 'text-align:center' }, 'נגיעה בוחרת, ואז לוחצים אישור · לחיצה ארוכה: הערה ו"איפה עצרתי"'));
+  if (pending.size) root.appendChild(h('div', { class: 'confirmbar' },
+    h('button', { class: 'btn', onclick: () => confirmPending(c) }, 'אישור (' + pending.size + ')'),
+    h('button', { class: 'btn sec', onclick: () => { pending.clear(); rerender(); } }, 'ביטול')));
   return root;
 }
