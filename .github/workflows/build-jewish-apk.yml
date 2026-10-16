@@ -1,4 +1,4 @@
-name: Build Jewish App APK
+﻿name: Build Jewish App APK
 on:
   workflow_dispatch:
   push:
@@ -40,7 +40,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           VERSION_CODE: ${{ github.run_number }}
         run: |
-          echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/keystore.jks"
+          echo "$KEYSTORE_B64" | tr -d "\r\n " | base64 -d > "$RUNNER_TEMP/keystore.jks"
           export KEYSTORE_PATH="$RUNNER_TEMP/keystore.jks"
           ./gradlew assembleRelease
       - name: Publish APK to release
@@ -49,4 +49,4 @@ jobs:
         run: |
           cp jewish-app/android/app/build/outputs/apk/release/app-release.apk jewish-app.apk
           gh release delete jewish-app-latest --yes --cleanup-tag || true
-          gh release create jewish-app-latest jewish-app.apk --title "אפליקציה יהודית APK" --notes "הגרסה האחרונה. לעדכון: מתקינים מעל הקיימת."
+          gh release create jewish-app-latest jewish-app.apk --title "׳׳₪׳׳™׳§׳¦׳™׳” ׳™׳”׳•׳“׳™׳× APK" --notes "׳”׳’׳¨׳¡׳” ׳”׳׳—׳¨׳•׳ ׳”. ׳׳¢׳“׳›׳•׳: ׳׳×׳§׳™׳ ׳™׳ ׳׳¢׳ ׳”׳§׳™׳™׳׳×."
