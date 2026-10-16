@@ -1,0 +1,18 @@
+{
+  "v": 4,
+  "createdOnFiles": { "v": 1, "at": "2026-10-16T10:00:00Z" },
+  "lists": "css",
+  "title": "אפליקציה אחת - אפיון מלא",
+  "order": ["title", "shift", "map", "today", "study", "track-edit", "templates", "history", "catchup", "stats", "zmanim", "alarms", "alarm-edit", "ring", "settings", "settings2", "special", "widgets", "ideas-now", "ideas-next", "ideas-new", "ideas-later", "arch", "reliability", "roadmap", "consult", "decisions"],
+  "sections": {
+    "s1": { "description": "מה השתנה ומה מבנה האפליקציה", "start": "shift" },
+    "s2": { "description": "המסכים: היום, לימוד, יומן, זמנים והתראות", "start": "today" },
+    "s3": { "description": "הגדרות, ימים מיוחדים ורכיבים", "start": "settings" },
+    "s4": { "description": "רעיונות והמלצות מהסקירה", "start": "ideas-now" },
+    "s5": { "description": "בנייה, שלבים, התייעצות והחלטות", "start": "arch" }
+  },
+  "faces": {
+    "heebo": { "family": "Heebo", "href": "https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" }
+  },
+  "designSystems": []
+}

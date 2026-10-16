@@ -1,0 +1,69 @@
+# HANDOVER - אפליקציה יהודית (נכתב 16.10.2026, סוף שיחה "Mobile Apps - 1")
+
+> המשתמש (יש): לא מתכנת, עברית תמיד, Windows 11 + Samsung S10e (Android, ממשק אנגלית). הכללים הכלליים נטענים אוטומטית מ-CLAUDE.md וה-Hook.
+> **המשימה**: לבנות מוצר סופי ומוגמר, "אפליקציה יהודית", אפליקציית Android אחת. המשתמש אישר "בנה הכל כולל הכל". מבקש לעצור רק להתקנה/בדיקה בטלפון.
+
+## 1. החלטות שאושרו (16.10.2026)
+- שם: **"אפליקציה יהודית"** (appId חדש, למשל `com.yaronpmo1.jewishapp`). מותקנת לצד חת"ת יומי הישן (`com.yaronpmo1.chitatyomi`), שהמשתמש ימחק בעצמו. הסימונים הישנים לא מועברים.
+- **RTL מלא** (html dir=rtl, lang=he).
+- הגדרות כוללות **עיצוב, צבעים, נראות**: מראה בהיר/כהה/אוטומטי, פלטות צבע (ברירת מחדל זהב), גודל כתב, צפיפות, ניגודיות גבוהה, צבע לכל לשונית (אופציה), פינות עגולות/חדות.
+- **מצפן תפילה** שמכוון לבית המקדש (הר הבית 31.7781N, 35.2360E). מבוסס חיישן מצפן של המכשיר (`deviceorientationabsolute`), עם הסבר כיול.
+- רעיונות מאושרים: כל "עכשיו" (שקף ideas-now) + "שלב הבא" (ideas-next) + "הצעות חדשות שלי" (ideas-new). **שקף ideas-later (כבדים) נדחה לשלבים הבאים - לא לבנות עכשיו** (תוכן מוטמע, שיעורי שמע, שאלון, סידור, משחקיות מלאה, סנכרון, ספרייה אופליין).
+- שקף 16 (הגדרות): "בסדר גמור לפעם הראשונה".
+- שקף 26 (התייעצות): לפי המלצותיי: (1) שבת/חג: בלי בקשת סימון ובלי צלצול, השלמה במוצאי שבת/חג, נרשמת בתאריך הנכון כ"הושלם" לא כאיחור; (2) השלמה באיחור נספרת ברצף, עם תווית "באיחור"; (3) היום מתחלף בשקיעה (הגדרה: שקיעה/צאת הכוכבים/חצות); (4) אבני דרך שקטות (7/30/100) אופציונלי; (5) תוכן לימוד = קישור בלבד (Sefaria / Chabad.org); (6) **תאריכי חב"ד מובנים: אני כותב את הרשימה ואני מאשר** (ראה סעיף 6).
+- שקף 27 (החלטות): אושר הכל. מפתח חתימה קבוע + סוד ב-GitHub + בנייה + Release + מחיקת דף המוקאפ הזמני.
+- **שיטת חישוב ברירת מחדל: בעל התניא.**
+- **ההרשאה לאינטרנט נשארת** (למקרה של עדכון עתידי), אבל האפליקציה חייבת לעבוד **לגמרי בלי אינטרנט**: כל הזמנים והלוח מחושבים בטלפון.
+- אישורים שניתנו: התקנת Android SDK + אמולטור (תיקייה אחת בתוך code), פעולות GitHub (מפתח חתימה כסוד, בנייה, Release, מחיקת מוקאפ), פתיחת תיקיית ה-APK להעברה בוואטסאפ.
+- חובה לשקול: מכשיר **בלי אינטרנט / בלי דפדפן / בלי SMS / בלי וואטסאפ** (ציבור דתי, טלפון כשר, מיקום ידני בלי GPS). לכן: ערים מובנות, מיקום ידני, שיתוף דרך Share של המערכת עם גיבוי ללוח/קובץ, קישורים עם הודעה והעתקה אם אין דפדפן.
+- משתמש רוצה **מוצר סופי ומוגמר**, לבדוק באמולטור, ולתקן עד שהכל עובד. מותר להתקין עוד כלי בדיקה חינמי מומלץ.
+
+## 2. מה נבדק ונמצא (חשוב, לא לחקור מחדש)
+- `@hebcal/core` v6.14 מחשב **בתוך הטלפון** את כל הזמנים, כולל בעל התניא, ומתאים לדקה ל-Hebcal API. שיטות ב-Zmanim: `alosBaalHatanya, sofZmanShmaBaalHatanya, sofZmanTfilaBaalHatanya, minchaGedolaBaalHatanya, minchaKetanaBaalHatanya, plagHaminchaBaalHatanya, tzaisBaalHatanya, chatzot`, וגם GRA: `alotHaShachar, misheyakir, sunrise, sofZmanShma, sofZmanTfilla, minchaGedola, plagHaMincha, sunset, tzeit, chatzotNight`, ו-MGA: `sofZmanShmaMGA...`. הפונקציות `getSunriseBaalHatanya` לא מחזירות Date (לא להשתמש). יצירה: `new Zmanim(new GeoLocation(name, lat, lon, 0, tz), date, false)`. עיגול לדקה הקרובה תואם ל-Hebcal.
+- תאריך עברי: `new HDate(date).renderGematriya()` ואז הסרת ניקוד `/[\u0591-\u05C7]/g`. פרשה: `HebrewCalendar.getSedra(hyear, il).lookup(saturdayHDate)` ואז `new ParshaEvent(result).render('he')`.
+- לוח/חגים/הדלקת נרות/הבדלה: `HebrewCalendar.calendar({start,end,il,location:new Location(lat,lon,il,tz,name),candlelighting:true,sedrot:true})`. דגלים: `flags.CHAG=1` (יום טוב), `ROSH_CHODESH=128`, `LIGHT_CANDLES=2`.
+- לימוד אוטומטי: `DailyLearning.lookup(key, hdate)` מ-`@hebcal/core` (דורש `import '@hebcal/learning'`) עם מפתחות: `dafYomi, mishnaYomi, nachYomi, tanakhYomi, psalms (תהילים חודשי), rambam1, rambam3, dafWeekly`. הרמב"ם והדף היומי אוטומטיים. **חומש רש"י, תניא, היום יום אין בהם טבלה**: חומש = פרשת השבוע + עליה לפי יום בשבוע (ראשון=עליה 1 ... שישי=6, שבת=7) מחושב; היום יום = תווית לפי התאריך העברי; תניא = מונה ידני (מיקום).
+- 32 אפליקציות נסקרו (דפי חנויות בלבד, בלי הפעלה). מסקנות: אין אפליקציה עם סימון חת"ת + רצף; אין תזכורת לימוד חכמה (רק אם לא סומן); בעל התניא לא צוין ב-Zman, ו-ZmanTime רק גר"א/מג"א.
+- מצגת מסכים סופית (27 שקפים, כל המסכים, בלי אפליקציה נפרדת): https://claude.ai/artifact/8qmHEUeHeGJAkbX5HRrMy8 (פרטית). מצגות קודמות (לא עדכניות): שעון יהודי https://claude.ai/artifact/PwTJy89FQ8TMuNDpg3GJAK, חת"ת יומי https://claude.ai/artifact/D8HNixrAwG4pFPyjYNjRSq, מאוחדת ישנה https://claude.ai/artifact/DCmPy48KXVcUFignUpTh1y. קבצי המצגת במחשב: `C:\Users\yaron\AppData\Local\Temp\claude\C--Users-yaron-code-MobileApps\bc489af5-b18b-4e2f-a750-edec05b8d984\scratchpad\deck4` (זמני; התוכן מסוכם בסעיף 3).
+
+## 3. האפיון (מקור: מצגת deck4)
+**4 לשוניות + גלגל הגדרות בכל מסך** (תחתית RTL: היום, לימוד, זמנים, יומן).
+1. **היום**: תאריך עברי+לועזי; כרטיס "הזמן הבא" + שעת ההתראה; באנר "אתמול חסר X - השלם"; לימוד לפי חלקי יום (בוקר/אחה"צ/ערב); סימון בנגיעה; לחיצה ארוכה = הערה + "איפה עצרתי"; כפתור "סימנתי הכל" (עם ביטול); בתהילים מוצגים פרקי היום.
+2. **לימוד**: "המסלולים שלי" (כל לימוד = מסלול; הפסקה/ארכיון בלי מחיקה; גרירה לסדר; פס התקדמות); עריכת מסלול (שם; תדירות יומי/ימים מסוימים/שבועי/חודשי; ימים; יעד ליום; מיקום נוכחי עם קידום אוטומטי; חלק ביום; תזכורת "אם לא סומן עד שעה" או יחסית לזמן הלכתי; קישור לטקסט); תבניות: חת"ת (ארבעה מסלולים), רמב"ם (1/3 פרקים, אוטומטי), דף יומי, משנה יומית, נ"ך יומי, תהילים חודשי (אוטומטי), פרשת השבוע, שיעורים שבועיים (שיחה, מאמר הרבי, מאמר אדמו"ר הזקן, מאמר אדמו"ר אחר), ספר עם מונה, מסלול חופשי.
+3. **זמנים**: זמני היום (עלות/משיכיר/זריחה/סוף זמן ק"ש/סוף זמן תפילה/חצות/מנחה גדולה/מנחה קטנה/פלג/שקיעה/צאת הכוכבים/חצות לילה) + לשונית שבוע (טבלה 7 ימים, שיתוף); לחיצה על זמן = הוספת התראה; התראות (שלושה סוגים: זמן הלכתי לפני/בזמן/אחרי X דקות; שעה קבועה; תזכורת לימוד = רק אם לא סומן); מתג, שכפול, מחיקה, תבניות (לפני שקיעה, ק"ש, מנחה, חצות, ערב שבת), "לא בשבת וחג", "חוזרת עד כיבוי", נודניק, צליל; **מסך צלצול** מלא על הנעילה עם כיבוי/נודניק וצליל שעולה בהדרגה; **התראת לימוד** עם כפתורי "למדתי"/"הזכר בעוד שעה"; תזכורות אוטומטיות: ראש חודש, ערב שבת/חג, הדלקת נרות, ספירת העומר.
+4. **יומן**: חודש עברי עם צבעי ימים (ירוק מלא, כתום חלקי, אדום חסר, כחול חג/מיוחד); לחיצה על יום = מסך השלמה (סימון כל מסלול, "סימנתי הכל", תווית "הושלם באיחור", סימון יום כמיוחד/חופשה); שורת "חסרים N ימים"; סטטיסטיקה (רצף, שיא, % חודש, גרף 8 שבועות, % לפי מסלול, השלמות באיחור); אבני דרך שקטות; שיתוף סיכום שבועי כטקסט.
+5. **הגדרות** (8 קבוצות): כללי (מראה, גודל כתב, תחילת שבוע), **עיצוב ונראות (פלטות, צפיפות, ניגודיות, צבע לכל לשונית, פינות)**, לימוד (השלמה נספרת, חלון השלמה, שעות חלקי יום), זמנים (מיקום אוטומטי/ידני/עיר מרשימה, שיטת חישוב, צאת הכוכבים, מתי מתחלף היום), התראות (צליל, עוצמה עולה, רטט, נודניק, חזרה עד כיבוי, שעות שקט), ימים מיוחדים (שבת וחג, מצב חופשה, יום מיוחד), הרשאות ואמינות ("בדיקת תקינות": שעון מעורר מדויק, פטור סוללה, התראות, מיקום, מסך מלא), נתונים (גיבוי לקובץ/שיתוף, שחזור מקובץ/הדבקה, ייצוא CSV, איפוס עם אישור כפול), אודות ועזרה.
+6. **תוספות**: מצפן תפילה; מסך פתיחה ראשון (מיקום, הרשאות, ערכת מסלולים); ווידג'טים (הזמן הבא; הלימוד שנשאר) - **נחשב לשלב מאוחר אם מורכב, אך ביקש "הכל"**; יארצייטים וימי הולדת עבריים (הוספה ידנית עם תזכורת); "המשך מהמקום שעצרתי"; יעד סיבוב ("יום X מתוך Y").
+
+## 4. ארכיטקטורה והחלטות טכניות
+- **ללא framework**: JS טהור (ES modules), esbuild לחבילה אחת (`@hebcal/core` נארז), CSS עם משתני עיצוב. תיקיית פרויקט: `C:\Users\yaron\code\MobileApps\jewish-app`. מבנה מתוכנן: `src/index.html`, `src/styles.css`, `src/main.js`, `src/lib/{dates,cities,zm,store,tracks,alarms,native,compass,theme,ui}.js`, `src/screens/*.js`, `native/java/com/yaronpmo1/jewishapp/*.java`, `scripts/{build.mjs,patch-android.mjs,test.mjs}`, `.github/workflows/build-jewish-apk.yml` (ברמת מאגר MobileApps).
+- **נתונים**: localStorage מפתח `jewish-app-v1`: settings, tracks, entries[dateKey][trackId]={s:'done'|'late'|'skip',t,n}, alarms, specialDays, vacations, yahrzeits. מפתח יום = YYYY-MM-DD של התאריך הלועזי של "יום היום העברי" (אם הוגדר מעבר בשקיעה והשעה אחרי השקיעה: מחר).
+- **התראות מדויקות (Android native, ללא תלות ברשת)**: תוסף Capacitor מותאם `JewishAlarm` ב-Java: מקבל מ-JS רשימה מחושבת מראש (עד 60 יום, עד ~500 פריטים) ושומר ב-SharedPreferences; `AlarmManager.setAlarmClock` להתראה הבאה; `AlarmReceiver` בודק (תזכורת לימוד: אם מסומן בוצע - מדלג); `AlarmService` (שירות קדמי mediaPlayback) מנגן צלצול `USAGE_ALARM` בלולאה עם עלייה הדרגתית ורטט + התראה עם fullScreenIntent ל-`AlarmActivity` (showWhenLocked/turnScreenOn) עם כפתורי כיבוי/נודניק; התראת לימוד = התראה רגילה עם כפתורים "למדתי" (כותב ל-pendingDone ש-JS קורא בפתיחה) ו"אחר כך"; `BootReceiver` לתזמון מחדש אחרי אתחול; JS מסנכרן "סומן בוצע" ל-native (`setDone`). מתודות הפלאגין: `schedule, cancelAll, setDone, status, requestExact, openBattery, requestNotifications, testAlarm, getPending`.
+- **מניפסט** (נוסף בסקריפט patch אחרי `cap add android`): SCHEDULE_EXACT_ALARM, USE_EXACT_ALARM, POST_NOTIFICATIONS, USE_FULL_SCREEN_INTENT, FOREGROUND_SERVICE, FOREGROUND_SERVICE_MEDIA_PLAYBACK, RECEIVE_BOOT_COMPLETED, WAKE_LOCK, VIBRATE, INTERNET, ACCESS_COARSE_LOCATION, ACCESS_FINE_LOCATION, REQUEST_IGNORE_BATTERY_OPTIMIZATIONS; רישום service/receivers/activity; החלפת MainActivity כך שירשום את הפלאגין לפני `super.onCreate`.
+- **פלאגינים רשמיים**: `@capacitor/share` (גיבוי וסיכום), `@capacitor/filesystem` (כתיבת קובץ גיבוי), `@capacitor/browser` (קישורי לימוד; אם אין דפדפן - הודעה והעתקה ללוח). מיקום: `navigator.geolocation` (Capacitor מבקש הרשאה אם מוצהרת במניפסט).
+- **אייקון**: מגן דוד זהב על רקע כהה, PNG בכל תיקיות mipmap (למחוק `mipmap-anydpi-v26`), נוצר ב-PowerShell `System.Drawing`. הוכח בחת"ת יומי.
+- **חתימה (חובה)**: מפתח קבוע. ליצור keystore עם `keytool` (מ-JDK 17 ב-android-sdk\jdk17), לקודד base64 ולשמור כסודות GitHub (`gh secret set`): `KEYSTORE_B64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD`; ב-workflow לפענח, להגדיר `signingConfig` ב-`android/app/build.gradle` (סקריפט patch) ולהריץ `assembleRelease` או `assembleDebug` עם אותה חתימה; לפרסם APK ב-Release `jewish-app-latest`. **להעתיק גם עותק של ה-keystore והסיסמה לתיקייה מקומית שאינה ב-git** (למשל `C:\Users\yaron\code\android-sdk\keys\`) ולהגיד למשתמש לשמור גיבוי.
+- **GitHub**: חשבון `yaronpmo1-create`, מאגר ציבורי `mobile-apps` (Pages: https://yaronpmo1-create.github.io/mobile-apps/). ה-`gh` מחובר עם scope `workflow`. קיים workflow `build-chitat-apk.yml` לאפליקציה הישנה (לא למחוק). יש למחוק את דף המוקאפ הזמני: `shaon-yehudi/mockup.html` (אושר), ולעדכן את `index.html` ו-`README.md` במאגר.
+- **הערה**: שרת ה-Node לבדיקה ב-`%TEMP%\srv.js` (פורט 8765/8766) - זמני, אפשר לכתוב חדש. בדפדפן המובנה: `mcp__Claude_Browser__*` (resize mobile 375x812).
+
+## 5. סביבה ומה הותקן
+- Android SDK: `C:\Users\yaron\code\android-sdk` (cmdline-tools\latest, jdk17, dl\ להורדות). **הותקן ואומת (16.10.2026)**: platform-tools 37.0.1, emulator 37.2.12, platforms;android-34, build-tools;34.0.0, system-images;android-34;google_apis;x86_64. לבדיקה חוזרת: `JAVA_HOME=...\jdk17 ...\cmdline-tools\latest\bin\sdkmanager.bat --sdk_root=C:\Users\yaron\code\android-sdk --list_installed`. אם חסר - להריץ שוב. אחר כך ליצור AVD: `avdmanager create avd -n pixel -k "system-images;android-34;google_apis;x86_64" -d pixel_6`, להפעיל `emulator -avd pixel -no-snapshot` (הווירטואליזציה פעילה, 252GB פנויים).
+- JDK 17 ב-`android-sdk\jdk17` (Gradle). Node 24, npm, gh, git זמינים. Python אינו מותקן.
+- `jewish-app\package.json` נכתב, `npm install` רץ (esbuild: להריץ `node node_modules/esbuild/install.js` אם הבינארי חסר).
+- ה-APK של חת"ת יומי הישן: `MobileApps\apk\chitat-yomi.apk`, ושחרור `apk-latest` במאגר (חתימה ישנה, לא ניתנת לעדכון).
+
+## 6. רשימת תאריכי חב"ד (אני כתבתי, ואני מאשר; המשתמש הסכים שאני מאשר)
+י"ט כסלו - ראש השנה לחסידות; כ' כסלו - חג הגאולה (אדמו"ר האמצעי? לא לציין); י' שבט - הילולת הרבי הריי"צ והתחלת נשיאות הרבי; כ"ב שבט - הילולת הרבנית חיה מושקא; כ"ד טבת - הילולת אדמו"ר הזקן; ב' ניסן - הילולת הרבי הרש"ב; י"א ניסן - יום הולדת הרבי; ג' תמוז - הילולת הרבי; י"ב-י"ג תמוז - חג הגאולה של הרבי הריי"צ; י"ח אלול - יום הולדת הבעש"ט ואדמו"ר הזקן. (רק תאריכים שאני בטוח בהם. **להשמיט את "כ' כסלו" אם אין ודאות**; ניתן לעדכן בהגדרות.) הוצג כאופציה ניתנת לכיבוי.
+
+## 7. סטטוס בנייה בזמן המסירה
+**בוצע**: package.json + התקנת תלויות; `src/lib/dates.js`, `src/lib/cities.js` (נכתבו, לא נבדקו); הורדת SDK/JDK; מצגות.
+**לא בוצע**: כל השאר (zm, store, tracks, UI, התראות native, מצפן, הגדרות, בנייה, חתימה, בדיקות באמולטור, פרסום).
+**סדר עבודה מומלץ**: (1) לוודא SDK; (2) לכתוב לוגיקה + בדיקות node (`scripts/test.mjs`: זמנים מול Hebcal, due, רצף, יצירת מופעי התראות); (3) UI; (4) תוסף native + patch + workflow + חתימה; (5) בנייה מקומית עם gradle (JAVA_HOME ל-jdk17, ANDROID_HOME) והרצה באמולטור, צילומי מסך עם `adb exec-out screencap`; (6) בדיקות התראה באמולטור (`adb shell` + שינוי שעון); (7) Release ב-GitHub, מחיקת מוקאפ, עדכון README במאגר; (8) לפתוח לו את תיקיית ה-APK (`explorer`) ולבקש התקנה בוואטסאפ ובדיקה בטלפון; (9) דוח סיום בחלון widget (שלוש קטגוריות).
+
+## 8. כללי עבודה עם המשתמש (מתוך CLAUDE.md, חשוב)
+עברית תמיד; שאלות/החלטות רק בחלון החלטות (סקיל decision-widget, לא AskUserQuestion); שם האפליקציה בכותרת צבעונית בחלון (לאפליקציה היהודית: זהב `#C99A2E`; בעבר: שעון אדום, חת"ת ירוק); תשובות קצרות; לא להגיד "תקין" בלי אימות בפועל; דוח סיום בשלוש קטגוריות כשיש יותר מנושא אחד; התנגשות בין כללים = לעצור ולהציג; בקשות עם מילים נחרצות ("הכל", "כולל הכל") = התוצאה המלאה.
+
+## 9. המצגת (האפיון החזותי) - חלק מהמסירה
+- קישור (פרטי, נפתח רק אצל המשתמש): https://claude.ai/artifact/8qmHEUeHeGJAkbX5HRrMy8 (27 שקפים).
+- **עותק מקומי של כל השקפים** (HTML + deck.json): `C:\Users\yaron\code\MobileApps\jewish-app\spec\deck-slides` (27 קבצי שקפים ב-`slides\`). כל שקף מסך מכיל מוקאפ טלפון בעיצוב הרצוי (פלטה: רקע #0E1726, פנל #17233A, זהב #E8C26A, טורקיז #4CC9B0, תכלת #8CB4FF, כתום #FF9E7A, אדום #FF6B6B; גופן Heebo). לשמש כמקור לעיצוב ה-UI בפועל. אם צריך לעדכן את המצגת: לפרסם מחדש לאותו URL (Artifact publish עם root לתיקיית spec, שימו לב שהמבנה project/deck.json + project/slides).
+- התקנה בטלפון בפעם הקודמת: וואטסאפ עבד.

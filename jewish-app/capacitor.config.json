@@ -1,0 +1,7 @@
+{
+  "appId": "com.yaronpmo1.jewishapp",
+  "appName": "אפליקציה יהודית",
+  "webDir": "www",
+  "server": { "androidScheme": "https" },
+  "android": { "allowMixedContent": false }
+}
