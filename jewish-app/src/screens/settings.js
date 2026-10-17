@@ -1,4 +1,4 @@
-import { h, openPage, openSheet, actionSheet, confirmBox, seg, field, sel, txt, toggle, toast, icon } from '../ui.js';
+import { h, openPage, openSheet, actionSheet, confirmBox, seg, chips, field, sel, txt, toggle, toast, icon } from '../ui.js';
 import { ctx, commit } from '../core.js';
 import { PALETTES, exportJson, replaceAll, reset } from '../lib/store.js';
 import { getLoc, METHODS } from '../lib/zm.js';
@@ -26,7 +26,8 @@ export function settingsMain() {
     ['אודות ועזרה', 'גרסה ושאלות נפוצות', about],
   ];
   openPage('הגדרות', () => h('div', null,
-    h('div', { class: 'list' }, groups.map(([t, s, fn], i) => h('div', { class: 'row tap', onclick: () => fn() }, h('div', { class: 'grow' }, h('div', { class: 't' }, (i + 1) + '. ' + t), h('div', { class: 's' }, s)), arrow())))));
+    h('div', { class: 'list' }, groups.map(([t, s, fn], i) => h('div', { class: 'row tap', onclick: () => fn() }, h('div', { class: 'grow' }, h('div', { class: 't' }, (i + 1) + '. ' + t), h('div', { class: 's' }, s)), arrow()))),
+    h('button', { class: 'btn sec block', onclick: () => openCompass() }, 'מצפן לבית המקדש')));
 }
 
 function general() {
@@ -81,8 +82,7 @@ function zmanim() {
       h('div', { class: 'list' }, row('מיקום', getLoc(s).name, arrow(), () => openLocation(() => commit()))),
       h('label', { class: 'f' }, 'שיטת חישוב'), seg(Object.entries(METHODS), s.method, (v) => { s.method = v; commit(); }),
       h('label', { class: 'f' }, 'צאת הכוכבים'), seg([['method', 'לפי השיטה'], ['min72', '72 דקות אחרי שקיעה']], s.tzeitMode, (v) => { s.tzeitMode = v; commit(); }),
-      h('label', { class: 'f' }, 'מתי מתחלף היום (לסימון הלימוד)'), seg([['sunset', 'שקיעה'], ['tzeit', 'צאת הכוכבים'], ['midnight', 'חצות']], s.dayChange, (v) => { s.dayChange = v; commit(); }),
-      field('הדלקת נרות: דקות לפני שקיעה', sel([[0, 'ברירת מחדל לפי המקום'], [18, '18 דקות'], [20, '20 דקות'], [30, '30 דקות'], [40, '40 דקות']], s.candleMins, (v) => { s.candleMins = Number(v); commit(); })));
+      h('label', { class: 'f' }, 'מתי מתחלף היום (לסימון הלימוד)'), seg([['sunset', 'שקיעה'], ['tzeit', 'צאת הכוכבים'], ['midnight', 'חצות']], s.dayChange, (v) => { s.dayChange = v; commit(); }));
   });
 }
 function alerts() {
@@ -98,17 +98,16 @@ function alerts() {
         sw('חוזרת עד כיבוי (ברירת מחדל)', 'צלצול ממשיך עד שמכבים', s, 'repeatUntilOff'),
         sw('שעות שקט', 'צלצול הופך להתראה שקטה', s, 'quiet')),
       s.quiet ? h('div', { class: 'inline' }, field('מ-', txt(s.quietFrom, (v) => { s.quietFrom = v; }, '', 'time')), field('עד', txt(s.quietTo, (v) => { s.quietTo = v; }, '', 'time'))) : null,
-      h('label', { class: 'f' }, 'נודניק (דקות)'), seg([[5, '5'], [9, '9'], [10, '10'], [15, '15']], s.snoozeMin, (v) => { s.snoozeMin = v; commit(); }),
+      h('label', { class: 'f' }, 'נודניק (דקות)'), seg([[5, '5'], [10, '10'], [15, '15']], s.snoozeMin, (v) => { s.snoozeMin = v; commit(); }),
       h('div', { class: 'section-title' }, 'תזכורות אוטומטיות'),
       h('div', { class: 'list' },
         sw('ראש חודש', '', s.auto, 'roshChodesh'),
         sw('ערב שבת / חג', 'ביום שישי וערב חג בצהריים', s.auto, 'erevShabbat'),
-        sw('הדלקת נרות', 'לפני זמן ההדלקה', s.auto, 'candles'),
+        row('הדלקת נרות', 'התראה ' + s.candleBefore + ' דקות לפני ההדלקה · ההדלקה ' + (s.candleMins ? s.candleMins + ' דקות לפני שקיעה' : 'לפי המקום') + ' · לחיצה לשינוי', toggle(!!s.auto.candles, (v) => { s.auto.candles = v; commit(); }), () => candleSheet()),
         sw('ספירת העומר', 'בערבי הספירה', s.auto, 'omer'),
         sw('תאריכי חב״ד', 'מתריע בתאריכים שנבחרו ברשימה', s, 'chabadDates'),
         row('רשימת תאריכי חב״ד', chabadList(s).filter((x) => x.on !== false).length + ' מתוך ' + chabadList(s).length + ' פעילים · בחירה, עריכה והוספה', arrow(), () => openChabad()),
-        sw('אבני דרך שקטות', 'הודעה על רצף 7, 30, 100', s, 'milestones')),
-      field('הדלקת נרות: להתריע לפני (דקות)', sel([[10, '10'], [20, '20'], [30, '30'], [45, '45']], s.candleBefore, (v) => { s.candleBefore = Number(v); commit(); })));
+        sw('אבני דרך שקטות', 'הודעה על רצף 7, 30, 100', s, 'milestones')));
   });
 }
 function special() {
@@ -223,4 +222,19 @@ function editChabad(c) {
     h('div', { class: 'inline', style: 'margin-top:12px' },
       c ? h('button', { class: 'btn danger', onclick: () => { s.chabadList = chabadList(s).filter((x) => x.id !== c.id); sh.close(); commit(); } }, 'מחיקה') : null,
       h('button', { class: 'btn', onclick: () => { if (!d.t.trim()) { toast('צריך תיאור'); return; } const L = chabadList(s); if (c) Object.assign(L.find((x) => x.id === c.id), d); else L.push(d); sh.close(); commit(); } }, 'שמירה'))));
+}
+
+// הדלקת נרות: כמה דקות לפני ההדלקה להתריע, ומתי ההדלקה (לפי המקום או מספר דקות לפני שקיעה)
+function candleSheet() {
+  const { s } = ctx();
+  const num = (key, ph) => h('input', { type: 'number', min: '1', max: '120', placeholder: ph, style: 'margin-top:6px', onchange: (e) => { const v = Math.round(Number(e.target.value)); if (v >= 0 && v <= 120) { s[key] = v; commit(); sh.refresh(); } } });
+  let sh;
+  sh = openSheet('הדלקת נרות', () => h('div', null,
+    h('label', { class: 'f' }, 'להתריע לפני ההדלקה (דקות)'),
+    chips([[10, '10'], [15, '15'], [20, '20'], [30, '30'], [45, '45']], [s.candleBefore], (v) => { s.candleBefore = v; commit(); sh.refresh(); }),
+    num('candleBefore', 'מספר אחר, בדקות (כרגע ' + s.candleBefore + ')'),
+    h('label', { class: 'f' }, 'זמן ההדלקה עצמו'),
+    chips([[0, 'לפי המקום'], [18, '18 דק׳ לפני שקיעה'], [20, '20'], [30, '30'], [40, '40']], [Number(s.candleMins) || 0], (v) => { s.candleMins = v; commit(); sh.refresh(); }),
+    num('candleMins', 'מספר אחר, בדקות לפני שקיעה (כרגע ' + (s.candleMins || 'לפי המקום') + ')'),
+    h('button', { class: 'btn block', style: 'margin-top:14px', onclick: () => sh.close() }, 'סגירה')));
 }

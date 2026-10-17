@@ -13,7 +13,11 @@ const NIKUD = /[֑-ׇ]/g;
 export const stripNikud = (s) => (s || '').replace(NIKUD, '');
 
 // "ד׳ חשוון תשפ״ז"
-export const hebrewDate = (d) => stripNikud(hd(d).renderGematriya());
+// השנה עם ה׳ בתחילתה: "התשפ״ז"
+const withHe = (s) => s.replace(/(\S+)$/, (y) => (y.startsWith('ה') ? y : 'ה' + y));
+export const hebrewDate = (d) => withHe(stripNikud(hd(d).renderGematriya()));
+// 1 בתשרי של השנה העברית הנוכחית (מפתח יום)
+export const tishreiKey = (d = new Date()) => dkey(new HDate(1, 7, new HDate(d).getFullYear()).greg());
 export const hebrewDayMonth = (d) => { const h = hd(d); return stripNikud(h.renderGematriya().replace(/\s\S+$/, '')); };
 
 export const WEEKDAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];

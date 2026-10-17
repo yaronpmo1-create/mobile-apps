@@ -2,7 +2,6 @@ import { h, press, actionSheet, openSheet, toast, txt, icon } from '../ui.js';
 import { ctx, commit, nav, rerender } from '../core.js';
 import { buildInstances } from '../lib/alarms.js';
 import { pickTemplate } from './learn.js';
-import { openCompass } from './extras.js';
 import { hebrewDate, weekdayName, parseKey, addDays, dkey, hhmm, pad } from '../lib/dates.js';
 import { ZMAN_DEFS, zmanimFor, dayEvents, parshaOfWeek, timedOn, omerDay, isRestDay, zmanName } from '../lib/zm.js';
 import { dueTracks, getEntry, setEntry, learnInfo, progressOf, PARTS, markAll, undoMark, missingDays, streak, dayStatus, isFreeDay, isLateMark } from '../lib/tracks.js';
@@ -155,7 +154,7 @@ export function today() {
   try { nextAl = buildInstances(st, c.now, 3, 40).find((i) => i.kind !== 'notify' || true); } catch (e) { /* */ }
   if (nextAl) root.appendChild(h('div', { class: 'card tap', onclick: () => { nav.timesView('alarms'); nav.goTab('times'); } }, h('div', { class: 'muted' }, 'ההתראה הבאה: ' + nextAl.title), h('div', { style: 'font-weight:700' }, hhmm(new Date(nextAl.t)) + (nextAl.text ? ' · ' + nextAl.text : ''))));
   else root.appendChild(h('div', { class: 'card muted' }, 'אין התראה מתוזמנת בקרוב.'));
-  root.appendChild(h('div', { class: 'card tap', style: 'display:flex;align-items:center;gap:10px', onclick: () => openCompass() }, h('span', { style: 'font-size:1.6rem' }, '🧭'), h('div', { class: 'grow', style: 'flex:1' }, h('div', { style: 'font-weight:700' }, 'מצפן לבית המקדש'), h('div', { class: 'muted small' }, 'כיוון התפילה מהמקום שבו אתם נמצאים')), h('span', { class: 'muted' }, icon('left', 22))));
+  if (tt.candles && tt.candles > c.now) root.appendChild(h('div', { class: 'card' }, h('div', { class: 'muted' }, 'הדלקת נרות היום'), h('div', { class: 'big' }, hhmm(tt.candles, loc.tz) + ' · בעוד ' + countdown(tt.candles - c.now))));
 
   // לימוד יומי
   root.appendChild(secHead('לימוד יומי', [['+ מסלול', () => pickTemplate()], ['ניהול', () => nav.goTab('learn')]]));

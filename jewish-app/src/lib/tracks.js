@@ -1,7 +1,7 @@
 // מסלולי לימוד: תבניות, מה ללמוד היום, מי חייב, סימון ורצף
 import { HDate, DailyLearning } from '@hebcal/core';
 import '@hebcal/learning';
-import { dkey, parseKey, addDays, hebrewDayMonth, stripNikud } from './dates.js';
+import { dkey, parseKey, addDays, hebrewDayMonth, stripNikud, tishreiKey } from './dates.js';
 import { getLoc, isRestDay, parshaOfWeek } from './zm.js';
 import { uid } from './store.js';
 
@@ -39,7 +39,7 @@ export function newTrack(tpl, extra = {}) {
     id: uid('t'), tpl: t.tpl, name: t.name, auto: t.auto || '', counter: !!t.counter, unit: t.unit || '', pos: t.pos || 1, total: t.total || 0, step: t.step || 1,
     freq: t.freq || 'daily', days: [0, 1, 2, 3, 4, 5, 6], weeklyDay: t.weeklyDay == null ? 6 : t.weeklyDay, monthlyDay: 1,
     target: 1, part: t.part || 'any', remind: { mode: 'none', time: '21:00', zman: 'shkiah', rel: 'before', mins: 30, ring: false },
-    url: t.url || '', paused: false, archived: false, order: 0, where: '', created: dkey(new Date()),
+    url: t.url || '', paused: false, archived: false, order: 0, where: '', created: tishreiKey(),
   };
   return Object.assign(o, extra);
 }

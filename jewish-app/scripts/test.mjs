@@ -1,7 +1,7 @@
 // בדיקות לוגיקה: node scripts/test.mjs
 import { defaults } from '../src/lib/store.js';
 import { getLoc, zmanimFor, parshaOfWeek, isRestDay, restIntervals, inRest, todayKey, bearingTo, dayEvents } from '../src/lib/zm.js';
-import { hhmm, dkey, parseKey, hebrewDate, addDays } from '../src/lib/dates.js';
+import { tishreiKey, hhmm, dkey, parseKey, hebrewDate, addDays } from '../src/lib/dates.js';
 import { addTemplate, dueTracks, setEntry, dayStatus, streak, learnInfo, isLateMark, missingDays, markAll, undoMark, getEntry } from '../src/lib/tracks.js';
 import { buildInstances, newAlarm } from '../src/lib/alarms.js';
 
@@ -108,6 +108,10 @@ eq(a2.length, 0, 'learning reminder skipped when done');
 s.loc = { mode: 'city', cityId: 'newyork' };
 eq(getLoc(s).name, 'ניו יורק', 'location from settings');
 ok(buildInstances(st, now, 3).length > 0, 'instances with NY');
+// שנה עברית עם ה׳, ותחילת תשרי
+ok(/ה[א-ת]+״[א-ת]$/.test(hebrewDate(new Date(2026, 9, 16))), 'hebrew year starts with he: ' + hebrewDate(new Date(2026, 9, 16)));
+eq(tishreiKey(new Date(2026, 9, 16)), '2026-09-12', 'tishrei key');
+eq(defaults().settings.auto.omer, true, 'omer default on');
 // התראה בתאריך מסוים: מופיעה רק בו
 {
   const st2 = defaults();

@@ -200,3 +200,18 @@ export function dragSort(container, onDone) {
   ['pointercancel'].forEach((ev) => container.addEventListener(ev, () => { clearTimeout(timer); if (active) end(false); }));
   container.addEventListener('contextmenu', (e) => e.preventDefault());
 }
+
+// אייקון מצפן (קו דק, בצבע הנוכחי)
+export function compassIcon(size = 28) {
+  const s = h('span', { class: 'ico', 'aria-hidden': 'true' });
+  s.innerHTML = '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2"/><path d="m15.8 8.2-2.1 5.5-5.5 2.1 2.1-5.5z" fill="currentColor" fill-opacity=".18"/></svg>';
+  return s;
+}
+// כפתור חזרה של המכשיר: סוגר את השכבה העליונה (דף, חלון או לשונית). מחזיר false אם אין שכבה
+export function backPress() {
+  const L = layers.pop();
+  if (!L) return false;
+  L.closed = true;
+  L.onClose();
+  return true;
+}

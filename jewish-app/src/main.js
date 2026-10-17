@@ -1,6 +1,7 @@
 import { load, get, save, onChange } from './lib/store.js';
 import { applyTheme } from './lib/theme.js';
-import { h, $, layerCount, hasPages, openLayer, icon } from './ui.js';
+import { h, $, layerCount, hasPages, openLayer, icon, compassIcon, backPress } from './ui.js';
+import { App as CapApp } from '@capacitor/app';
 import { setRender, ctx, commit, nav } from './core.js';
 import { today, nextZman, countdown } from './screens/today.js';
 import { learn } from './screens/learn.js';
@@ -26,7 +27,7 @@ function render() {
   const st = get();
   applyTheme(st.settings, tab);
   const sc = mainEl ? mainEl.scrollTop : 0;
-  const top = h('div', { class: 'top' }, h('h1', null, TITLES[tab]), h('div', { style: 'display:flex;gap:2px' }, h('button', { class: 'iconbtn', 'aria-label': 'מצפן לבית המקדש', onclick: () => openCompass() }, '🧭'), h('button', { class: 'iconbtn', 'aria-label': 'הגדרות', onclick: () => settingsMain() }, '⚙')));
+  const top = h('div', { class: 'top' }, h('h1', null, TITLES[tab]), h('div', { style: 'display:flex;gap:2px' }, h('button', { class: 'iconbtn', style: 'color:var(--accent)', 'aria-label': 'מצפן לבית המקדש', onclick: () => openCompass() }, compassIcon(30)), h('button', { class: 'iconbtn', 'aria-label': 'הגדרות', onclick: () => settingsMain() }, '⚙')));
   let body;
   try { body = SCREENS[tab](); } catch (e) { body = h('pre', { style: 'white-space:pre-wrap;color:var(--bad)' }, 'שגיאה: ' + e.message + '\n' + (e.stack || '')); console.error(e); }
   const main = h('div', { class: 'main' }, body);
@@ -77,9 +78,22 @@ try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change
 history.replaceState({ base: 1 }, '');
 
 render();
-// מסך פתיחה: מוצג עד שהמסך הראשי ("היום") מוכן
+// כפתור "חזרה" של המכשיר: סוגר שכבה פתוחה או חוזר ללשונית הקודמת; רק במסך הראשי יוצאים מהאפליקציה
+try {
+  CapApp.addListener('backButton', () => {
+    if (backPress()) return;
+    if (tab !== 'today') { goTab('today'); return; }
+    CapApp.exitApp();
+  });
+} catch (e) { /* בדפדפן אין */ }
+
+// מסך פתיחה: מוצג זמן קבוע ומתייצב לפני שהמסך הראשי ("היום") נחשף
 const splash = document.getElementById('splash');
-setTimeout(() => { if (splash) { splash.classList.add('out'); setTimeout(() => splash.remove(), 400); } }, 1100);
-if (get().first) setTimeout(() => firstRun(() => { render(); }), 1300);
+const showApp = () => {
+  document.body.classList.add('ready');
+  if (splash) { splash.classList.add('out'); setTimeout(() => splash.remove(), 450); }
+};
+setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(showApp)), 1700);
+if (get().first) setTimeout(() => firstRun(() => { render(); }), 2300);
 intake().then(() => { syncNow(); pushWidget(); });
 window.__app = { get, render, goTab, ctx, commit };

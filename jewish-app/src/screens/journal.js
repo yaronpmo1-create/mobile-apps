@@ -1,11 +1,12 @@
-import { navBar, h, openPage, openSheet, actionSheet, confirmBox, toggle, toast, press } from '../ui.js';
+import { chips, field, navBar, h, openPage, openSheet, actionSheet, confirmBox, toggle, toast, press } from '../ui.js';
 import { ctx, commit, nav } from '../core.js';
 import { HDate } from '@hebcal/core';
 import { dkey, parseKey, addDays, hebrewDate, hebrewMonthYear, hebrewMonthDays, hd, stripNikud, WD_LETTER, weekdayName, WEEKDAYS } from '../lib/dates.js';
-import { dayStatus, dueTracks, activeTracks, getEntry, streak, missingDays, pctRange, trackPct, lateCount, markAll, undoMark, isFreeDay, firstKey } from '../lib/tracks.js';
+import { setEntry, isDue, dayStatus, dueTracks, activeTracks, getEntry, streak, missingDays, pctRange, trackPct, lateCount, markAll, undoMark, isFreeDay, firstKey } from '../lib/tracks.js';
 import { isChagDay } from '../lib/zm.js';
 import { trackRow } from './today.js';
 import { setDone, shareText } from '../lib/native.js';
+import { tishreiKey } from '../lib/dates.js';
 
 let mOff = 0; // היסטוריית חודשים יחסית לחודש הנוכחי
 
@@ -50,6 +51,7 @@ export function journal() {
   const miss = missingDays(st, c.tk);
   if (miss.length) root.appendChild(h('div', { class: 'banner' }, h('span', null, 'חסרים ' + miss.length + ' ימים'), h('button', { class: 'btn sm', onclick: () => openDay(miss[miss.length - 1]) }, 'להשלמה')));
   else root.appendChild(h('p', { class: 'h-sub' }, 'אין ימים חסרים בחלון ההשלמה.'));
+  root.appendChild(h('button', { class: 'btn block', style: 'margin:6px 0', onclick: () => retro() }, 'השלמה רטרואקטיבית (סימון ימים קודמים)'));
   root.appendChild(h('button', { class: 'btn sec block', style: 'margin:6px 0', onclick: () => stats() }, 'סטטיסטיקה והישגים'));
   return root;
 }
@@ -135,4 +137,39 @@ export function stats() {
     root.appendChild(h('button', { class: 'btn block', style: 'margin-top:14px', onclick: async () => { const r = await shareText('סיכום שבועי', summaryText(c)); if (r === 'copied') toast('הסיכום הועתק ללוח'); } }, 'שיתוף סיכום שבועי'));
     return root;
   });
+}
+
+// סימון לימוד לטווח ימים בעבר, בבת אחת. אם הטווח מתחיל לפני תחילת המסלול, המסלול מוקדם לתחילת הטווח
+function retro() {
+  const c = ctx();
+  const tracks = activeTracks(c.st);
+  if (!tracks.length) { toast('עוד אין מסלולים'); return; }
+  const sel = new Set(tracks.map((t) => t.id));
+  let from = tishreiKey(), to = dkey(addDays(c.today, -1));
+  let sh;
+  sh = openSheet('השלמה רטרואקטיבית', () => h('div', null,
+    h('p', { class: 'muted small' }, 'מסמן כהושלם את הימים שבטווח, רק במסלולים שנבחרו ורק בימים שהם מתוזמנים. ימים שכבר סומנו לא משתנים.'),
+    h('label', { class: 'f' }, 'מסלולים'),
+    chips(tracks.map((t) => [t.id, t.name]), [...sel], (v) => { if (sel.has(v)) sel.delete(v); else sel.add(v); sh.refresh(); }),
+    h('div', { class: 'inline' },
+      field('מתאריך', h('input', { type: 'date', value: from, onchange: (e) => { if (e.target.value) from = e.target.value; } })),
+      field('עד תאריך', h('input', { type: 'date', value: to, onchange: (e) => { if (e.target.value) to = e.target.value; } }))),
+    h('button', { class: 'btn sec sm', style: 'margin-top:8px', onclick: () => { from = tishreiKey(); sh.refresh(); } }, 'התחלה מראש השנה (תשרי)'),
+    h('button', { class: 'btn block', style: 'margin-top:14px', onclick: () => {
+      if (!sel.size) { toast('צריך לבחור מסלול'); return; }
+      if (to < from) { toast('טווח לא תקין'); return; }
+      const end = dkey(addDays(c.today, -1)); if (to > end) to = end;
+      let n = 0;
+      for (const t of tracks) {
+        if (!sel.has(t.id)) continue;
+        if (t.created > from) t.created = from;
+        let d = parseKey(from);
+        while (dkey(d) <= to) {
+          const k = dkey(d);
+          if (isDue(t, k) && !getEntry(c.st, k, t.id) && !c.st.special[k]) { setEntry(c.st, k, t, 'done', k); setDone(k, t.id, true); n++; }
+          d = addDays(d, 1);
+        }
+      }
+      sh.close(); commit(); toast('סומנו ' + n + ' לימודים');
+    } }, 'סמן כהושלם')));
 }

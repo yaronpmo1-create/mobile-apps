@@ -1,4 +1,5 @@
 // שמירת נתונים מקומית (localStorage). הכל בטלפון בלבד.
+import { tishreiKey } from './dates.js';
 const KEY = 'jewish-app-v1';
 
 export const PALETTES = {
@@ -9,16 +10,16 @@ export const TAB_COLORS = { today: '#C99A2E', learn: '#2E8B57', times: '#2F6FB5'
 
 export function defaults() {
   return {
-    v: 1,
+    v: 2,
     first: true,
     settings: {
       theme: 'auto', palette: 'gold', fontScale: 1, density: 'normal', contrast: false, tabColors: false, corners: 'round',
       countLate: true, lateWindow: 14, partMorning: 12, partAfternoon: 18, partEvening: 24,
       loc: { mode: 'city', cityId: 'jerusalem', lat: 0, lon: 0, name: '', tz: '' },
       method: 'baal', tzeitMode: 'method', dayChange: 'sunset', candleMins: 0,
-      sound: 'alarm', soundUri: '', soundName: '', ramp: true, vibrate: true, snoozeMin: 9, repeatUntilOff: false, quiet: false, quietFrom: '23:00', quietTo: '05:00',
+      sound: 'alarm', soundUri: '', soundName: '', ramp: true, vibrate: true, snoozeMin: 10, repeatUntilOff: false, quiet: false, quietFrom: '23:00', quietTo: '05:00',
       vacation: false, chabadDates: true, chabadList: null, milestones: true,
-      auto: { roshChodesh: true, erevShabbat: true, candles: true, omer: false },
+      auto: { roshChodesh: true, erevShabbat: true, candles: true, omer: true },
       autoTimes: { roshChodesh: '08:00', erevShabbat: '12:00', omer: '21:00' },
       candleBefore: 20,
     },
@@ -45,11 +46,22 @@ function merge(d, s) {
   return d;
 }
 
+// שדרוג נתונים ישנים (גרסה 1 -> 2): עומר דולק, נודניק 10, בלי אבני דרך, ומסלולים מתחילים מתשרי
+function migrate(s) {
+  if ((s.v || 1) < 2) {
+    s.settings.auto.omer = true;
+    if (s.settings.snoozeMin === 9) s.settings.snoozeMin = 10;
+    const tk = tishreiKey();
+    for (const t of s.tracks) if (!t.created || t.created > tk) t.created = tk;
+    s.v = 2;
+  }
+  return s;
+}
 export function load() {
   const base = defaults();
   try {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(KEY) : null;
-    if (raw) state = merge(base, JSON.parse(raw));
+    if (raw) state = migrate(merge(base, JSON.parse(raw)));
     else state = base;
   } catch (e) { state = base; }
   return state;
@@ -60,7 +72,7 @@ export function save() {
   subs.forEach((f) => { try { f(); } catch (e) { /* */ } });
 }
 export const onChange = (f) => subs.push(f);
-export function replaceAll(obj) { state = merge(defaults(), obj); first(false); }
+export function replaceAll(obj) { state = migrate(merge(defaults(), obj)); first(false); }
 function first(v) { state.first = v; save(); }
 export const exportJson = () => JSON.stringify(get());
 export function reset() { state = defaults(); state.first = true; save(); }

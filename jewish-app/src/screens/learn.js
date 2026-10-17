@@ -1,3 +1,4 @@
+import { tishreiKey, dkey } from '../lib/dates.js';
 import { dragSort, h, openPage, openSheet, actionSheet, confirmBox, seg, chips, field, sel, txt, toggle, toast } from '../ui.js';
 import { ctx, commit, nav } from '../core.js';
 import { TEMPLATES, AUTO_KINDS, PARTS, addTemplate, newTrack, progressOf, trackPct, streak } from '../lib/tracks.js';
@@ -119,6 +120,11 @@ export function editTrack(id, fresh) {
     root.appendChild(h('hr'));
     root.appendChild(field('קישור לטקסט (אופציונלי)', txt(d.url, (v) => up('url', v), 'https://...')));
     root.appendChild(field('איפה עצרתי', txt(d.where, (v) => up('where', v))));
+    root.appendChild(h('label', { class: 'f' }, 'המסלול מתחיל בתאריך (אפשר אחורה, כדי להשלים רטרואקטיבית)'));
+    root.appendChild(h('div', { class: 'inline' },
+      h('input', { type: 'date', value: d.created || '', onchange: (e) => { if (e.target.value) up('created', e.target.value); pg.refresh(); } }),
+      h('button', { class: 'btn sec sm', style: 'flex:none', onclick: () => { up('created', tishreiKey()); pg.refresh(); } }, 'ראש השנה (תשרי)'),
+      h('button', { class: 'btn sec sm', style: 'flex:none', onclick: () => { up('created', dkey(new Date())); pg.refresh(); } }, 'היום')));
     root.appendChild(h('button', { class: 'btn block', style: 'margin-top:18px', onclick: () => {
       if (!d.name.trim()) { toast('צריך שם למסלול'); return; }
       if (fresh) c.st.tracks.push(d);

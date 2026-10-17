@@ -114,6 +114,7 @@ export function dayEvents(date, loc, st = {}) {
   const out = [];
   for (const e of evs) {
     if (e.getFlags() & SKIP_FLAGS) continue;
+    if (/School Observance/i.test(e.getDesc())) continue; // "שמירת בית הספר ליום העלייה": לא רלוונטי
     out.push(stripNikud(e.render('he')));
   }
   return out;
