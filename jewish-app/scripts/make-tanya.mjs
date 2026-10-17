@@ -1,49 +1,31 @@
-// בונה את src/lib/tanya-data.js מ-data/tanya-raw.txt (לוח התניא היומי של חב"ד, נאסף מ-chabad.org ב-18.10.2026)
-// מריץ גם בדיקות שלמות: תאריכים רצופים, סדר עולה, ואותה תבנית טקסט.
+// בונה את src/lib/tanya-data.js מ-data/tanya-sefaria.txt (לוח התניא היומי: הפסקה שבה מתחיל הלימוד בכל יום, מקור: Sefaria, נאסף 18.10.2026).
+// כל שורה: תאריך|ref (למשל "Tanya, Part IV; Iggeret HaKodesh 26:20"). הפלט: תאריך -> "ספר|פרק|פסקה".
 import fs from 'node:fs';
 import path from 'node:path';
 const root = path.resolve(import.meta.dirname, '..');
-const lines = fs.readFileSync(path.join(root, 'data/tanya-raw.txt'), 'utf8').split('\n').map((l) => l.trim()).filter(Boolean);
-
-const BOOKS = { 'Likutei Amarim': 'L', 'Shaar Hayichud Vehaemunah': 'S', 'Igeret HaTeshuva': 'T', 'Iggeret HaKodesh': 'K', 'Kuntres Acharon': 'A' };
-const SPECIAL = { "Title Page and Approbations": ['x1', -30], "Approbations (cont'd)": ['x2', -20], 'Introduction': ['x3', 2] };
-const entries = {};
-const rank = {};
-const errors = [];
+const lines = fs.readFileSync(path.join(root, 'data/tanya-sefaria.txt'), 'utf8').split('\n').map((l) => l.trim()).filter(Boolean);
+const BOOKS = [['Likkutei Amarim', 'L'], ['Shaar HaYichud', 'S'], ['Iggeret HaTeshuvah', 'T'], ['Iggeret HaKodesh', 'K'], ['Kuntres Acharon', 'A']];
+const SPECIAL = [['Title Page', 'x1'], ['Approbation', 'x2'], ["Compiler's Foreword", 'x4'], ['Introduction', 'x3'], ['Chinukh Katan', 'x5']];
+const entries = {}, errors = [];
 for (const line of lines) {
-  const [date, rest] = line.split('|');
-  const m = /^([^,]+), (.+)$/.exec(rest);
-  if (!m || !BOOKS[m[1]]) { errors.push('book? ' + line); continue; }
-  const b = BOOKS[m[1]];
-  let t = m[2], pos = 'w', n = 0, code, rk;
-  const pm = /^(beginning|middle|end) of (.+)$/.exec(t);
-  if (pm) { pos = { beginning: 'b', middle: 'm', end: 'e' }[pm[1]]; t = pm[2]; }
-  const rp = { b: 1, m: 2, w: 2, e: 3 }[pos];
-  if (SPECIAL[t]) { code = b + '|' + SPECIAL[t][0] + '|' + pos; rk = SPECIAL[t][1]; }
-  else if (t === "Compiler's Foreword") { code = b + '|x4|' + pos; rk = rp; }
-  else {
-    const nm = /^(Chapter|Epistle|Essay) (\d+)$/.exec(t);
-    if (!nm) { errors.push('text? ' + line); continue; }
-    n = Number(nm[2]); code = b + '|' + n + '|' + pos; rk = n * 10 + rp;
-  }
-  if (entries[date]) errors.push('dup ' + date);
-  entries[date] = code; rank[date] = { b, rk };
+  const [date, ref] = line.split('|');
+  if (!ref || /^(ERR|NONE)$/.test(ref)) { errors.push('missing ' + date); continue; }
+  const body = ref.replace(/^Tanya, Part [IV]+; /, '');
+  const m = /^(.*?)(?:, ([A-Za-z' ]+?))? (\d+)(?::(\d+))?(?:-.*)?$/.exec(body);
+  const bk = BOOKS.find(([k]) => body.startsWith(k));
+  if (!m || !bk) { errors.push('format ' + line); continue; }
+  const sp = SPECIAL.find(([k]) => body.includes(', ' + k));
+  let code;
+  if (sp) code = bk[1] + '|' + sp[1] + '|' + (m[4] || m[3]);
+  else if (m[4]) code = bk[1] + '|' + m[3] + '|' + m[4];
+  else { errors.push('nopara ' + line); continue; }
+  entries[date] = code;
 }
-// רצף תאריכים ללא חורים, וסדר לא יורד (חוץ מתחילת מחזור חדש)
-const dates = Object.keys(entries).sort();
+const sorted = Object.keys(entries).sort();
 const keyD = (d) => new Date(d + 'T12:00:00');
-const order = { L: 0, S: 1, T: 2, K: 3, A: 4 };
-const sorted = dates.filter((d) => d >= '2026-10-16');
-let wraps = 0;
-for (let i = 1; i < sorted.length; i++) {
-  const gap = Math.round((keyD(sorted[i]) - keyD(sorted[i - 1])) / 86400000);
-  if (gap !== 1) errors.push('gap before ' + sorted[i] + ' (' + gap + ')');
-  const a = rank[sorted[i - 1]], c = rank[sorted[i]];
-  const ao = order[a.b] * 1000 + a.rk, co = order[c.b] * 1000 + c.rk;
-  if (co < ao) { if (a.b === 'A' && c.b === 'L') wraps++; else errors.push('order ' + sorted[i - 1] + ' -> ' + sorted[i] + ': ' + entries[sorted[i - 1]] + ' -> ' + entries[sorted[i]]); }
-}
-console.log('days', sorted.length, 'first', sorted[0], 'last', sorted[sorted.length - 1], 'cycle wraps', wraps);
+for (let i = 1; i < sorted.length; i++) if (Math.round((keyD(sorted[i]) - keyD(sorted[i - 1])) / 86400000) !== 1) errors.push('gap before ' + sorted[i]);
+console.log('days', sorted.length, 'first', sorted[0], 'last', sorted[sorted.length - 1]);
 if (errors.length) { console.log('ERRORS:\n' + errors.join('\n')); process.exit(1); }
-const out = '// נוצר אוטומטית מ-scripts/make-tanya.mjs. אל תערוך ידנית.\n// תאריך -> "ספר|מספר|מקום" (b תחילת, m אמצע, e סוף, w שלם). מקור: לוח התניא היומי של chabad.org\nexport const TANYA_DAYS = ' + JSON.stringify(Object.fromEntries(sorted.map((d) => [d, entries[d]]))) + ';\nexport const TANYA_LAST = ' + JSON.stringify(sorted[sorted.length - 1]) + ';\n';
+const out = '// נוצר אוטומטית מ-scripts/make-tanya.mjs. אל תערוך ידנית.\n// תאריך -> "ספר|פרק|פסקה" (פסקה = הפסקה שבה מתחיל הלימוד היומי). מקור: לוח התניא היומי של Sefaria\nexport const TANYA_DAYS = ' + JSON.stringify(Object.fromEntries(sorted.map((d) => [d, entries[d]]))) + ';\nexport const TANYA_LAST = ' + JSON.stringify(sorted[sorted.length - 1]) + ';\n';
 fs.writeFileSync(path.join(root, 'src/lib/tanya-data.js'), out);
 console.log('written', (out.length / 1024).toFixed(1) + 'KB');

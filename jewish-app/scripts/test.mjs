@@ -120,9 +120,9 @@ ok(hebrewDate(new Date(2026, 9, 18)).includes('מרחשון'), 'marcheshvan name
 { const sx = defaults().settings; sx.dayChange = 'time'; sx.dayChangeTime = '21:00'; eq(todayKey(sx, new Date(2026, 9, 18, 21, 30)), '2026-10-19', 'day changes at custom time'); eq(todayKey(sx, new Date(2026, 9, 18, 20, 30)), '2026-10-18', 'before custom time'); eq(todayKey(defaults().settings, new Date(2026, 9, 18, 23, 30)), '2026-10-18', 'default change at midnight'); }
 // לוח התניא היומי
 { const st3 = defaults(); addTemplate(st3, 'tanya'); const tn = st3.tracks[0];
-  eq(learnInfo(tn, new Date(2026, 9, 18, 12), st3).sub, 'אגרת הקודש, אמצע אגרת כ״ו', 'tanya 18.10.2026');
-  eq(learnInfo(tn, new Date(2026, 11, 4, 12), st3).sub, 'ליקוטי אמרים, תחילת פרק א׳', 'tanya 4.12.2026');
-  eq(learnInfo(tn, new Date(2027, 5, 11, 12), st3).sub, 'שער היחוד והאמונה, הקדמה', 'tanya 11.6.2027'); }
+  eq(learnInfo(tn, new Date(2026, 9, 18, 12), st3).sub, 'אגרת הקודש, אגרת כ״ו, מפסקה כ׳', 'tanya 18.10.2026');
+  eq(learnInfo(tn, new Date(2026, 11, 4, 12), st3).sub, 'ליקוטי אמרים, פרק א׳, מפסקה א׳', 'tanya 4.12.2026');
+  eq(learnInfo(tn, new Date(2027, 5, 11, 12), st3).sub, 'שער היחוד והאמונה, חינוך קטן, מפסקה א׳', 'tanya 11.6.2027'); }
 // התראה בתאריך מסוים: מופיעה רק בו
 {
   const st2 = defaults();

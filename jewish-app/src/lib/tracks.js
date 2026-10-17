@@ -13,14 +13,13 @@ export function tanyaPos(n) {
   for (const [name, cnt] of TANYA) { if (x <= cnt) return name + ', פרק ' + gematria(x); x -= cnt; }
   return 'קונטרס אחרון';
 }
-// "ספר|מספר|מקום" -> "אגרת הקודש, אמצע אגרת כ״ו"
+// "ספר|פרק|פסקה" -> "אגרת הקודש, אגרת כ״ו, מפסקה כ׳" (הפסקה שבה מתחיל הלימוד של היום)
 const T_BOOK = { L: 'ליקוטי אמרים', S: 'שער היחוד והאמונה', T: 'אגרת התשובה', K: 'אגרת הקודש', A: 'קונטרס אחרון' };
-const T_SPECIAL = { x1: 'שער הספר והסכמות', x2: 'הסכמות (המשך)', x3: 'הקדמה', x4: 'הקדמת המלקט' };
-const T_POS = { b: 'תחילת ', m: 'אמצע ', e: 'סוף ', w: '' };
+const T_SPECIAL = { x1: 'שער הספר', x2: 'הסכמות', x3: 'הקדמה', x4: 'הקדמת המלקט', x5: 'חינוך קטן' };
 export function tanyaText(code) {
-  const [b, n, pos] = code.split('|');
+  const [b, n, para] = code.split('|');
   const what = T_SPECIAL[n] || ((b === 'K' ? 'אגרת ' : b === 'A' ? 'מאמר ' : 'פרק ') + gematria(Number(n)));
-  return T_BOOK[b] + ', ' + T_POS[pos] + what;
+  return T_BOOK[b] + ', ' + what + ', מפסקה ' + gematria(Number(para));
 }
 export const ALIYOT = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שביעי'];
 export const PARTS = { morning: 'בוקר', afternoon: 'אחר הצהריים', evening: 'ערב ולילה', any: 'במהלך היום' };
