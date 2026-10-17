@@ -10,7 +10,7 @@ export const TAB_COLORS = { today: '#C99A2E', learn: '#2E8B57', times: '#2F6FB5'
 
 export function defaults() {
   return {
-    v: 4,
+    v: 5,
     first: true,
     settings: {
       theme: 'auto', palette: 'gold', fontScale: 1, density: 'normal', contrast: false, tabColors: false, corners: 'round',
@@ -67,6 +67,10 @@ function migrate(s) {
   if (s.v < 4) {
     for (const t of s.tracks) if (t.tpl === 'tanya') { t.auto = 'tanyaYomi'; t.counter = false; t.total = 0; }
     s.v = 4;
+  }
+  if (s.v < 5) {
+    for (const t of s.tracks) if (t.name === 'מסלול חופשי') t.name = 'מסלול בהתאמה אישית';
+    s.v = 5;
   }
   return s;
 }

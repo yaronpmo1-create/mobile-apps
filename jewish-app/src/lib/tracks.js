@@ -42,7 +42,7 @@ export const TEMPLATES = [
   { tpl: 'maamarZaken', name: 'מאמר אדמו״ר הזקן', freq: 'weekly', weeklyDay: 6, part: 'any' },
   { tpl: 'maamarOther', name: 'מאמר אדמו״ר אחר', freq: 'weekly', weeklyDay: 6, part: 'any' },
   { tpl: 'book', name: 'ספר עם מונה', counter: true, unit: 'עמוד', pos: 1, total: 0, step: 1, freq: 'daily', part: 'evening' },
-  { tpl: 'free', name: 'מסלול חופשי', freq: 'daily', part: 'any' },
+  { tpl: 'free', name: 'מסלול בהתאמה אישית', freq: 'daily', part: 'any' },
 ];
 export const AUTO_KINDS = {
   chumash: 'חומש לפי פרשת השבוע', tanyaYomi: 'תניא יומי (לוח חב״ד)', psalms: 'תהילים חודשי', hayomyom: 'היום יום', rambam1: 'רמב״ם 1', rambam3: 'רמב״ם 3',
