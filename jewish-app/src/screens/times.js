@@ -1,3 +1,4 @@
+import { hebrewDayMonth } from '../lib/dates.js';
 import { hebDate, navBar, h, openPage, openSheet, actionSheet, confirmBox, seg, chips, field, sel, txt, toggle, toast } from '../ui.js';
 import { ctx, commit, nav } from '../core.js';
 import { ZMAN_DEFS, zmanimFor, zmanName, METHODS, timedOn, dayEvents, parshaOfWeek, isRestDay } from '../lib/zm.js';
@@ -68,12 +69,12 @@ function weekView(c) {
   const cols = ['alot', 'netz', 'shma', 'tfila', 'chatzot', 'gedola', 'plag', 'shkiah', 'tzeit'];
   const start = addDays(c.today, -c.today.getDay() + offset * 7);
   const root = h('div', null);
-  root.appendChild(navBar(h('div', { style: 'text-align:center' }, h('b', null, 'שבוע של ' + start.getDate() + '.' + (start.getMonth() + 1)), h('div', { class: 'muted small' }, c.loc.name + ' · ' + METHODS[c.s.method])), () => { offset--; commit(); }, () => { offset++; commit(); }));
+  root.appendChild(navBar(h('div', { style: 'text-align:center' }, h('b', null, 'שבוע של ' + hebrewDayMonth(start)), h('div', { class: 'muted small' }, c.loc.name + ' · ' + METHODS[c.s.method])), () => { offset--; commit(); }, () => { offset++; commit(); }));
   const names = (id) => ZMAN_DEFS.find((z) => z.id === id).name;
   const tbl = h('table', { class: 'wk' }, h('thead', null, h('tr', null, h('th', null, 'יום'), cols.map((id) => h('th', null, names(id))))),
     h('tbody', null, [0, 1, 2, 3, 4, 5, 6].map((i) => {
       const d = addDays(start, i), z = zmanimFor(d, c.loc, c.s.method, c.s.tzeitMode);
-      return h('tr', { style: dkey(d) === c.tk ? 'color:var(--accent);font-weight:700' : '' }, h('td', null, WD_LETTER[d.getDay()] + '׳ ' + d.getDate() + '.' + (d.getMonth() + 1)), cols.map((id) => h('td', { style: 'direction:ltr' }, hhmm(z[id], c.loc.tz))));
+      return h('tr', { style: dkey(d) === c.tk ? 'color:var(--accent);font-weight:700' : '' }, h('td', null, WD_LETTER[d.getDay()] + '׳ ' + hebrewDayMonth(d)), cols.map((id) => h('td', { style: 'direction:ltr' }, hhmm(z[id], c.loc.tz))));
     })));
   root.appendChild(h('div', { class: 'scrollx card' }, tbl));
   root.appendChild(h('button', { class: 'btn sec block', onclick: async () => {
@@ -107,7 +108,7 @@ function monthView(c) {
   const tbl = h('table', { class: 'wk' }, h('thead', null, h('tr', null, h('th', null, 'יום'), cols.map((id) => h('th', null, names(id))))),
     h('tbody', null, days.map((d) => {
       const z = zmanimFor(d, c.loc, c.s.method, c.s.tzeitMode);
-      return h('tr', { style: dkey(d) === c.tk ? 'color:var(--accent);font-weight:700' : '' }, h('td', null, WD_LETTER[d.getDay()] + '׳ ' + d.getDate() + '.' + (d.getMonth() + 1)), cols.map((id) => h('td', { style: 'direction:ltr' }, hhmm(z[id], c.loc.tz))));
+      return h('tr', { style: dkey(d) === c.tk ? 'color:var(--accent);font-weight:700' : '' }, h('td', null, WD_LETTER[d.getDay()] + '׳ ' + hebrewDayMonth(d)), cols.map((id) => h('td', { style: 'direction:ltr' }, hhmm(z[id], c.loc.tz))));
     })));
   root.appendChild(h('div', { class: 'scrollx card' }, tbl));
   root.appendChild(h('button', { class: 'btn sec block', onclick: async () => {
