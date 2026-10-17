@@ -1,7 +1,7 @@
 // בדיקות לוגיקה: node scripts/test.mjs
 import { defaults } from '../src/lib/store.js';
 import { getLoc, zmanimFor, parshaOfWeek, isRestDay, restIntervals, inRest, todayKey, bearingTo, dayEvents } from '../src/lib/zm.js';
-import { tishreiKey, hhmm, dkey, parseKey, hebrewDate, addDays } from '../src/lib/dates.js';
+import { gematria, tishreiKey, hhmm, dkey, parseKey, hebrewDate, addDays } from '../src/lib/dates.js';
 import { addTemplate, dueTracks, setEntry, dayStatus, streak, learnInfo, isLateMark, missingDays, markAll, undoMark, getEntry } from '../src/lib/tracks.js';
 import { buildInstances, newAlarm } from '../src/lib/alarms.js';
 
@@ -112,6 +112,10 @@ ok(buildInstances(st, now, 3).length > 0, 'instances with NY');
 ok(/ה[א-ת]+״[א-ת]$/.test(hebrewDate(new Date(2026, 9, 16))), 'hebrew year starts with he: ' + hebrewDate(new Date(2026, 9, 16)));
 eq(tishreiKey(new Date(2026, 9, 16)), '2026-09-12', 'tishrei key');
 eq(defaults().settings.auto.omer, true, 'omer default on');
+// גימטריה, מרחשון, החלפת יום
+eq(gematria(26), 'כ״ו', 'gematria 26'); eq(gematria(15), 'ט״ו', 'gematria 15'); eq(gematria(7), 'ז׳', 'gematria 7');
+ok(hebrewDate(new Date(2026, 9, 18)).includes('מרחשון'), 'marcheshvan name');
+{ const sx = defaults().settings; sx.dayChange = 'time'; sx.dayChangeTime = '21:00'; eq(todayKey(sx, new Date(2026, 9, 18, 21, 30)), '2026-10-19', 'day changes at custom time'); eq(todayKey(sx, new Date(2026, 9, 18, 20, 30)), '2026-10-18', 'before custom time'); eq(todayKey(defaults().settings, new Date(2026, 9, 18, 23, 30)), '2026-10-18', 'default change at midnight'); }
 // התראה בתאריך מסוים: מופיעה רק בו
 {
   const st2 = defaults();

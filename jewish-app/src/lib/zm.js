@@ -155,8 +155,12 @@ export function inRest(ms, intervals) { return intervals.some(([a, b]) => ms >= 
 // ---- היום ההלכתי ----
 export function todayKey(st, now = new Date()) {
   const base = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12);
-  const mode = st.dayChange || 'sunset';
+  const mode = st.dayChange || 'midnight';
   if (mode === 'midnight') return dkey(base);
+  if (mode === 'time') {
+    const [hh, mm] = String(st.dayChangeTime || '21:00').split(':').map(Number);
+    return now.getHours() * 60 + now.getMinutes() >= hh * 60 + (mm || 0) ? dkey(addDays(base, 1)) : dkey(base);
+  }
   const loc = getLoc(st);
   const z = zmanimFor(base, loc, st.method || 'baal', st.tzeitMode || 'method');
   const t = mode === 'tzeit' ? z.tzeit : z.shkiah;

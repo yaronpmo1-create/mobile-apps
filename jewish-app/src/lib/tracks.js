@@ -1,10 +1,17 @@
 // מסלולי לימוד: תבניות, מה ללמוד היום, מי חייב, סימון ורצף
 import { HDate, DailyLearning } from '@hebcal/core';
 import '@hebcal/learning';
-import { dkey, parseKey, addDays, hebrewDayMonth, stripNikud, tishreiKey } from './dates.js';
+import { dkey, parseKey, addDays, hebrewDayMonth, stripNikud, tishreiKey, gematria, hebrewDayLetter } from './dates.js';
 import { getLoc, isRestDay, parshaOfWeek } from './zm.js';
 import { uid } from './store.js';
 
+// חלקי התניא לפי סדר, ומספר הפרקים בכל חלק
+const TANYA = [['ליקוטי אמרים', 53], ['שער היחוד והאמונה', 12], ['אגרת התשובה', 12], ['אגרת הקודש', 32]];
+export function tanyaPos(n) {
+  let x = Math.max(1, Math.floor(n));
+  for (const [name, cnt] of TANYA) { if (x <= cnt) return name + ', פרק ' + gematria(x); x -= cnt; }
+  return 'קונטרס אחרון';
+}
 export const ALIYOT = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שביעי'];
 export const PARTS = { morning: 'בוקר', afternoon: 'אחר הצהריים', evening: 'ערב ולילה', any: 'במהלך היום' };
 
@@ -12,8 +19,8 @@ const CH = 'https://www.chabad.org/dailystudy/';
 // auto = סוג חישוב אוטומטי; counter = מונה ידני; weekly = שיעור שבועי
 export const TEMPLATES = [
   { tpl: 'chumash', name: 'חומש עם רש״י', auto: 'chumash', freq: 'daily', part: 'morning', url: CH + 'torahreading.asp' },
-  { tpl: 'tehilim', name: 'תהילים (חודשי)', auto: 'psalms', freq: 'daily', part: 'morning', url: CH + 'tehillim.asp' },
-  { tpl: 'tanya', name: 'תניא', counter: true, unit: 'פרק', pos: 1, total: 53, step: 1, freq: 'daily', part: 'morning', url: CH + 'tanya.asp' },
+  { tpl: 'tehilim', name: 'תהילים יומי', auto: 'psalms', freq: 'daily', part: 'morning', url: CH + 'tehillim.asp' },
+  { tpl: 'tanya', name: 'תניא יומי', counter: true, unit: 'פרק', pos: 1, total: 109, step: 1, freq: 'daily', part: 'morning', url: CH + 'tanya.asp' },
   { tpl: 'hayomyom', name: 'היום יום', auto: 'hayomyom', freq: 'daily', part: 'morning', url: CH + 'hayomyom.asp' },
   { tpl: 'rambam1', name: 'רמב״ם - פרק אחד ביום', auto: 'rambam1', freq: 'daily', part: 'afternoon' },
   { tpl: 'rambam3', name: 'רמב״ם - שלושה פרקים ביום', auto: 'rambam3', freq: 'daily', part: 'afternoon' },
@@ -68,10 +75,11 @@ export function learnInfo(track, date, st) {
       const r = DailyLearning.lookup(track.auto, new HDate(noon));
       if (r) {
         out.sub = stripNikud(r.render ? r.render('he') : String(r.name || '')).replace(/^דף יומי:\s*/, '');
+        if (track.auto === 'psalms') out.title = track.name + ' (ליום ' + hebrewDayLetter(date) + ' בחודש)';
         if (r.url) out.url = r.url();
       }
     } else if (track.counter) {
-      out.sub = (track.unit || 'מקום') + ' ' + track.pos + (track.total ? ' מתוך ' + track.total : '');
+      out.sub = track.tpl === 'tanya' ? tanyaPos(track.pos) : (track.unit || 'מקום') + ' ' + track.pos + (track.total ? ' מתוך ' + track.total : '');
     }
   } catch (e) { /* ממשיך בלי פירוט */ }
   if (track.where) out.where = track.where;

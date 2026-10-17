@@ -25,4 +25,4 @@ export const rerender = () => renderBase();
 // שמירה שקטה בלי רענון (בזמן הקלדה)
 export function quietSave() { save(); }
 
-export const nav = { tab: 'today', goTab: null, openLearnEdit: null, openDay: null, openAlarmEdit: null, newAlarm: null, timesView: null };
+export const nav = { tab: 'today', goTab: null, openLearnEdit: null, openDay: null, openAlarmEdit: null, newAlarm: null, timesView: null, retro: null };

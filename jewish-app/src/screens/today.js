@@ -1,9 +1,10 @@
-import { h, press, actionSheet, openSheet, toast, txt, icon } from '../ui.js';
+import { h, press, actionSheet, openSheet, toast, txt, navBar } from '../ui.js';
 import { ctx, commit, nav, rerender } from '../core.js';
 import { buildInstances } from '../lib/alarms.js';
 import { pickTemplate } from './learn.js';
 import { hebrewDate, weekdayName, parseKey, addDays, dkey, hhmm, pad } from '../lib/dates.js';
 import { ZMAN_DEFS, zmanimFor, dayEvents, parshaOfWeek, timedOn, omerDay, isRestDay, zmanName } from '../lib/zm.js';
+import { hebrewDate as _hd } from '../lib/dates.js';
 import { dueTracks, getEntry, setEntry, learnInfo, progressOf, PARTS, markAll, undoMark, missingDays, streak, dayStatus, isFreeDay, isLateMark } from '../lib/tracks.js';
 import { setDone, openLink } from '../lib/native.js';
 import { chabadOn } from '../lib/chabad.js';
@@ -83,6 +84,7 @@ export function trackRow(c, key, track, opts = {}) {
       info.where ? h('div', { class: 's' }, 'המשך: ' + info.where) : null,
       pr != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(pr * 100) + '%' })) : null));
   press(el, () => {
+    if (opts.readonly) { toast('אי אפשר לסמן יום עתידי'); return; }
     if (pend) { if (pend.has(track.id)) pend.delete(track.id); else pend.add(track.id); rerender(); return; }
     const r = markTrack(c, key, track, e && e.s !== 'skip' ? null : 'done');
     if (!r.was && r.e && opts.milestone !== false) milestone(c);
@@ -100,17 +102,17 @@ export function milestone(c) {
 const pending = new Set();
 const secHead = (title, acts) => h('div', { class: 'sechead' }, h('h2', null, title), h('div', { class: 'acts' }, acts.map(([l, fn]) => h('button', { class: 'btn sm sec', onclick: fn }, l))));
 
-function confirmPending(c) {
+function confirmPending(c, key) {
   const ids = [...pending];
   let marked = 0;
   for (const id of ids) {
     const track = c.st.tracks.find((x) => x.id === id);
     if (!track) continue;
-    const e = getEntry(c.st, c.tk, id);
+    const e = getEntry(c.st, key, id);
     const isDone = e && (e.s === 'done' || e.s === 'late');
-    setEntry(c.st, c.tk, track, isDone ? null : 'done', c.tk);
-    const n = getEntry(c.st, c.tk, id);
-    setDone(c.tk, id, !!(n && (n.s === 'done' || n.s === 'late' || n.s === 'skip')));
+    setEntry(c.st, key, track, isDone ? null : 'done', c.tk);
+    const n = getEntry(c.st, key, id);
+    setDone(key, id, !!(n && (n.s === 'done' || n.s === 'late' || n.s === 'skip')));
     if (!isDone) marked++;
   }
   pending.clear();
@@ -118,13 +120,23 @@ function confirmPending(c) {
   if (marked) { toast('נשמר: ' + marked + ' לימודים סומנו'); milestone(c); } else toast('השינויים נשמרו');
 }
 
+let dayOff = 0;
+let pendKey = '';
+
 export function today() {
   const c = ctx();
   const { st, s, loc } = c;
-  const d = c.today;
+  const d = addDays(c.today, dayOff);
+  const key = dkey(d);
+  const isToday = dayOff === 0;
+  const future = key > c.tk;
+  if (pendKey !== key) { pending.clear(); pendKey = key; }
   const root = h('div', null);
-  // כותרת תאריך
-  root.appendChild(h('div', { class: 'h-date' }, weekdayName(d) + ', ' + hebrewDate(d) + ' · ' + d.getDate() + '.' + (d.getMonth() + 1)));
+  // כותרת תאריך עם חיצים ליום הקודם / הבא
+  root.appendChild(navBar(
+    h('div', null, h('div', { class: 'h-date', style: 'margin:0' }, weekdayName(d) + ', ' + hebrewDate(d)), h('div', { class: 'muted small' }, d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear())),
+    () => { dayOff--; rerender(); }, () => { dayOff++; rerender(); }));
+  if (!isToday) root.appendChild(h('button', { class: 'btn ghost sm block', style: 'margin-bottom:8px', onclick: () => { dayOff = 0; rerender(); } }, 'חזרה להיום'));
   // אירועי היום
   const ev = dayEvents(d, loc, s);
   const hd = new HDate(d);
@@ -141,61 +153,58 @@ export function today() {
   const line = ev.concat(extra);
   if (line.length) root.appendChild(h('p', { class: 'h-sub' }, line.join(' · ')));
 
-  // הזמן הבא וההתראה הבאה
-  root.appendChild(secHead('האירוע הבא', [['+ התראה', () => nav.newAlarm()], ['ניהול', () => { nav.timesView('alarms'); nav.goTab('times'); }]]));
-  const nz = nextZman(c);
-  if (nz) {
-    const al = alarmFor(c, nz);
-    root.appendChild(h('div', { class: 'card accent tap', onclick: () => { nav.timesView('day'); nav.goTab('times'); } },
-      h('div', { class: 'muted' }, 'הזמן הבא: ' + nz.name + ' ' + hhmm(nz.t, loc.tz)),
-      h('div', { class: 'big' }, 'בעוד ' + countdown(nz.t - c.now) + (al ? ' · התראה ב-' + hhmm(al, loc.tz) : ''))));
+  // האירוע הבא: זמן והתראה, שני כרטיסים קטנים באותו גובה
+  if (isToday) {
+    root.appendChild(secHead('האירוע הבא', []));
+    const nz = nextZman(c);
+    const al = nz ? alarmFor(c, nz) : null;
+    let nextAl = null;
+    try { nextAl = buildInstances(st, c.now, 3, 40)[0] || null; } catch (e) { /* */ }
+    root.appendChild(h('div', { class: 'pair' },
+      h('div', { class: 'card mini tap', onclick: () => nav.goTab('times') },
+        h('div', { class: 'muted small' }, nz ? nz.name + ' · ' + hhmm(nz.t, loc.tz) : 'הזמן הבא'),
+        h('div', { class: 'big mid one' }, nz ? 'בעוד ' + countdown(nz.t - c.now) + (al ? ' · התראה ' + hhmm(al, loc.tz) : '') : '-')),
+      h('div', { class: 'card mini tap', onclick: () => nav.goTab('times') },
+        h('div', { class: 'muted small' }, 'ההתראה הבאה'),
+        h('div', { class: 'big mid one' }, nextAl ? hhmm(new Date(nextAl.t)) + ' · ' + nextAl.title : 'אין בקרוב'))));
+    if (tt.candles && tt.candles > c.now) root.appendChild(h('div', { class: 'card mini', style: 'margin-top:8px' }, h('span', { class: 'muted small' }, 'הדלקת נרות היום '), h('b', null, hhmm(tt.candles, loc.tz) + ' · בעוד ' + countdown(tt.candles - c.now))));
   }
-  let nextAl = null;
-  try { nextAl = buildInstances(st, c.now, 3, 40).find((i) => i.kind !== 'notify' || true); } catch (e) { /* */ }
-  if (nextAl) root.appendChild(h('div', { class: 'card tap', onclick: () => { nav.timesView('alarms'); nav.goTab('times'); } }, h('div', { class: 'muted' }, 'ההתראה הבאה: ' + nextAl.title), h('div', { style: 'font-weight:700' }, hhmm(new Date(nextAl.t)) + (nextAl.text ? ' · ' + nextAl.text : ''))));
-  else root.appendChild(h('div', { class: 'card muted' }, 'אין התראה מתוזמנת בקרוב.'));
-  if (tt.candles && tt.candles > c.now) root.appendChild(h('div', { class: 'card' }, h('div', { class: 'muted' }, 'הדלקת נרות היום'), h('div', { class: 'big' }, hhmm(tt.candles, loc.tz) + ' · בעוד ' + countdown(tt.candles - c.now))));
 
   // לימוד יומי
-  root.appendChild(secHead('לימוד יומי', [['+ מסלול', () => pickTemplate()], ['ניהול', () => nav.goTab('learn')]]));
-  // באנר השלמה
-  const miss = missingDays(st, c.tk);
-  if (miss.length) {
-    const yk = dkey(addDays(d, -1));
-    const txt1 = miss.length === 1 && miss[0] === yk ? (miss.length && dayStatus(st, yk).total - dayStatus(st, yk).done === 1 ? 'אתמול חסר לימוד אחד' : 'אתמול חסרים לימודים') : 'חסרים ' + miss.length + ' ימים';
-    root.appendChild(h('div', { class: 'banner' }, h('span', null, txt1), h('button', { class: 'btn sm', onclick: () => nav.openDay(miss[0]) }, 'השלם')));
-  }
-
-  const due = dueTracks(st, c.tk);
-  const free = isFreeDay(st, c.tk);
-  if (free) root.appendChild(h('div', { class: 'banner' }, h('span', null, st.special[c.tk] ? 'יום מיוחד - לא נספר כהחמצה' : 'מצב חופשה - לא נספר כהחמצה')));
+  root.appendChild(secHead('לימוד יומי', []));
+  const due = dueTracks(st, key);
+  const free = isFreeDay(st, key);
+  if (future) root.appendChild(h('div', { class: 'banner' }, h('span', null, 'יום עתידי. אפשר לסמן רק מהיום והלאה אחורה.')));
+  if (free) root.appendChild(h('div', { class: 'banner' }, h('span', null, st.special[key] ? 'יום מיוחד - לא נספר כהחמצה' : 'מצב חופשה - לא נספר כהחמצה')));
   if (isRestDay(d, loc, s) && due.length) root.appendChild(h('p', { class: 'h-sub' }, 'שבת/חג: בלי תזכורות וצלצול. אפשר לסמן במוצאי שבת/חג והלימוד יירשם בתאריך הנכון, לא כאיחור.'));
 
   if (!st.tracks.filter((t) => !t.archived).length) {
-    root.appendChild(h('div', { class: 'card empty-note' }, h('p', null, 'עוד אין מסלולי לימוד.'), h('button', { class: 'btn', onclick: () => nav.goTab('learn') }, 'הוספת מסלול')));
+    root.appendChild(h('div', { class: 'card empty-note' }, h('p', null, 'עוד אין מסלולי לימוד.'), h('button', { class: 'btn', onclick: () => pickTemplate() }, 'הוספת מסלול')));
   } else if (!due.length) {
-    root.appendChild(h('div', { class: 'card empty-note' }, 'אין לימוד מתוזמן להיום.'));
+    root.appendChild(h('div', { class: 'card empty-note' }, 'אין לימוד מתוזמן ליום הזה.'));
   }
-  // לפי חלקי היום
   const groups = { morning: [], afternoon: [], evening: [], any: [] };
   due.forEach((t) => (groups[t.part] || groups.any).push(t));
   for (const k of ['morning', 'afternoon', 'evening', 'any']) {
     if (!groups[k].length) continue;
-    const hr = c.now.getHours() + c.now.getMinutes() / 60; const curPart = hr < s.partMorning ? 'morning' : hr < s.partAfternoon ? 'afternoon' : hr < (s.partEvening || 24) ? 'evening' : '';
-    root.appendChild(h('div', { class: 'section-title', style: k === curPart ? 'color:var(--accent)' : '' }, PARTS[k] + (k === curPart ? ' · עכשיו' : '')));
-    root.appendChild(h('div', { class: 'list' }, groups[k].map((t) => trackRow(c, c.tk, t, { pend: pending }))));
+    root.appendChild(h('div', { class: 'section-title' }, PARTS[k]));
+    root.appendChild(h('div', { class: 'list' }, groups[k].map((t) => trackRow(c, key, t, { pend: future ? null : pending, readonly: future }))));
   }
-  if (due.length) {
-    const undone = due.filter((tr) => { const e = getEntry(st, c.tk, tr.id); return !(e && (e.s === 'done' || e.s === 'late')); });
+  if (due.length && !future) {
+    const undone = due.filter((tr) => { const e = getEntry(st, key, tr.id); return !(e && (e.s === 'done' || e.s === 'late')); });
     const allSel = undone.length && undone.every((tr) => pending.has(tr.id));
     root.appendChild(h('button', { class: 'btn sec block', disabled: !undone.length, onclick: () => { if (allSel) undone.forEach((tr) => pending.delete(tr.id)); else undone.forEach((tr) => pending.add(tr.id)); rerender(); } },
-      !undone.length ? 'כל הלימוד של היום סומן ✓' : allSel ? 'ביטול בחירת הכל' : 'סמן הכל'));
+      !undone.length ? 'כל הלימוד סומן ✓' : allSel ? 'ביטול בחירת הכל' : 'סמן הכל'));
     const sk = streak(st, c.tk);
-    if (sk.cur) root.appendChild(h('p', { class: 'h-sub', style: 'text-align:center;margin-top:10px' }, 'רצף נוכחי: ' + sk.cur + ' ימים'));
+    if (isToday && sk.cur) root.appendChild(h('p', { class: 'h-sub', style: 'text-align:center;margin-top:10px' }, 'רצף נוכחי: ' + sk.cur + ' ימים'));
   }
   root.appendChild(h('p', { class: 'dim small', style: 'text-align:center' }, 'נגיעה בוחרת, ואז לוחצים אישור · לחיצה ארוכה: הערה ו"איפה עצרתי"'));
+
+  // עדכון לימוד: השלמות והוספת מסלול (בסוף)
+  root.appendChild(secHead('עדכון לימוד', [['השלמות', () => nav.retro && nav.retro()], ['+ מסלול', () => pickTemplate()]]));
+
   if (pending.size) root.appendChild(h('div', { class: 'confirmbar' },
-    h('button', { class: 'btn', onclick: () => confirmPending(c) }, 'אישור (' + pending.size + ')'),
+    h('button', { class: 'btn', onclick: () => confirmPending(c, key) }, 'אישור (' + pending.size + ')'),
     h('button', { class: 'btn sec', onclick: () => { pending.clear(); rerender(); } }, 'ביטול')));
   return root;
 }

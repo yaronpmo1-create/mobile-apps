@@ -10,13 +10,13 @@ export const TAB_COLORS = { today: '#C99A2E', learn: '#2E8B57', times: '#2F6FB5'
 
 export function defaults() {
   return {
-    v: 2,
+    v: 3,
     first: true,
     settings: {
       theme: 'auto', palette: 'gold', fontScale: 1, density: 'normal', contrast: false, tabColors: false, corners: 'round',
       countLate: true, lateWindow: 14, partMorning: 12, partAfternoon: 18, partEvening: 24,
       loc: { mode: 'city', cityId: 'jerusalem', lat: 0, lon: 0, name: '', tz: '' },
-      method: 'baal', tzeitMode: 'method', dayChange: 'sunset', candleMins: 0,
+      method: 'baal', tzeitMode: 'method', dayChange: 'midnight', dayChangeTime: '21:00', candleMins: 0,
       sound: 'alarm', soundUri: '', soundName: '', ramp: true, vibrate: true, snoozeMin: 10, repeatUntilOff: false, quiet: false, quietFrom: '23:00', quietTo: '05:00',
       vacation: false, chabadDates: true, chabadList: null, milestones: true,
       auto: { roshChodesh: true, erevShabbat: true, candles: true, omer: true },
@@ -54,6 +54,15 @@ function migrate(s) {
     const tk = tishreiKey();
     for (const t of s.tracks) if (!t.created || t.created > tk) t.created = tk;
     s.v = 2;
+  }
+  if (s.v < 3) {
+    if (!s.settings.dayChange || s.settings.dayChange === 'sunset') s.settings.dayChange = 'midnight';
+    for (const t of s.tracks) {
+      if (t.name === 'תהילים (חודשי)') t.name = 'תהילים יומי';
+      if (t.name === 'תניא') t.name = 'תניא יומי';
+      if (t.tpl === 'tanya' && t.total === 53) t.total = 109;
+    }
+    s.v = 3;
   }
   return s;
 }

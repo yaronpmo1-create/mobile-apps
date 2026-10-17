@@ -6,7 +6,7 @@ import { setRender, ctx, commit, nav } from './core.js';
 import { today, nextZman, countdown } from './screens/today.js';
 import { learn } from './screens/learn.js';
 import { times } from './screens/times.js';
-import { journal } from './screens/journal.js';
+import { journal, shiftMonth } from './screens/journal.js';
 import { settingsMain } from './screens/settings.js';
 import { firstRun, openCompass } from './screens/extras.js';
 import { syncNow, takeDone, setWidget, setDone } from './lib/native.js';
@@ -16,8 +16,8 @@ import { hhmm } from './lib/dates.js';
 load();
 // תצוגה מקדימה בדפדפן: נתוני דוגמה (ערכת חת״ת) כדי שהמסך הראשי לא יהיה ריק
 if (window.__PREVIEW && !get().tracks.length) { addTemplate(get(), 'chitas'); get().first = false; }
-const TABS = [['today', 'היום', '◉'], ['learn', 'לימוד', '☰'], ['times', 'זמנים', '◔'], ['journal', 'יומן', '▦']];
-const TITLES = { today: 'אפליקציה יהודית', learn: 'המסלולים שלי', times: 'זמנים והתראות', journal: 'יומן' };
+const TABS = [['today', 'היום', '◉'], ['times', 'זמנים', '◔'], ['learn', 'לימוד', '☰'], ['journal', 'יומן', '▦']];
+const TITLES = { today: 'אפליקציה יהודית', learn: 'לימוד ומסלולים', times: 'זמנים והתראות', journal: 'יומן ומעקב' };
 const SCREENS = { today, learn, times, journal };
 let tab = 'today';
 const app = document.getElementById('app');
@@ -32,6 +32,15 @@ function render() {
   try { body = SCREENS[tab](); } catch (e) { body = h('pre', { style: 'white-space:pre-wrap;color:var(--bad)' }, 'שגיאה: ' + e.message + '\n' + (e.stack || '')); console.error(e); }
   const main = h('div', { class: 'main' }, body);
   const bar = h('div', { class: 'tabbar' }, TABS.map(([k, l, ic]) => h('button', { class: 'tab' + (k === tab ? ' on' : ''), onclick: () => goTab(k) }, h('span', { class: 'ic' }, ic), l)));
+  if (tab === 'journal') {
+    // החלקה ימינה = חודש קודם, שמאלה = חודש הבא
+    let sx = 0, sy = 0;
+    main.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+    main.addEventListener('touchend', (e) => {
+      const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+      if (Math.abs(dx) > 70 && Math.abs(dy) < 50) shiftMonth(dx > 0 ? -1 : 1);
+    }, { passive: true });
+  }
   app.replaceChildren(top, main, bar);
   mainEl = main;
   main.scrollTop = sc;

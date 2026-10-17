@@ -6,27 +6,22 @@ import { setEntry, isDue, dayStatus, dueTracks, activeTracks, getEntry, streak, 
 import { isChagDay } from '../lib/zm.js';
 import { trackRow } from './today.js';
 import { setDone, shareText } from '../lib/native.js';
-import { tishreiKey } from '../lib/dates.js';
+import { tishreiKey, hebrewMonthAnchor } from '../lib/dates.js';
+import { rerender } from '../core.js';
 
 let mOff = 0; // היסטוריית חודשים יחסית לחודש הנוכחי
 
 const dayLetter = (d) => stripNikud(hd(d).renderGematriya()).split(' ')[0];
 
-function monthAnchor(c) {
-  const h0 = hd(c.today);
-  let a = new HDate(1, h0.getMonth(), h0.getFullYear());
-  for (let i = 0; i < Math.abs(mOff); i++) {
-    if (mOff > 0) a = a.add(a.daysInMonth(), 'd');
-    else { const p = a.add(-1, 'd'); a = new HDate(1, p.getMonth(), p.getFullYear()); }
-  }
-  return a.greg();
-}
+const sel = new Set();
+let selMode = false, selAct = 'skip';
+export function shiftMonth(delta) { mOff += delta; commit(); }
 
 export function journal() {
   const c = ctx();
   const { st } = c;
   const root = h('div', null);
-  const anchor = mOff === 0 ? c.today : monthAnchor(c);
+  const anchor = mOff === 0 ? c.today : hebrewMonthAnchor(c.today, mOff);
   const days = hebrewMonthDays(anchor);
   root.appendChild(navBar(h('div', { style: 'text-align:center' }, h('b', { style: 'font-size:1.2rem' }, hebrewMonthYear(days[0])), h('div', { class: 'muted small' }, mOff ? 'חזרה להיום בלחיצה' : 'החודש הנוכחי')), () => { mOff--; commit(); }, () => { mOff++; commit(); }));
   if (mOff) root.lastChild.children[1].onclick = () => { mOff = 0; commit(); };
@@ -42,17 +37,28 @@ export function journal() {
     let cls = future ? 'none future' : ds.kind;
     if (k === c.tk && ds.kind !== 'full') cls = ds.kind === 'special' ? 'special' : 'none';
     const chag = isChagDay(d, c.loc, c.s);
-    grid.appendChild(h('button', { class: 'cell ' + cls + (k === c.tk ? ' today' : ''), onclick: () => openDay(k) },
-      dayLetter(d), h('small', null, d.getDate()), chag && ds.kind !== 'special' ? h('i', { class: 'dot' }) : null));
+    const cell = h('button', { class: 'cell ' + cls + (k === c.tk ? ' today' : '') + (sel.has(k) ? ' sel' : '') },
+      dayLetter(d), h('small', null, d.getDate()), chag && ds.kind !== 'special' ? h('i', { class: 'dot' }) : null);
+    press(cell, () => { if (selMode) { if (sel.has(k)) sel.delete(k); else sel.add(k); if (!sel.size) selMode = false; rerender(); } else openDay(k); },
+      () => { selMode = true; sel.add(k); rerender(); });
+    grid.appendChild(cell);
   }
   root.appendChild(grid);
   root.appendChild(h('div', { class: 'legend' },
     [['var(--ok)', 'הכל'], ['var(--warn)', 'חלקי'], ['var(--bad)', 'חסר'], ['var(--info)', 'חג / מיוחד']].map(([col, t]) => h('span', null, h('i', { style: 'background:' + col }), t))));
-  const miss = missingDays(st, c.tk);
-  if (miss.length) root.appendChild(h('div', { class: 'banner' }, h('span', null, 'חסרים ' + miss.length + ' ימים'), h('button', { class: 'btn sm', onclick: () => openDay(miss[miss.length - 1]) }, 'להשלמה')));
-  else root.appendChild(h('p', { class: 'h-sub' }, 'אין ימים חסרים בחלון ההשלמה.'));
+  root.appendChild(h('p', { class: 'dim small', style: 'text-align:center' }, 'נגיעה פותחת יום · לחיצה ארוכה: בחירת כמה ימים · החלקה: חודש קודם/הבא'));
   root.appendChild(h('button', { class: 'btn block', style: 'margin:6px 0', onclick: () => retro() }, 'השלמה רטרואקטיבית (סימון ימים קודמים)'));
   root.appendChild(h('button', { class: 'btn sec block', style: 'margin:6px 0', onclick: () => stats() }, 'סטטיסטיקה והישגים'));
+  if (selMode) {
+    root.appendChild(h('div', { class: 'confirmbar', style: 'flex-direction:column' },
+      h('div', { class: 'seg', style: 'margin:0' }, [['skip', 'לא נספר (חופשה / יום מיוחד)'], ['count', 'נספר (רלוונטי)']].map(([v, l]) => h('button', { class: v === selAct ? 'on' : '', onclick: () => { selAct = v; rerender(); } }, l))),
+      h('div', { style: 'display:flex;gap:10px' },
+        h('button', { class: 'btn', onclick: () => {
+          for (const k of sel) { if (selAct === 'skip') st.special[k] = 1; else delete st.special[k]; }
+          const n = sel.size; sel.clear(); selMode = false; commit(); toast(selAct === 'skip' ? n + ' ימים סומנו כלא נספרים' : n + ' ימים חזרו להיספר');
+        } }, 'אישור (' + sel.size + ')'),
+        h('button', { class: 'btn sec', onclick: () => { sel.clear(); selMode = false; rerender(); } }, 'ביטול'))));
+  }
   return root;
 }
 
@@ -93,6 +99,7 @@ export function openDay(key) {
   });
 }
 nav.openDay = openDay;
+nav.retro = () => retro();
 
 export function summaryText(c) {
   const st = c.st;
@@ -140,7 +147,7 @@ export function stats() {
 }
 
 // סימון לימוד לטווח ימים בעבר, בבת אחת. אם הטווח מתחיל לפני תחילת המסלול, המסלול מוקדם לתחילת הטווח
-function retro() {
+export function retro() {
   const c = ctx();
   const tracks = activeTracks(c.st);
   if (!tracks.length) { toast('עוד אין מסלולים'); return; }

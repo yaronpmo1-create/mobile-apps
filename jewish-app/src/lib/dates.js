@@ -15,10 +15,32 @@ export const stripNikud = (s) => (s || '').replace(NIKUD, '');
 // "ד׳ חשוון תשפ״ז"
 // השנה עם ה׳ בתחילתה: "התשפ״ז"
 const withHe = (s) => s.replace(/(\S+)$/, (y) => (y.startsWith('ה') ? y : 'ה' + y));
-export const hebrewDate = (d) => withHe(stripNikud(hd(d).renderGematriya()));
+const fixM = (s) => s.replace(/(^|\s)חשון(?=\s|$)/, '$1מרחשון');
+export const hebrewDate = (d) => withHe(fixM(stripNikud(hd(d).renderGematriya())));
+// אות היום בחודש העברי: "ז׳"
+export const hebrewDayLetter = (d) => stripNikud(hd(d).renderGematriya()).split(' ')[0];
+// מספר לאותיות עבריות: 26 -> כ״ו
+export function gematria(n) {
+  const L = [[400, 'ת'], [300, 'ש'], [200, 'ר'], [100, 'ק'], [90, 'צ'], [80, 'פ'], [70, 'ע'], [60, 'ס'], [50, 'נ'], [40, 'מ'], [30, 'ל'], [20, 'כ'], [10, 'י'], [9, 'ט'], [8, 'ח'], [7, 'ז'], [6, 'ו'], [5, 'ה'], [4, 'ד'], [3, 'ג'], [2, 'ב'], [1, 'א']];
+  let s = '', x = n;
+  if (x === 15) return 'ט״ו';
+  if (x === 16) return 'ט״ז';
+  for (const [v, l] of L) while (x >= v) { s += l; x -= v; }
+  return s.length > 1 ? s.slice(0, -1) + '״' + s.slice(-1) : s + '׳';
+}
+// עוגן החודש העברי (היום הראשון שלו) לפי היסט חודשים מהחודש של d
+export function hebrewMonthAnchor(d, off) {
+  const h0 = hd(d);
+  let a = new HDate(1, h0.getMonth(), h0.getFullYear());
+  for (let i = 0; i < Math.abs(off); i++) {
+    if (off > 0) a = a.add(a.daysInMonth(), 'd');
+    else { const p = a.add(-1, 'd'); a = new HDate(1, p.getMonth(), p.getFullYear()); }
+  }
+  return a.greg();
+}
 // 1 בתשרי של השנה העברית הנוכחית (מפתח יום)
 export const tishreiKey = (d = new Date()) => dkey(new HDate(1, 7, new HDate(d).getFullYear()).greg());
-export const hebrewDayMonth = (d) => { const h = hd(d); return stripNikud(h.renderGematriya().replace(/\s\S+$/, '')); };
+export const hebrewDayMonth = (d) => { const h = hd(d); return fixM(stripNikud(h.renderGematriya().replace(/\s\S+$/, ''))); };
 
 export const WEEKDAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 export const WD_LETTER = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];

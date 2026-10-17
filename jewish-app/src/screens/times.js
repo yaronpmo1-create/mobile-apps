@@ -2,6 +2,7 @@ import { navBar, h, openPage, openSheet, actionSheet, confirmBox, seg, chips, fi
 import { ctx, commit, nav } from '../core.js';
 import { ZMAN_DEFS, zmanimFor, zmanName, METHODS, timedOn, dayEvents, parshaOfWeek, isRestDay } from '../lib/zm.js';
 import { hhmm, weekdayName, hebrewDate, addDays, dkey, parseKey, WD_LETTER } from '../lib/dates.js';
+import { hebrewMonthAnchor, hebrewMonthDays, hebrewMonthYear } from '../lib/dates.js';
 import { newAlarm, ALARM_TEMPLATES, alarmTitle, daysLabel, REL, buildInstances } from '../lib/alarms.js';
 import { activeTracks } from '../lib/tracks.js';
 import { shareText, testAlarm } from '../lib/native.js';
@@ -13,10 +14,17 @@ let offset = 0;
 export function times() {
   const c = ctx();
   const root = h('div', null);
-  root.appendChild(seg([['day', 'היום'], ['week', 'שבוע'], ['alarms', 'התראות']], view, (v) => { view = v; commit(); }));
+  if (view === 'alarms') {
+    root.appendChild(h('button', { class: 'btn sec block', style: 'margin-bottom:10px', onclick: () => { view = 'day'; commit(); } }, 'חזרה לזמנים'));
+    root.appendChild(alarmsView(c));
+    return root;
+  }
+  root.appendChild(h('div', { class: 'inline', style: 'margin-bottom:6px' },
+    h('div', { style: 'flex:3' }, seg([['day', 'היום'], ['week', 'שבוע'], ['month', 'חודש']], view, (v) => { view = v; commit(); })),
+    h('button', { class: 'btn', style: 'flex:1;margin-bottom:8px', onclick: () => { view = 'alarms'; commit(); } }, 'התראות')));
   if (view === 'day') root.appendChild(dayView(c));
   else if (view === 'week') root.appendChild(weekView(c));
-  else root.appendChild(alarmsView(c));
+  else root.appendChild(monthView(c));
   return root;
 }
 
@@ -86,6 +94,27 @@ export function newAlarmSheet() {
 }
 nav.newAlarm = newAlarmSheet;
 nav.timesView = (v) => { view = v; };
+
+let monthOff = 0;
+function monthView(c) {
+  const cols = ['alot', 'netz', 'shma', 'tfila', 'chatzot', 'shkiah', 'tzeit'];
+  const anchor = monthOff === 0 ? c.today : hebrewMonthAnchor(c.today, monthOff);
+  const days = hebrewMonthDays(anchor);
+  const root = h('div', null);
+  root.appendChild(navBar(h('div', { style: 'text-align:center' }, h('b', null, hebrewMonthYear(days[0])), h('div', { class: 'muted small' }, c.loc.name + ' · ' + METHODS[c.s.method])), () => { monthOff--; commit(); }, () => { monthOff++; commit(); }));
+  if (monthOff) root.appendChild(h('button', { class: 'btn ghost sm block', style: 'margin-bottom:8px', onclick: () => { monthOff = 0; commit(); } }, 'חזרה לחודש הנוכחי'));
+  const names = (id) => ZMAN_DEFS.find((z) => z.id === id).name;
+  const tbl = h('table', { class: 'wk' }, h('thead', null, h('tr', null, h('th', null, 'יום'), cols.map((id) => h('th', null, names(id))))),
+    h('tbody', null, days.map((d) => {
+      const z = zmanimFor(d, c.loc, c.s.method, c.s.tzeitMode);
+      return h('tr', { style: dkey(d) === c.tk ? 'color:var(--accent);font-weight:700' : '' }, h('td', null, WD_LETTER[d.getDay()] + '׳ ' + d.getDate() + '.' + (d.getMonth() + 1)), cols.map((id) => h('td', { style: 'direction:ltr' }, hhmm(z[id], c.loc.tz))));
+    })));
+  root.appendChild(h('div', { class: 'scrollx card' }, tbl));
+  root.appendChild(h('button', { class: 'btn sec block', onclick: async () => {
+    const r = await shareText('זמני החודש', days.map((d) => dayText(c, d)).join('\n\n')); if (r === 'copied') toast('הטבלה הועתקה ללוח');
+  } }, 'שיתוף זמני החודש'));
+  return root;
+}
 
 function alarmsView(c) {
   const root = h('div', null);
