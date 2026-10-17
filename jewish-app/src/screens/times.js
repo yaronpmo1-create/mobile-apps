@@ -99,11 +99,10 @@ nav.timesView = (v) => { view = v; };
 let monthOff = 0;
 function monthView(c) {
   const cols = ['alot', 'netz', 'shma', 'tfila', 'chatzot', 'shkiah', 'tzeit'];
-  const anchor = monthOff === 0 ? c.today : hebrewMonthAnchor(c.today, monthOff);
-  const days = hebrewMonthDays(anchor);
+  const days = Array.from({ length: 30 }, (_, i) => addDays(c.today, monthOff * 30 + i));
   const root = h('div', null);
-  root.appendChild(navBar(h('div', { style: 'text-align:center' }, h('b', null, hebrewMonthYear(days[0])), h('div', { class: 'muted small' }, c.loc.name + ' · ' + METHODS[c.s.method])), () => { monthOff--; commit(); }, () => { monthOff++; commit(); }));
-  if (monthOff) root.appendChild(h('button', { class: 'btn ghost sm block', style: 'margin-bottom:8px', onclick: () => { monthOff = 0; commit(); } }, 'חזרה לחודש הנוכחי'));
+  root.appendChild(navBar(h('div', { style: 'text-align:center' }, h('b', null, hebrewDayMonth(days[0]) + ' - ' + hebrewDayMonth(days[29])), h('div', { class: 'muted small' }, '30 יום מהיום · ' + c.loc.name + ' · ' + METHODS[c.s.method])), () => { monthOff--; commit(); }, () => { monthOff++; commit(); }));
+  if (monthOff) root.appendChild(h('button', { class: 'btn ghost sm block', style: 'margin-bottom:8px', onclick: () => { monthOff = 0; commit(); } }, 'חזרה להיום'));
   const names = (id) => ZMAN_DEFS.find((z) => z.id === id).name;
   const tbl = h('table', { class: 'wk' }, h('thead', null, h('tr', null, h('th', null, 'יום'), cols.map((id) => h('th', null, names(id))))),
     h('tbody', null, days.map((d) => {

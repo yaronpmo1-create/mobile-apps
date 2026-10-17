@@ -16,6 +16,9 @@ const dayLetter = (d) => stripNikud(hd(d).renderGematriya()).split(' ')[0];
 const sel = new Set();
 let selMode = false, selAct = 'skip';
 export function shiftMonth(delta) { mOff += delta; commit(); }
+// אחרי גרירת בחירה (לחיצה ארוכה והחלקה) אסור שהשחרור יחליף חודש
+let dragDone = false;
+export function consumeSelDrag() { const v = dragDone; dragDone = false; return v; }
 
 export function journal() {
   const c = ctx();
@@ -37,21 +40,32 @@ export function journal() {
     let cls = future ? 'none future' : ds.kind;
     if (k === c.tk && ds.kind !== 'full') cls = ds.kind === 'special' ? 'special' : 'none';
     const chag = isChagDay(d, c.loc, c.s);
-    const cell = h('button', { class: 'cell ' + cls + (k === c.tk ? ' today' : '') + (sel.has(k) ? ' sel' : '') },
+    const cell = h('button', { class: 'cell ' + cls + (k === c.tk ? ' today' : '') + (sel.has(k) ? ' sel' : ''), 'data-k': k },
       dayLetter(d), h('small', null, d.getDate()), chag && ds.kind !== 'special' ? h('i', { class: 'dot' }) : null);
     press(cell, () => { if (selMode) { if (sel.has(k)) sel.delete(k); else sel.add(k); if (!sel.size) selMode = false; rerender(); } else openDay(k); },
-      () => { selMode = true; sel.add(k); rerender(); });
+      () => {
+        // לחיצה ארוכה: מתחילים בחירה, ובהחלקה האצבע מסמנת גם את הימים שעוברת עליהם
+        selMode = true; sel.add(k); cell.classList.add('sel');
+        const move = (e) => {
+          e.preventDefault();
+          const t = e.touches[0], el = document.elementFromPoint(t.clientX, t.clientY), cc = el && el.closest && el.closest('[data-k]');
+          if (cc && !sel.has(cc.dataset.k)) { sel.add(cc.dataset.k); cc.classList.add('sel'); }
+        };
+        const end = () => { grid.removeEventListener('touchmove', move); grid.removeEventListener('touchend', end); grid.removeEventListener('touchcancel', end); dragDone = true; setTimeout(() => { dragDone = false; }, 400); rerender(); };
+        grid.addEventListener('touchmove', move, { passive: false });
+        grid.addEventListener('touchend', end); grid.addEventListener('touchcancel', end);
+      });
     grid.appendChild(cell);
   }
   root.appendChild(grid);
   root.appendChild(h('div', { class: 'legend' },
-    [['var(--ok)', 'הכל'], ['var(--warn)', 'חלקי'], ['var(--bad)', 'חסר'], ['var(--info)', 'חג / מיוחד']].map(([col, t]) => h('span', null, h('i', { style: 'background:' + col }), t))));
-  root.appendChild(h('p', { class: 'dim small', style: 'text-align:center' }, 'נגיעה פותחת יום · לחיצה ארוכה: בחירת כמה ימים · החלקה: חודש קודם/הבא'));
-  root.appendChild(h('button', { class: 'btn block', style: 'margin:6px 0', onclick: () => retro() }, 'השלמה רטרואקטיבית (סימון ימים קודמים)'));
-  root.appendChild(h('button', { class: 'btn sec block', style: 'margin:6px 0', onclick: () => stats() }, 'סטטיסטיקה והישגים'));
+    [['var(--ok)', 'הכל'], ['var(--warn)', 'חלקי'], ['var(--bad)', 'חסר'], ['var(--info)', 'חג / מיוחד / לא נספר']].map(([col, t]) => h('span', null, h('i', { style: 'background:' + col }), t))));
+  root.appendChild(h('p', { class: 'dim small', style: 'text-align:center' }, 'נגיעה פותחת יום · לחיצה ארוכה: בחירת כמה ימים · החלקה: חודש קודם/הבא · לחיצה ארוכה והחלקה: סימון כמה ימים ברצף'));
+  root.appendChild(h('button', { class: 'btn block', style: 'margin:6px 0', onclick: () => retro() }, 'השלמה ועדכון רטרואקטיבי'));
+  root.appendChild(h('button', { class: 'btn sec block', style: 'margin:6px 0', onclick: () => stats() }, 'מעקב והישגים'));
   if (selMode) {
     root.appendChild(h('div', { class: 'confirmbar', style: 'flex-direction:column' },
-      h('div', { class: 'seg', style: 'margin:0' }, [['skip', 'לא נספר (חופשה / יום מיוחד)'], ['count', 'נספר (רלוונטי)']].map(([v, l]) => h('button', { class: v === selAct ? 'on' : '', onclick: () => { selAct = v; rerender(); } }, l))),
+      h('div', { class: 'seg', style: 'margin:0' }, [['skip', 'חג / מיוחד / לא נספר'], ['count', 'נספר (רלוונטי)']].map(([v, l]) => h('button', { class: v === selAct ? 'on' : '', onclick: () => { selAct = v; rerender(); } }, l))),
       h('div', { style: 'display:flex;gap:10px' },
         h('button', { class: 'btn', onclick: () => {
           for (const k of sel) { if (selAct === 'skip') st.special[k] = 1; else delete st.special[k]; }
@@ -92,7 +106,7 @@ export function openDay(key) {
       } }, ds.kind === 'full' ? 'כל היום הושלם ✓' : 'סימנתי הכל'));
     }
     root.appendChild(h('div', { class: 'list', style: 'margin-top:12px' },
-      h('div', { class: 'row' }, h('div', { class: 'grow' }, h('div', { class: 't' }, 'יום מיוחד / חופשה / לא נספר'), h('div', { class: 's' }, 'לא נספר כהחמצה ולא שובר רצף')),
+      h('div', { class: 'row' }, h('div', { class: 'grow' }, h('div', { class: 't' }, 'חג / מיוחד / לא נספר'), h('div', { class: 's' }, 'לא נספר כהחמצה ולא שובר רצף')),
         toggle(!!st.special[key], (v) => { if (v) st.special[key] = 1; else delete st.special[key]; commit(); }))));
     if (ds.late) root.appendChild(h('p', { class: 'small muted' }, ds.late + ' סימונים באיחור (מסומנים בכתום)'));
     return root;

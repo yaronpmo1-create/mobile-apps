@@ -154,3 +154,10 @@ body:not(.ready) #app{visibility:hidden}
 .tab{padding:7px 2px 6px;gap:1px;justify-content:flex-start}
 .tab .ic{font-size:1.35rem;height:1.5rem;display:flex;align-items:center}
 .tab .lbl{display:block;font-size:.8rem;line-height:1.15;min-height:2.3em;text-align:center}
+
+.wheels{display:grid;grid-template-columns:.8fr 1.2fr 1.5fr;gap:6px;position:relative}
+.wheels::after{content:"";position:absolute;left:0;right:0;top:44px;height:44px;border-top:1.5px solid var(--accent);border-bottom:1.5px solid var(--accent);pointer-events:none;border-radius:8px}
+.wheel{height:132px;overflow-y:auto;scroll-snap-type:y mandatory;padding:44px 0;box-sizing:border-box;background:var(--card2);border:1.5px solid var(--line);border-radius:var(--radiusS);scrollbar-width:none;overscroll-behavior:contain;touch-action:pan-y;min-width:0}
+.wheel::-webkit-scrollbar{display:none}
+.wheel .wi{height:44px;line-height:44px;text-align:center;scroll-snap-align:center;color:var(--dim);font-size:.95rem;cursor:pointer}
+.wheel .wi.on{color:var(--text);font-weight:700}

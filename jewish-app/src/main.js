@@ -6,7 +6,7 @@ import { setRender, ctx, commit, nav } from './core.js';
 import { today, nextZman, countdown } from './screens/today.js';
 import { learn } from './screens/learn.js';
 import { times } from './screens/times.js';
-import { journal, shiftMonth } from './screens/journal.js';
+import { journal, shiftMonth, consumeSelDrag } from './screens/journal.js';
 import { settingsMain } from './screens/settings.js';
 import { firstRun, openCompass } from './screens/extras.js';
 import { syncNow, takeDone, setWidget, setDone } from './lib/native.js';
@@ -38,6 +38,7 @@ function render() {
     main.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
     main.addEventListener('touchend', (e) => {
       const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+      if (consumeSelDrag()) return;
       if (Math.abs(dx) > 70 && Math.abs(dy) < 50) shiftMonth(dx > 0 ? 1 : -1);
     }, { passive: true });
   }

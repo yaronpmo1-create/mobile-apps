@@ -218,8 +218,27 @@ export function backPress() {
   return true;
 }
 
-// בורר תאריך עברי: יום, חודש, שנה. מקבל ומחזיר מפתח יום לועזי (YYYY-MM-DD)
-const H_MONTH_NAMES = { 7: 'תשרי', 8: 'מרחשון', 9: 'כסלו', 10: 'טבת', 11: 'שבט', 1: 'ניסן', 2: 'אייר', 3: 'סיוון', 4: 'תמוז', 5: 'אב', 6: 'אלול' };
+// גלגל בחירה (גלילה עם הצמדה): items = [[ערך, תווית]], מחזיר אלמנט. onPick נקרא כשהגלגל נעצר על ערך חדש
+const WH = 44;
+function wheel(items, value, onPick) {
+  const el = h('div', { class: 'wheel', role: 'listbox' }, items.map(([v, l]) => h('div', { class: 'wi' + (String(v) === String(value) ? ' on' : ''), onclick: () => el.scrollTo({ top: items.findIndex((x) => String(x[0]) === String(v)) * WH, behavior: 'smooth' }) }, l)));
+  const idx0 = Math.max(0, items.findIndex((x) => String(x[0]) === String(value)));
+  const place = () => { el.scrollTop = idx0 * WH; };
+  let ready = false;
+  setTimeout(place, 0); setTimeout(place, 120); setTimeout(() => { place(); ready = true; }, 260);
+  let tm = null, cur = idx0;
+  el.addEventListener('scroll', () => {
+    if (!ready) return;
+    clearTimeout(tm);
+    tm = setTimeout(() => {
+      const i = Math.max(0, Math.min(items.length - 1, Math.round(el.scrollTop / WH)));
+      [...el.children].forEach((c, j) => c.classList.toggle('on', j === i));
+      if (i !== cur) { cur = i; onPick(items[i][0]); }
+    }, 110);
+  });
+  return el;
+}
+// בורר תאריך עברי בגלגלים: יום, חודש, שנה. מקבל ומחזיר מפתח יום לועזי (YYYY-MM-DD)
 const yearName = (y) => 'ה' + gematria(y - 5000);
 export function hebDate(valueKey, onChange) {
   const h0 = new HDate(parseKey(valueKey));
@@ -236,13 +255,13 @@ export function hebDate(valueKey, onChange) {
     if (m === 13 && !HDate.isLeapYear(y)) m = 12;
     d = Math.min(d, HDate.daysInMonth(m, y));
     const days = Array.from({ length: HDate.daysInMonth(m, y) }, (_, i) => [i + 1, gematria(i + 1)]);
-    const years = [y - 2, y - 1, y, y + 1].map((v) => [v, yearName(v)]);
+    const years = Array.from({ length: 9 }, (_, i) => y - 4 + i).map((v) => [v, yearName(v)]);
     const g = new HDate(d, m, y).greg();
     wrap.replaceChildren(
-      h('div', { class: 'hrow' },
-        sel(days, d, (v) => { d = Number(v); fire(); }),
-        sel(monthsOf(y), m, (v) => { m = Number(v); fire(); }),
-        sel(years, y, (v) => { y = Number(v); fire(); })),
+      h('div', { class: 'wheels' },
+        wheel(days, d, (v) => { d = Number(v); fire(); }),
+        wheel(monthsOf(y), m, (v) => { m = Number(v); fire(); }),
+        wheel(years, y, (v) => { y = Number(v); fire(); })),
       h('div', { class: 'dim small', style: 'margin-top:2px' }, 'לועזי: ' + g.getDate() + '.' + (g.getMonth() + 1) + '.' + g.getFullYear()));
   }
   draw();

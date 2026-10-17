@@ -33,7 +33,7 @@ export function learn() {
     list.appendChild(h('div', { class: 'row tap', 'data-id': t.id, style: t.paused ? 'opacity:.6' : '', onclick: () => editTrack(t.id) },
       h('div', { class: 'grow' },
         h('div', { class: 't' }, t.name, t.paused ? h('span', { class: 'tag blue' }, 'מושהה') : null),
-        h('div', { class: 's' }, trackSummary(t, c) + (t.paused ? '' : ' · הצלחה 30 יום: ' + trackPct(st, t, 30, c.tk) + '%')),
+        h('div', { class: 's' }, trackSummary(t, c)),
         pr != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(pr * 100) + '%' })) : null),
       h('button', { class: 'iconbtn nodrag', onclick: (e) => { e.stopPropagation(); trackMenu(t); } }, '⋮')));
   });
