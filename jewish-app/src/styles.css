@@ -139,8 +139,14 @@ body:not(.ready) #app{visibility:hidden}
 #splash h1{margin:0;color:#E8C26A;font-size:2rem;font-weight:800;letter-spacing:.5px}
 #splash p{margin:0;color:#AEB9CC;font-size:1rem}
 
+.hrow{display:grid;grid-template-columns:.8fr 1.2fr 1.5fr;gap:6px}
+.hrow select{padding:8px 1px;font-size:.9rem;text-align:center;text-align-last:center;appearance:none;-webkit-appearance:none;min-width:0}
 .pair{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch}
 .card.mini{margin:0;padding:8px 12px;min-height:66px;display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:0}
 .card.mini .one{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card.mini .mid{font-size:1.02rem}
+.card.mini .wrap{white-space:normal;line-height:1.25}
 .cell.sel{outline:3px solid var(--accent);outline-offset:-3px;box-shadow:inset 0 0 0 100px var(--accentSoft)}
+
+.tab{font-size:.82rem;line-height:1.15;text-align:center;padding-inline:2px}
+.tab .ic{font-size:1.3rem}

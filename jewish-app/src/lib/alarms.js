@@ -32,7 +32,7 @@ export function alarmTitle(a, st) {
   return (a.rel === 'at' ? '' : a.mins + ' דקות ' + REL[a.rel] + ' ') + zmanName(a.zman);
 }
 export function daysLabel(days, date) {
-  if (date) { const p = date.split('-'); return 'בתאריך ' + Number(p[2]) + '.' + Number(p[1]) + '.' + p[0]; }
+  if (date) { const p = date.split('-'); return 'בתאריך ' + hebrewDayMonth(new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), 12)); }
   if (!days || days.length === 7) return 'כל יום';
   return days.map((d) => DAY_LETTERS[d]).join('׳ ') + '׳';
 }

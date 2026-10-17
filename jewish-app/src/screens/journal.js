@@ -1,4 +1,4 @@
-import { chips, field, navBar, h, openPage, openSheet, actionSheet, confirmBox, toggle, toast, press } from '../ui.js';
+import { hebDate, chips, field, navBar, h, openPage, openSheet, actionSheet, confirmBox, toggle, toast, press } from '../ui.js';
 import { ctx, commit, nav } from '../core.js';
 import { HDate } from '@hebcal/core';
 import { dkey, parseKey, addDays, hebrewDate, hebrewMonthYear, hebrewMonthDays, hd, stripNikud, WD_LETTER, weekdayName, WEEKDAYS } from '../lib/dates.js';
@@ -92,7 +92,7 @@ export function openDay(key) {
       } }, ds.kind === 'full' ? 'כל היום הושלם ✓' : 'סימנתי הכל'));
     }
     root.appendChild(h('div', { class: 'list', style: 'margin-top:12px' },
-      h('div', { class: 'row' }, h('div', { class: 'grow' }, h('div', { class: 't' }, 'יום מיוחד / חופשה'), h('div', { class: 's' }, 'לא נספר כהחמצה ולא שובר רצף')),
+      h('div', { class: 'row' }, h('div', { class: 'grow' }, h('div', { class: 't' }, 'יום מיוחד / חופשה / לא נספר'), h('div', { class: 's' }, 'לא נספר כהחמצה ולא שובר רצף')),
         toggle(!!st.special[key], (v) => { if (v) st.special[key] = 1; else delete st.special[key]; commit(); }))));
     if (ds.late) root.appendChild(h('p', { class: 'small muted' }, ds.late + ' סימונים באיחור (מסומנים בכתום)'));
     return root;
@@ -159,8 +159,8 @@ export function retro() {
     h('label', { class: 'f' }, 'מסלולים'),
     chips(tracks.map((t) => [t.id, t.name]), [...sel], (v) => { if (sel.has(v)) sel.delete(v); else sel.add(v); sh.refresh(); }),
     h('div', { class: 'inline' },
-      field('מתאריך', h('input', { type: 'date', value: from, onchange: (e) => { if (e.target.value) from = e.target.value; } })),
-      field('עד תאריך', h('input', { type: 'date', value: to, onchange: (e) => { if (e.target.value) to = e.target.value; } }))),
+      field('מתאריך', hebDate(from, (v) => { from = v; })),
+      field('עד תאריך', hebDate(to, (v) => { to = v; }))),
     h('button', { class: 'btn sec sm', style: 'margin-top:8px', onclick: () => { from = tishreiKey(); sh.refresh(); } }, 'התחלה מראש השנה (תשרי)'),
     h('button', { class: 'btn block', style: 'margin-top:14px', onclick: () => {
       if (!sel.size) { toast('צריך לבחור מסלול'); return; }

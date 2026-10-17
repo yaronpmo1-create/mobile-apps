@@ -47,6 +47,7 @@ eq(learnInfo(chumash, parseKey(today), st).sub, 'פרשת נח - שישי', 'chu
 const tehilim = st.tracks.find((t) => t.tpl === 'tehilim');
 ok(learnInfo(tehilim, parseKey(today), st).sub.includes('תהלים'), 'psalms label ' + learnInfo(tehilim, parseKey(today), st).sub);
 const tanya = st.tracks.find((t) => t.tpl === 'tanya');
+tanya.counter = true; tanya.pos = 1; tanya.step = 1; // בדיקת מנגנון המונה (בפועל התניא לפי לוח)
 setEntry(st, today, tanya, 'done', today);
 eq(tanya.pos, 2, 'tanya advanced');
 setEntry(st, today, tanya, null, today);
@@ -116,6 +117,11 @@ eq(defaults().settings.auto.omer, true, 'omer default on');
 eq(gematria(26), 'כ״ו', 'gematria 26'); eq(gematria(15), 'ט״ו', 'gematria 15'); eq(gematria(7), 'ז׳', 'gematria 7');
 ok(hebrewDate(new Date(2026, 9, 18)).includes('מרחשון'), 'marcheshvan name');
 { const sx = defaults().settings; sx.dayChange = 'time'; sx.dayChangeTime = '21:00'; eq(todayKey(sx, new Date(2026, 9, 18, 21, 30)), '2026-10-19', 'day changes at custom time'); eq(todayKey(sx, new Date(2026, 9, 18, 20, 30)), '2026-10-18', 'before custom time'); eq(todayKey(defaults().settings, new Date(2026, 9, 18, 23, 30)), '2026-10-18', 'default change at midnight'); }
+// לוח התניא היומי
+{ const st3 = defaults(); addTemplate(st3, 'tanya'); const tn = st3.tracks[0];
+  eq(learnInfo(tn, new Date(2026, 9, 18, 12), st3).sub, 'אגרת הקודש, אמצע אגרת כ״ו', 'tanya 18.10.2026');
+  eq(learnInfo(tn, new Date(2026, 11, 4, 12), st3).sub, 'ליקוטי אמרים, תחילת פרק א׳', 'tanya 4.12.2026');
+  eq(learnInfo(tn, new Date(2027, 5, 11, 12), st3).sub, 'שער היחוד והאמונה, הקדמה', 'tanya 11.6.2027'); }
 // התראה בתאריך מסוים: מופיעה רק בו
 {
   const st2 = defaults();

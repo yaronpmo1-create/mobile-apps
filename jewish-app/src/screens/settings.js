@@ -1,4 +1,4 @@
-import { h, openPage, openSheet, actionSheet, confirmBox, seg, chips, field, sel, txt, toggle, toast, icon } from '../ui.js';
+import { hebDate, h, openPage, openSheet, actionSheet, confirmBox, seg, chips, field, sel, txt, toggle, toast, icon } from '../ui.js';
 import { ctx, commit } from '../core.js';
 import { PALETTES, exportJson, replaceAll, reset } from '../lib/store.js';
 import { getLoc, METHODS } from '../lib/zm.js';
@@ -129,8 +129,8 @@ function addVacation() {
   const c = ctx();
   let from = c.tk, to = dkey(addDays(c.today, 7));
   openSheet('טווח חופשה', (sh) => h('div', null,
-    field('מתאריך', h('input', { type: 'date', value: from, onchange: (e) => (from = e.target.value) })),
-    field('עד תאריך', h('input', { type: 'date', value: to, onchange: (e) => (to = e.target.value) })),
+    field('מתאריך', hebDate(from, (v) => { from = v; })),
+    field('עד תאריך', hebDate(to, (v) => { to = v; })),
     h('button', { class: 'btn block', style: 'margin-top:14px', onclick: () => { if (!from || !to || to < from) { toast('טווח לא תקין'); return; } c.st.vacations.push({ from, to }); sh.close(); commit(); } }, 'שמירה')));
 }
 

@@ -16,7 +16,7 @@ import { hhmm } from './lib/dates.js';
 load();
 // תצוגה מקדימה בדפדפן: נתוני דוגמה (ערכת חת״ת) כדי שהמסך הראשי לא יהיה ריק
 if (window.__PREVIEW && !get().tracks.length) { addTemplate(get(), 'chitas'); get().first = false; }
-const TABS = [['today', 'היום', '◉'], ['times', 'זמנים', '◔'], ['learn', 'לימוד', '☰'], ['journal', 'יומן', '▦']];
+const TABS = [['today', 'היום', '◉'], ['times', 'זמנים והתראות', '◔'], ['learn', 'לימוד ומסלולים', '☰'], ['journal', 'יומן ומעקב', '▦']];
 const TITLES = { today: 'אפליקציה יהודית', learn: 'לימוד ומסלולים', times: 'זמנים והתראות', journal: 'יומן ומעקב' };
 const SCREENS = { today, learn, times, journal };
 let tab = 'today';
@@ -33,12 +33,12 @@ function render() {
   const main = h('div', { class: 'main' }, body);
   const bar = h('div', { class: 'tabbar' }, TABS.map(([k, l, ic]) => h('button', { class: 'tab' + (k === tab ? ' on' : ''), onclick: () => goTab(k) }, h('span', { class: 'ic' }, ic), l)));
   if (tab === 'journal') {
-    // החלקה ימינה = חודש קודם, שמאלה = חודש הבא
+    // החלקה ימינה = חודש הבא, שמאלה = חודש קודם (כיוון עברית)
     let sx = 0, sy = 0;
     main.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
     main.addEventListener('touchend', (e) => {
       const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
-      if (Math.abs(dx) > 70 && Math.abs(dy) < 50) shiftMonth(dx > 0 ? -1 : 1);
+      if (Math.abs(dx) > 70 && Math.abs(dy) < 50) shiftMonth(dx > 0 ? 1 : -1);
     }, { passive: true });
   }
   app.replaceChildren(top, main, bar);

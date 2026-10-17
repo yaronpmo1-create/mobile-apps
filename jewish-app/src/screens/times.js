@@ -1,4 +1,4 @@
-import { navBar, h, openPage, openSheet, actionSheet, confirmBox, seg, chips, field, sel, txt, toggle, toast } from '../ui.js';
+import { hebDate, navBar, h, openPage, openSheet, actionSheet, confirmBox, seg, chips, field, sel, txt, toggle, toast } from '../ui.js';
 import { ctx, commit, nav } from '../core.js';
 import { ZMAN_DEFS, zmanimFor, zmanName, METHODS, timedOn, dayEvents, parshaOfWeek, isRestDay } from '../lib/zm.js';
 import { hhmm, weekdayName, hebrewDate, addDays, dkey, parseKey, WD_LETTER } from '../lib/dates.js';
@@ -178,7 +178,7 @@ export function editAlarm(id, type, preset, back) {
     } else {
       root.appendChild(h('label', { class: 'f' }, 'תאריך מסוים (לא חובה): ההתראה תפעל רק בו'));
       root.appendChild(h('div', { class: 'inline' },
-        h('input', { type: 'date', value: d.date || '', onchange: (e) => { d.date = e.target.value || ''; pg.refresh(); } }),
+        d.date ? h('div', { style: 'flex:3' }, hebDate(d.date, (v) => { d.date = v; })) : h('button', { class: 'btn sec', onclick: () => { d.date = c.tk; pg.refresh(); } }, 'קביעת תאריך מסוים'),
         d.date ? h('button', { class: 'btn sec sm', style: 'flex:none', onclick: () => { d.date = ''; pg.refresh(); } }, 'ניקוי תאריך') : null));
       if (!d.date) {
         root.appendChild(h('label', { class: 'f' }, 'ימים'));

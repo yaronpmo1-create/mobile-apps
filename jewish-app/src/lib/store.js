@@ -10,7 +10,7 @@ export const TAB_COLORS = { today: '#C99A2E', learn: '#2E8B57', times: '#2F6FB5'
 
 export function defaults() {
   return {
-    v: 3,
+    v: 4,
     first: true,
     settings: {
       theme: 'auto', palette: 'gold', fontScale: 1, density: 'normal', contrast: false, tabColors: false, corners: 'round',
@@ -63,6 +63,10 @@ function migrate(s) {
       if (t.tpl === 'tanya' && t.total === 53) t.total = 109;
     }
     s.v = 3;
+  }
+  if (s.v < 4) {
+    for (const t of s.tracks) if (t.tpl === 'tanya') { t.auto = 'tanyaYomi'; t.counter = false; t.total = 0; }
+    s.v = 4;
   }
   return s;
 }

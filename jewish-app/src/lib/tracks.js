@@ -4,6 +4,7 @@ import '@hebcal/learning';
 import { dkey, parseKey, addDays, hebrewDayMonth, stripNikud, tishreiKey, gematria, hebrewDayLetter } from './dates.js';
 import { getLoc, isRestDay, parshaOfWeek } from './zm.js';
 import { uid } from './store.js';
+import { TANYA_DAYS } from './tanya-data.js';
 
 // חלקי התניא לפי סדר, ומספר הפרקים בכל חלק
 const TANYA = [['ליקוטי אמרים', 53], ['שער היחוד והאמונה', 12], ['אגרת התשובה', 12], ['אגרת הקודש', 32]];
@@ -11,6 +12,15 @@ export function tanyaPos(n) {
   let x = Math.max(1, Math.floor(n));
   for (const [name, cnt] of TANYA) { if (x <= cnt) return name + ', פרק ' + gematria(x); x -= cnt; }
   return 'קונטרס אחרון';
+}
+// "ספר|מספר|מקום" -> "אגרת הקודש, אמצע אגרת כ״ו"
+const T_BOOK = { L: 'ליקוטי אמרים', S: 'שער היחוד והאמונה', T: 'אגרת התשובה', K: 'אגרת הקודש', A: 'קונטרס אחרון' };
+const T_SPECIAL = { x1: 'שער הספר והסכמות', x2: 'הסכמות (המשך)', x3: 'הקדמה', x4: 'הקדמת המלקט' };
+const T_POS = { b: 'תחילת ', m: 'אמצע ', e: 'סוף ', w: '' };
+export function tanyaText(code) {
+  const [b, n, pos] = code.split('|');
+  const what = T_SPECIAL[n] || ((b === 'K' ? 'אגרת ' : b === 'A' ? 'מאמר ' : 'פרק ') + gematria(Number(n)));
+  return T_BOOK[b] + ', ' + T_POS[pos] + what;
 }
 export const ALIYOT = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שביעי'];
 export const PARTS = { morning: 'בוקר', afternoon: 'אחר הצהריים', evening: 'ערב ולילה', any: 'במהלך היום' };
@@ -20,7 +30,7 @@ const CH = 'https://www.chabad.org/dailystudy/';
 export const TEMPLATES = [
   { tpl: 'chumash', name: 'חומש עם רש״י', auto: 'chumash', freq: 'daily', part: 'morning', url: CH + 'torahreading.asp' },
   { tpl: 'tehilim', name: 'תהילים יומי', auto: 'psalms', freq: 'daily', part: 'morning', url: CH + 'tehillim.asp' },
-  { tpl: 'tanya', name: 'תניא יומי', counter: true, unit: 'פרק', pos: 1, total: 109, step: 1, freq: 'daily', part: 'morning', url: CH + 'tanya.asp' },
+  { tpl: 'tanya', name: 'תניא יומי', auto: 'tanyaYomi', freq: 'daily', part: 'morning', url: CH + 'tanya.asp' },
   { tpl: 'hayomyom', name: 'היום יום', auto: 'hayomyom', freq: 'daily', part: 'morning', url: CH + 'hayomyom.asp' },
   { tpl: 'rambam1', name: 'רמב״ם - פרק אחד ביום', auto: 'rambam1', freq: 'daily', part: 'afternoon' },
   { tpl: 'rambam3', name: 'רמב״ם - שלושה פרקים ביום', auto: 'rambam3', freq: 'daily', part: 'afternoon' },
@@ -35,7 +45,7 @@ export const TEMPLATES = [
   { tpl: 'free', name: 'מסלול חופשי', freq: 'daily', part: 'any' },
 ];
 export const AUTO_KINDS = {
-  chumash: 'חומש לפי פרשת השבוע', psalms: 'תהילים חודשי', hayomyom: 'היום יום', rambam1: 'רמב״ם 1', rambam3: 'רמב״ם 3',
+  chumash: 'חומש לפי פרשת השבוע', tanyaYomi: 'תניא יומי (לוח חב״ד)', psalms: 'תהילים חודשי', hayomyom: 'היום יום', rambam1: 'רמב״ם 1', rambam3: 'רמב״ם 3',
   dafYomi: 'דף יומי', mishnaYomi: 'משנה יומית', tanakhYomi: 'נ״ך יומי', nachYomi: 'נביאים יומי', dafWeekly: 'דף שבועי',
 };
 export const CHITAS = ['chumash', 'tehilim', 'tanya', 'hayomyom'];
@@ -68,6 +78,9 @@ export function learnInfo(track, date, st) {
     if (track.auto === 'chumash') {
       const p = parshaOfWeek(date, loc, st.settings);
       if (p) out.sub = 'פרשת ' + p + ' - ' + ALIYOT[date.getDay()];
+    } else if (track.auto === 'tanyaYomi') {
+      const code = TANYA_DAYS[dkey(date)];
+      out.sub = code ? tanyaText(code) : 'לוח התניא לתאריך הזה יתווסף בעדכון';
     } else if (track.auto === 'hayomyom') {
       out.sub = hebrewDayMonth(date);
     } else if (track.auto) {

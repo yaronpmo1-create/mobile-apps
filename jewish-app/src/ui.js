@@ -1,3 +1,5 @@
+import { HDate } from '@hebcal/core';
+import { dkey, parseKey, gematria, hebrewDate } from './lib/dates.js';
 // כלי ממשק: בניית אלמנטים, שכבות (דפים וחלונות) עם כפתור "חזרה" של אנדרואיד
 export function h(tag, props, ...kids) {
   const el = document.createElement(tag);
@@ -214,4 +216,35 @@ export function backPress() {
   L.closed = true;
   L.onClose();
   return true;
+}
+
+// בורר תאריך עברי: יום, חודש, שנה. מקבל ומחזיר מפתח יום לועזי (YYYY-MM-DD)
+const H_MONTH_NAMES = { 7: 'תשרי', 8: 'מרחשון', 9: 'כסלו', 10: 'טבת', 11: 'שבט', 1: 'ניסן', 2: 'אייר', 3: 'סיוון', 4: 'תמוז', 5: 'אב', 6: 'אלול' };
+const yearName = (y) => 'ה' + gematria(y - 5000);
+export function hebDate(valueKey, onChange) {
+  const h0 = new HDate(parseKey(valueKey));
+  let y = h0.getFullYear(), m = h0.getMonth(), d = h0.getDate();
+  const wrap = h('div', { class: 'hdate' });
+  const monthsOf = (yy) => {
+    const leap = HDate.isLeapYear(yy);
+    const out = [[7, 'תשרי'], [8, 'מרחשון'], [9, 'כסלו'], [10, 'טבת'], [11, 'שבט']];
+    if (leap) out.push([12, 'אדר א׳'], [13, 'אדר ב׳']); else out.push([12, 'אדר']);
+    return out.concat([[1, 'ניסן'], [2, 'אייר'], [3, 'סיוון'], [4, 'תמוז'], [5, 'אב'], [6, 'אלול']]);
+  };
+  const fire = () => { const k = dkey(new HDate(d, m, y).greg()); onChange(k); draw(); };
+  function draw() {
+    if (m === 13 && !HDate.isLeapYear(y)) m = 12;
+    d = Math.min(d, HDate.daysInMonth(m, y));
+    const days = Array.from({ length: HDate.daysInMonth(m, y) }, (_, i) => [i + 1, gematria(i + 1)]);
+    const years = [y - 2, y - 1, y, y + 1].map((v) => [v, yearName(v)]);
+    const g = new HDate(d, m, y).greg();
+    wrap.replaceChildren(
+      h('div', { class: 'hrow' },
+        sel(days, d, (v) => { d = Number(v); fire(); }),
+        sel(monthsOf(y), m, (v) => { m = Number(v); fire(); }),
+        sel(years, y, (v) => { y = Number(v); fire(); })),
+      h('div', { class: 'dim small', style: 'margin-top:2px' }, 'לועזי: ' + g.getDate() + '.' + (g.getMonth() + 1) + '.' + g.getFullYear()));
+  }
+  draw();
+  return wrap;
 }

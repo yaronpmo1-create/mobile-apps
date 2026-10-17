@@ -162,11 +162,13 @@ export function today() {
     try { nextAl = buildInstances(st, c.now, 3, 40)[0] || null; } catch (e) { /* */ }
     root.appendChild(h('div', { class: 'pair' },
       h('div', { class: 'card mini tap', onclick: () => nav.goTab('times') },
-        h('div', { class: 'muted small' }, nz ? nz.name + ' · ' + hhmm(nz.t, loc.tz) : 'הזמן הבא'),
-        h('div', { class: 'big mid one' }, nz ? 'בעוד ' + countdown(nz.t - c.now) + (al ? ' · התראה ' + hhmm(al, loc.tz) : '') : '-')),
+        h('div', { class: 'muted small' }, 'הזמן הבא · ' + (nz ? hhmm(nz.t, loc.tz) : '')),
+        h('div', { class: 'big mid wrap' }, nz ? nz.name : '-'),
+        h('div', { class: 'muted small' }, nz ? 'בעוד ' + countdown(nz.t - c.now) : '')),
       h('div', { class: 'card mini tap', onclick: () => nav.goTab('times') },
-        h('div', { class: 'muted small' }, 'ההתראה הבאה'),
-        h('div', { class: 'big mid one' }, nextAl ? hhmm(new Date(nextAl.t)) + ' · ' + nextAl.title : 'אין בקרוב'))));
+        h('div', { class: 'muted small' }, 'ההתראה הבאה · ' + (nextAl ? hhmm(new Date(nextAl.t)) : '')),
+        h('div', { class: 'big mid wrap' }, nextAl ? nextAl.title : 'אין התראה בקרוב'),
+        h('div', { class: 'muted small' }, nextAl ? 'בעוד ' + countdown(nextAl.t - c.now.getTime()) : ''))));
     if (tt.candles && tt.candles > c.now) root.appendChild(h('div', { class: 'card mini', style: 'margin-top:8px' }, h('span', { class: 'muted small' }, 'הדלקת נרות היום '), h('b', null, hhmm(tt.candles, loc.tz) + ' · בעוד ' + countdown(tt.candles - c.now))));
   }
 
@@ -201,7 +203,7 @@ export function today() {
   root.appendChild(h('p', { class: 'dim small', style: 'text-align:center' }, 'נגיעה בוחרת, ואז לוחצים אישור · לחיצה ארוכה: הערה ו"איפה עצרתי"'));
 
   // עדכון לימוד: השלמות והוספת מסלול (בסוף)
-  root.appendChild(secHead('עדכון לימוד', [['השלמות', () => nav.retro && nav.retro()], ['+ מסלול', () => pickTemplate()]]));
+  root.appendChild(secHead('עדכון לימוד', [['השלמות', () => nav.goTab('journal')], ['+ מסלול', () => pickTemplate()]]));
 
   if (pending.size) root.appendChild(h('div', { class: 'confirmbar' },
     h('button', { class: 'btn', onclick: () => confirmPending(c, key) }, 'אישור (' + pending.size + ')'),
