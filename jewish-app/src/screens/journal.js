@@ -2,7 +2,7 @@ import { hebDate, chips, field, navBar, h, openPage, openSheet, actionSheet, con
 import { ctx, commit, nav } from '../core.js';
 import { HDate } from '@hebcal/core';
 import { dkey, parseKey, addDays, hebrewDate, hebrewMonthYear, hebrewMonthDays, hd, stripNikud, WD_LETTER, weekdayName, WEEKDAYS } from '../lib/dates.js';
-import { setEntry, isDue, dayStatus, dueTracks, activeTracks, getEntry, streak, missingDays, pctRange, trackPct, lateCount, markAll, undoMark, isFreeDay, firstKey } from '../lib/tracks.js';
+import { setEntry, isDue, dayStatus, dueTracks, activeTracks, getEntry, streak, missingDays, pctRange, trackPct, lateCount, markAll, undoMark, isFreeDay, firstKey, beyondWindow } from '../lib/tracks.js';
 import { isChagDay } from '../lib/zm.js';
 import { trackRow } from './today.js';
 import { setDone, shareText } from '../lib/native.js';
@@ -71,9 +71,45 @@ export function journal() {
           for (const k of sel) { if (selAct === 'skip') st.special[k] = 1; else delete st.special[k]; }
           const n = sel.size; sel.clear(); selMode = false; commit(); toast(selAct === 'skip' ? n + ' ימים סומנו כלא נספרים' : n + ' ימים חזרו להיספר');
         } }, 'אישור (' + sel.size + ')'),
-        h('button', { class: 'btn sec', onclick: () => { sel.clear(); selMode = false; rerender(); } }, 'ביטול'))));
+        h('button', { class: 'btn sec', onclick: () => { sel.clear(); selMode = false; rerender(); } }, 'ביטול')),
+      h('button', { class: 'btn ghost block', onclick: () => lessonsForSelected() }, 'סימון שיעורים בימים שנבחרו')));
   }
   return root;
+}
+
+// סימון שיעורים בכמה ימים יחד: בוחרים מסלולים ופעולה, והיא חלה על כל הימים הנבחרים שבהם המסלול מתוזמן
+function lessonsForSelected() {
+  const c = ctx(), st = c.st;
+  const keys = [...sel].sort();
+  const tracks = activeTracks(st);
+  const chosen = new Set(tracks.map((t) => t.id));
+  let act = 'done';
+  openSheet('סימון שיעורים ב-' + keys.length + ' ימים', (sh) => {
+    const trBtns = tracks.map((t) => { const b = h('button', { class: 'chip on', onclick: () => { if (chosen.has(t.id)) chosen.delete(t.id); else chosen.add(t.id); b.classList.toggle('on', chosen.has(t.id)); } }, t.name); return b; });
+    const acts = [['done', 'סומן שנלמד'], ['skip', 'דלג (לא נספר)'], ['clear', 'ביטול סימון']];
+    const aBtns = acts.map(([v, l]) => { const b = h('button', { class: v === act ? 'on' : '', onclick: () => { act = v; aBtns.forEach((x, i) => x.classList.toggle('on', acts[i][0] === v)); } }, l); return b; });
+    return h('div', null,
+      h('label', { class: 'f' }, 'אילו שיעורים'),
+      h('div', { class: 'chips' }, trBtns),
+      h('label', { class: 'f' }, 'מה לעשות'),
+      h('div', { class: 'seg' }, aBtns),
+      h('div', { class: 'inline', style: 'margin-top:12px' },
+        h('button', { class: 'btn', onclick: () => {
+          let n = 0;
+          for (const k of keys) {
+            if (beyondWindow(k, c.tk)) continue;
+            for (const t of dueTracks(st, k)) {
+              if (!chosen.has(t.id)) continue;
+              setEntry(st, k, t, act === 'clear' ? null : act, c.tk);
+              const e = getEntry(st, k, t.id);
+              setDone(k, t.id, !!(e && (e.s === 'done' || e.s === 'late' || e.s === 'skip')));
+              n++;
+            }
+          }
+          sh.close(); sel.clear(); selMode = false; commit(); toast('עודכנו ' + n + ' סימונים');
+        } }, 'אישור'),
+        h('button', { class: 'btn sec', onclick: () => sh.close() }, 'ביטול')));
+  });
 }
 
 export function openDay(key) {
@@ -84,20 +120,20 @@ export function openDay(key) {
     const st = c2.st;
     const root = h('div', null);
     root.appendChild(h('div', { class: 'h-sub' }, d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear()));
-    if (key > c2.tk) root.appendChild(h('div', { class: 'banner' }, 'יום עתידי. אפשר לסמן רק מהיום והלאה לאחור.'));
+    if (beyondWindow(key, c2.tk)) root.appendChild(h('div', { class: 'banner' }, 'אפשר לסמן עד שישה ימים קדימה, לא מעבר לכך.'));
     const due = dueTracks(st, key);
     const free = isFreeDay(st, key);
     const ds = dayStatus(st, key);
     if (!due.length) root.appendChild(h('div', { class: 'card empty-note' }, 'אין לימוד מתוזמן ליום הזה.'));
     root.appendChild(h('div', { class: 'list' }, due.map((t) => {
-      const row = trackRow(c2, key, t, { milestone: key === c2.tk });
+      const row = trackRow(c2, key, t, { milestone: key === c2.tk, readonly: beyondWindow(key, c2.tk) });
       const n = ((st.notes || {})[key] || {})[t.id];
       if (n) row.querySelector('.grow').appendChild(h('div', { class: 's' }, 'הערה: ' + n));
       return row;
     })));
     const others = activeTracks(st).filter((t) => !due.includes(t));
     if (others.length) root.appendChild(h('p', { class: 'dim small' }, 'מסלולים שלא מתוזמנים ליום הזה לא מוצגים.'));
-    if (due.length && key <= c2.tk) {
+    if (due.length && !beyondWindow(key, c2.tk)) {
       root.appendChild(h('button', { class: 'btn block', disabled: ds.kind === 'full', onclick: () => {
         const ids = markAll(st, key, c2.tk);
         ids.forEach((id) => setDone(key, id, true));

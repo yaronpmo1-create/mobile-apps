@@ -31,7 +31,7 @@ function render() {
   let body;
   try { body = SCREENS[tab](); } catch (e) { body = h('pre', { style: 'white-space:pre-wrap;color:var(--bad)' }, 'שגיאה: ' + e.message + '\n' + (e.stack || '')); console.error(e); }
   const main = h('div', { class: 'main' }, body);
-  const bar = h('div', { class: 'tabbar' }, TABS.map(([k, l, ic]) => h('button', { class: 'tab' + (k === tab ? ' on' : ''), onclick: () => goTab(k) }, h('span', { class: 'ic' }, ic), h('span', { class: 'lbl' }, l.split('\n').flatMap((x, i) => (i ? [h('br'), x] : [x]))))));
+  const bar = h('div', { class: 'tabbar' }, TABS.map(([k, l, ic]) => h('button', { class: 'tab' + (k === tab ? ' on' : ''), onclick: () => goTab(k) }, h('span', { class: 'ic' }, ic), h('span', { class: 'lbl' }, l.split('\n').flatMap((x, i) => (i ? [h('br'), h('span', { class: 'l2' }, x)] : [h('span', { class: 'l1' }, x)]))))));
   if (tab === 'journal') {
     // החלקה ימינה = חודש הבא, שמאלה = חודש קודם (כיוון עברית)
     let sx = 0, sy = 0;

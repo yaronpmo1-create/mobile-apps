@@ -128,6 +128,8 @@ export const dueTracks = (st, key) => activeTracks(st).filter((t) => isDue(t, ke
 export const getEntry = (st, key, id) => (st.entries[key] || {})[id] || null;
 
 // האם סימון בזמן "עכשיו" ליום key נחשב באיחור (שבת וחג: אפשר להשלים עד מוצאי השבת/החג)
+// אפשר לסמן עד שישה ימים קדימה, לא מעבר לכך
+export const beyondWindow = (key, tk) => key > dkey(addDays(parseKey(tk), 6));
 export function isLateMark(st, key, nowKey) {
   if (nowKey <= key) return false;
   const loc = getLoc(st.settings);

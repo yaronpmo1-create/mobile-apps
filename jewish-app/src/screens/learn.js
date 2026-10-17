@@ -27,25 +27,33 @@ export function learn() {
   const act = st.tracks.filter((t) => !t.archived).sort((a, b) => a.order - b.order);
   const arch = st.tracks.filter((t) => t.archived);
   if (!act.length) root.appendChild(h('div', { class: 'card empty-note' }, 'עוד אין מסלולים. אפשר להתחיל מערכת חת״ת מוכנה או מכל תבנית אחרת.'));
-  const list = h('div', { class: 'list' });
-  act.forEach((t, i) => {
-    const pr = progressOf(t);
-    list.appendChild(h('div', { class: 'row tap', 'data-id': t.id, style: t.paused ? 'opacity:.6' : '', onclick: () => editTrack(t.id) },
-      h('div', { class: 'grow' },
-        h('div', { class: 't' }, t.name, t.paused ? h('span', { class: 'tag blue' }, 'מושהה') : null),
-        h('div', { class: 's' }, trackSummary(t, c)),
-        pr != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(pr * 100) + '%' })) : null),
-      h('button', { class: 'iconbtn nodrag', onclick: (e) => { e.stopPropagation(); trackMenu(t); } }, '⋮')));
-  });
-  if (act.length) {
-    dragSort(list, (ids) => { ids.forEach((id, k) => { const tr = st.tracks.find((x) => x.id === id); if (tr) tr.order = k; }); commit(); });
+  const ORDER = ['morning', 'afternoon', 'evening', 'any'];
+  const groups = ORDER.map((k) => [k, act.filter((t) => (ORDER.includes(t.part) ? t.part : 'any') === k)]).filter(([, l]) => l.length);
+  const renumber = (changedKey, ids) => {
+    const seq = [];
+    for (const [k, l] of groups) (k === changedKey ? ids.map((id) => st.tracks.find((x) => x.id === id)).filter(Boolean) : l).forEach((t) => seq.push(t));
+    seq.forEach((t, i) => { t.order = i; });
+  };
+  for (const [gk, gl] of groups) {
+    root.appendChild(h('div', { class: 'section-title' }, PARTS[gk]));
+    const list = h('div', { class: 'list' });
+    gl.forEach((t) => {
+      const pr = progressOf(t);
+      list.appendChild(h('div', { class: 'row tap', 'data-id': t.id, style: t.paused ? 'opacity:.6' : '', onclick: () => editTrack(t.id) },
+        h('div', { class: 'grow' },
+          h('div', { class: 't' }, t.name, t.paused ? h('span', { class: 'tag blue' }, 'מושהה') : null),
+          h('div', { class: 's' }, trackSummary(t, c)),
+          pr != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(pr * 100) + '%' })) : null),
+        h('button', { class: 'iconbtn nodrag', onclick: (e) => { e.stopPropagation(); trackMenu(t); } }, '⋮')));
+    });
+    dragSort(list, (ids) => { renumber(gk, ids); commit(); });
     root.appendChild(list);
   }
   if (arch.length) {
     root.appendChild(h('div', { class: 'section-title' }, 'ארכיון'));
     root.appendChild(h('div', { class: 'list' }, arch.map((t) => h('div', { class: 'row tap', onclick: () => trackMenu(t) }, h('div', { class: 'grow' }, h('div', { class: 't' }, t.name), h('div', { class: 's' }, 'בארכיון. ההיסטוריה נשמרה'))))));
   }
-  root.appendChild(h('p', { class: 'dim small', style: 'text-align:center;margin-top:12px' }, 'לחיצה ארוכה על מסלול וגרירה משנות סדר · ⋮ להשהיה, שכפול וארכיון'));
+  root.appendChild(h('p', { class: 'dim small', style: 'text-align:center;margin-top:12px' }, 'לחיצה ארוכה על מסלול וגרירה משנות סדר בתוך הקבוצה · ⋮ להשהיה, שכפול וארכיון · את הקבוצה (בוקר וכו׳) משנים בעריכת המסלול'));
   return root;
 }
 

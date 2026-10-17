@@ -5,7 +5,7 @@ import { pickTemplate } from './learn.js';
 import { hebrewDate, weekdayName, parseKey, addDays, dkey, hhmm, pad } from '../lib/dates.js';
 import { ZMAN_DEFS, zmanimFor, dayEvents, parshaOfWeek, timedOn, omerDay, isRestDay, zmanName } from '../lib/zm.js';
 import { hebrewDate as _hd } from '../lib/dates.js';
-import { dueTracks, getEntry, setEntry, learnInfo, progressOf, PARTS, markAll, undoMark, missingDays, streak, dayStatus, isFreeDay, isLateMark } from '../lib/tracks.js';
+import { dueTracks, getEntry, setEntry, learnInfo, progressOf, PARTS, markAll, undoMark, missingDays, streak, dayStatus, isFreeDay, isLateMark, beyondWindow } from '../lib/tracks.js';
 import { setDone, openLink } from '../lib/native.js';
 import { chabadOn } from '../lib/chabad.js';
 import { HDate } from '@hebcal/core';
@@ -55,7 +55,9 @@ export function trackNoteSheet(c, key, track) {
     h('label', { class: 'f' }, 'איפה עצרתי (יוצג בהמשך)'), txt(where, (v) => (where = v), 'למשל: סעיף ג׳'),
     h('label', { class: 'f' }, 'הערה ליום הזה'), h('textarea', { oninput: (ev) => (note = ev.target.value) }, note),
     h('div', { class: 'inline', style: 'margin-top:12px' },
-      h('button', { class: 'btn sec', onclick: () => { markTrack(c, key, track, 'skip'); sh.close(); } }, 'דלג היום'),
+      ((getEntry(c.st, key, track.id) || {}).s === 'skip')
+        ? h('button', { class: 'btn', onclick: () => { markTrack(c, key, track, null); sh.close(); } }, 'ביטול הדילוג')
+        : h('button', { class: 'btn sec', onclick: () => { markTrack(c, key, track, 'skip'); sh.close(); toast('סומן דילוג', 'ביטול', () => markTrack(c, key, track, null)); } }, 'דלג היום'),
       h('button', { class: 'btn', onclick: () => {
         track.where = where;
         c.st.notes = c.st.notes || {};
@@ -84,7 +86,7 @@ export function trackRow(c, key, track, opts = {}) {
       info.where ? h('div', { class: 's' }, 'המשך: ' + info.where) : null,
       pr != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(pr * 100) + '%' })) : null));
   press(el, () => {
-    if (opts.readonly) { toast('אי אפשר לסמן יום עתידי'); return; }
+    if (opts.readonly) { toast('אפשר לסמן עד שישה ימים קדימה'); return; }
     if (pend) { if (pend.has(track.id)) pend.delete(track.id); else pend.add(track.id); rerender(); return; }
     const r = markTrack(c, key, track, e && e.s !== 'skip' ? null : 'done');
     if (!r.was && r.e && opts.milestone !== false) milestone(c);
@@ -129,7 +131,7 @@ export function today() {
   const d = addDays(c.today, dayOff);
   const key = dkey(d);
   const isToday = dayOff === 0;
-  const future = key > c.tk;
+  const future = beyondWindow(key, c.tk);
   if (pendKey !== key) { pending.clear(); pendKey = key; }
   const root = h('div', null);
   // כותרת תאריך עם חיצים ליום הקודם / הבא
@@ -176,7 +178,7 @@ export function today() {
   root.appendChild(secHead('לימוד יומי', []));
   const due = dueTracks(st, key);
   const free = isFreeDay(st, key);
-  if (future) root.appendChild(h('div', { class: 'banner' }, h('span', null, 'יום עתידי. אפשר לסמן רק מהיום והלאה אחורה.')));
+  if (future) root.appendChild(h('div', { class: 'banner' }, h('span', null, 'אפשר לסמן עד שישה ימים קדימה, לא מעבר לכך.')));
   if (free) root.appendChild(h('div', { class: 'banner' }, h('span', null, st.special[key] ? 'יום מיוחד - לא נספר כהחמצה' : 'מצב חופשה - לא נספר כהחמצה')));
   if (isRestDay(d, loc, s) && due.length) root.appendChild(h('p', { class: 'h-sub' }, 'שבת/חג: בלי תזכורות וצלצול. אפשר לסמן במוצאי שבת/חג והלימוד יירשם בתאריך הנכון, לא כאיחור.'));
 
@@ -200,7 +202,7 @@ export function today() {
     const sk = streak(st, c.tk);
     if (isToday && sk.cur) root.appendChild(h('p', { class: 'h-sub', style: 'text-align:center;margin-top:10px' }, 'רצף נוכחי: ' + sk.cur + ' ימים'));
   }
-  root.appendChild(h('p', { class: 'dim small', style: 'text-align:center' }, 'נגיעה בוחרת, ואז לוחצים אישור · לחיצה ארוכה: הערה ו"איפה עצרתי"'));
+  root.appendChild(h('p', { class: 'dim small', style: 'text-align:center' }, 'לחיצה ארוכה: הערה ו"איפה עצרתי"'));
 
   // עדכון לימוד: השלמות והוספת מסלול (בסוף)
   root.appendChild(secHead('עדכון לימוד', [['השלמות', () => nav.goTab('journal')], ['+ מסלול', () => pickTemplate()]]));

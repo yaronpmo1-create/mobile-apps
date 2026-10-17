@@ -161,3 +161,6 @@ body:not(.ready) #app{visibility:hidden}
 .wheel::-webkit-scrollbar{display:none}
 .wheel .wi{height:44px;line-height:44px;text-align:center;scroll-snap-align:center;color:var(--dim);font-size:.95rem;cursor:pointer}
 .wheel .wi.on{color:var(--text);font-weight:700}
+
+.tab .lbl .l1{font-size:1.25em}
+.tab .lbl .l2{font-size:1em}

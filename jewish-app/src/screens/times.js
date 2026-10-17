@@ -11,18 +11,15 @@ import { openCompass } from './extras.js';
 
 let view = 'day';
 let offset = 0;
+let weekOff = 0;
 
 export function times() {
   const c = ctx();
   const root = h('div', null);
-  if (view === 'alarms') {
-    root.appendChild(h('button', { class: 'btn sec block', style: 'margin-bottom:10px', onclick: () => { view = 'day'; commit(); } }, 'חזרה לזמנים'));
-    root.appendChild(alarmsView(c));
-    return root;
-  }
   root.appendChild(h('div', { class: 'inline', style: 'margin-bottom:6px' },
-    h('div', { style: 'flex:3' }, seg([['day', 'היום'], ['week', 'שבוע'], ['month', 'חודש']], view, (v) => { view = v; commit(); })),
-    h('button', { class: 'btn', style: 'flex:1;margin-bottom:8px', onclick: () => { view = 'alarms'; commit(); } }, 'התראות')));
+    h('div', { style: 'flex:3' }, seg([['day', 'היום'], ['week', 'שבוע'], ['month', 'חודש']], view === 'alarms' ? '' : view, (v) => { view = v; commit(); })),
+    h('button', { class: view === 'alarms' ? 'btn' : 'btn sec', style: 'flex:1;margin-bottom:8px', onclick: () => { view = 'alarms'; commit(); } }, 'התראות')));
+  if (view === 'alarms') { root.appendChild(alarmsView(c)); return root; }
   if (view === 'day') root.appendChild(dayView(c));
   else if (view === 'week') root.appendChild(weekView(c));
   else root.appendChild(monthView(c));
@@ -67,9 +64,10 @@ function dayText(c, d) {
 
 function weekView(c) {
   const cols = ['alot', 'netz', 'shma', 'tfila', 'chatzot', 'gedola', 'plag', 'shkiah', 'tzeit'];
-  const start = addDays(c.today, -c.today.getDay() + offset * 7);
+  const start = addDays(c.today, weekOff * 7);
   const root = h('div', null);
-  root.appendChild(navBar(h('div', { style: 'text-align:center' }, h('b', null, 'שבוע של ' + hebrewDayMonth(start)), h('div', { class: 'muted small' }, c.loc.name + ' · ' + METHODS[c.s.method])), () => { offset--; commit(); }, () => { offset++; commit(); }));
+  root.appendChild(navBar(h('div', { style: 'text-align:center' }, h('b', null, hebrewDayMonth(start) + ' - ' + hebrewDayMonth(addDays(start, 6))), h('div', { class: 'muted small' }, '7 ימים מהיום · ' + c.loc.name + ' · ' + METHODS[c.s.method])), () => { weekOff--; commit(); }, () => { weekOff++; commit(); }));
+  if (weekOff) root.appendChild(h('button', { class: 'btn ghost sm block', style: 'margin-bottom:8px', onclick: () => { weekOff = 0; commit(); } }, 'חזרה להיום'));
   const names = (id) => ZMAN_DEFS.find((z) => z.id === id).name;
   const tbl = h('table', { class: 'wk' }, h('thead', null, h('tr', null, h('th', null, 'יום'), cols.map((id) => h('th', null, names(id))))),
     h('tbody', null, [0, 1, 2, 3, 4, 5, 6].map((i) => {
