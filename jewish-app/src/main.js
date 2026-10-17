@@ -16,7 +16,7 @@ import { hhmm } from './lib/dates.js';
 load();
 // תצוגה מקדימה בדפדפן: נתוני דוגמה (ערכת חת״ת) כדי שהמסך הראשי לא יהיה ריק
 if (window.__PREVIEW && !get().tracks.length) { addTemplate(get(), 'chitas'); get().first = false; }
-const TABS = [['today', 'היום', '◉'], ['times', 'זמנים והתראות', '◔'], ['learn', 'לימוד ומסלולים', '☰'], ['journal', 'יומן ומעקב', '▦']];
+const TABS = [['today', 'היום', '◉'], ['times', 'זמנים\nוהתראות', '◔'], ['learn', 'לימוד\nומסלולים', '☰'], ['journal', 'יומן\nומעקב', '▦']];
 const TITLES = { today: 'אפליקציה יהודית', learn: 'לימוד ומסלולים', times: 'זמנים והתראות', journal: 'יומן ומעקב' };
 const SCREENS = { today, learn, times, journal };
 let tab = 'today';
@@ -31,7 +31,7 @@ function render() {
   let body;
   try { body = SCREENS[tab](); } catch (e) { body = h('pre', { style: 'white-space:pre-wrap;color:var(--bad)' }, 'שגיאה: ' + e.message + '\n' + (e.stack || '')); console.error(e); }
   const main = h('div', { class: 'main' }, body);
-  const bar = h('div', { class: 'tabbar' }, TABS.map(([k, l, ic]) => h('button', { class: 'tab' + (k === tab ? ' on' : ''), onclick: () => goTab(k) }, h('span', { class: 'ic' }, ic), l)));
+  const bar = h('div', { class: 'tabbar' }, TABS.map(([k, l, ic]) => h('button', { class: 'tab' + (k === tab ? ' on' : ''), onclick: () => goTab(k) }, h('span', { class: 'ic' }, ic), h('span', { class: 'lbl' }, l.split('\n').flatMap((x, i) => (i ? [h('br'), x] : [x]))))));
   if (tab === 'journal') {
     // החלקה ימינה = חודש הבא, שמאלה = חודש קודם (כיוון עברית)
     let sx = 0, sy = 0;

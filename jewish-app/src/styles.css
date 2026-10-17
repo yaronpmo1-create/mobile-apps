@@ -150,3 +150,7 @@ body:not(.ready) #app{visibility:hidden}
 
 .tab{font-size:.82rem;line-height:1.15;text-align:center;padding-inline:2px}
 .tab .ic{font-size:1.3rem}
+
+.tab{padding:7px 2px 6px;gap:1px;justify-content:flex-start}
+.tab .ic{font-size:1.35rem;height:1.5rem;display:flex;align-items:center}
+.tab .lbl{display:block;font-size:.8rem;line-height:1.15;min-height:2.3em;text-align:center}
