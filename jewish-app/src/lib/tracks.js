@@ -88,7 +88,10 @@ export function learnInfo(track, date, st) {
       const r = DailyLearning.lookup(track.auto, new HDate(noon));
       if (r) {
         out.sub = stripNikud(r.render ? r.render('he') : String(r.name || '')).replace(/^דף יומי:\s*/, '');
-        if (track.auto === 'psalms') out.title = track.name + ' (ליום ' + hebrewDayLetter(date) + ' בחודש)';
+        if (track.auto === 'psalms') {
+          const rng = out.sub.replace(/^תה[יל]*ים/, '').replace(/\s+/g, ' ').trim();
+          out.sub = 'ליום ' + hebrewDayLetter(date) + ' לחודש, ' + (rng.includes('-') ? 'פרקים ' + rng.replace(/\s*-\s*/, ' - ') : 'פרק ' + rng);
+        }
         if (r.url) out.url = r.url();
       }
     } else if (track.counter) {

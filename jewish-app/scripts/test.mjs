@@ -45,7 +45,8 @@ eq(dueTracks(st, today).length, 4, 'all due daily');
 const chumash = st.tracks.find((t) => t.tpl === 'chumash');
 eq(learnInfo(chumash, parseKey(today), st).sub, 'פרשת נח - שישי', 'chumash label');
 const tehilim = st.tracks.find((t) => t.tpl === 'tehilim');
-ok(learnInfo(tehilim, parseKey(today), st).sub.includes('תהלים'), 'psalms label ' + learnInfo(tehilim, parseKey(today), st).sub);
+ok(/^ליום .׳ לחודש, פרקים .+ - .+$/.test(learnInfo(tehilim, parseKey(today), st).sub), 'psalms label ' + learnInfo(tehilim, parseKey(today), st).sub);
+eq(learnInfo(tehilim, new Date(2026, 9, 18, 12), st).sub, 'ליום ז׳ לחודש, פרקים ל״ט - מ״ג', 'psalms 7 Cheshvan');
 const tanya = st.tracks.find((t) => t.tpl === 'tanya');
 tanya.counter = true; tanya.pos = 1; tanya.step = 1; // בדיקת מנגנון המונה (בפועל התניא לפי לוח)
 setEntry(st, today, tanya, 'done', today);
