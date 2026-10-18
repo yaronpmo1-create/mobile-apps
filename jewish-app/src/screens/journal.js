@@ -36,11 +36,13 @@ export function journal() {
   for (const d of days) {
     const k = dkey(d);
     const ds = dayStatus(st, k);
-    const future = k > c.tk;
-    let cls = future ? 'none future' : ds.kind;
+    const future = k > c.tk, isToday = k === c.tk;
+    // יום עתידי והיום: מראים רק מה שסומן (מלא / חלקי); בלי סימון - ניטרלי, כי עוד אפשר לסמן
+    let cls = ds.kind;
+    if ((future || isToday) && ds.kind !== 'full' && ds.kind !== 'partial') cls = ds.kind === 'special' ? 'special' : 'none';
+    if (future) cls += ' future';
     const hue = (r) => (r <= 0.5 ? 10 + r * 50 : 35 + (r - 0.5) * 150);
-    const pstyle = !future && ds.kind === 'partial' && !(k === c.tk) ? 'background:hsl(' + Math.round(hue(ds.ratio)) + ' 78% 50%);color:#1a1a1a' : '';
-    if (k === c.tk && ds.kind !== 'full') cls = ds.kind === 'special' ? 'special' : 'none';
+    const pstyle = ds.kind === 'partial' ? 'background:hsl(' + Math.round(hue(ds.ratio)) + ' 78% 50%);color:#1a1a1a' : '';
     const chag = isChagDay(d, c.loc, c.s);
     const cell = h('button', { class: 'cell ' + cls + (k === c.tk ? ' today' : '') + (sel.has(k) ? ' sel' : ''), 'data-k': k, style: pstyle },
       dayLetter(d), h('small', null, d.getDate()), chag && ds.kind !== 'special' ? h('i', { class: 'dot' }) : null);
@@ -107,11 +109,12 @@ function lessonsForSelected() {
     const setAll = (v) => els.forEach((e) => { e.r.state = v; draw(e.r, e.chk, e.lbl); });
     return h('div', null,
       h('p', { class: 'muted small' }, 'נגיעה בשיעור משנה את מצבו בכל הימים שנבחרו: סומן, לא סומן (מוחק את הסימון), דלג.'),
-      h('div', { class: 'inline', style: 'margin-bottom:8px' },
+      h('div', { class: 'list' }, els.map((e) => e.row)),
+      h('div', { class: 'inline', style: 'margin-top:8px' },
         h('button', { class: 'btn sec', onclick: () => setAll('done') }, 'סמן הכל'),
         h('button', { class: 'btn sec', onclick: () => setAll('none') }, 'בטל הכל')),
-      h('div', { class: 'list' }, els.map((e) => e.row)),
-      h('div', { class: 'inline', style: 'margin-top:12px' },
+      h('hr', { style: 'margin:14px 0 12px' }),
+      h('div', { class: 'inline' },
         h('button', { class: 'btn', onclick: () => {
           let n = 0;
           for (const { r } of els) {
