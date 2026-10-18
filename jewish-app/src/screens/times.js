@@ -134,7 +134,7 @@ function alarmsView(c) {
     const nt = nextAt[a.id];
     list.appendChild(h('div', { class: 'row tap', style: a.enabled ? '' : 'opacity:.55', onclick: () => editAlarm(a.id, a.type) },
       h('div', { class: 'grow' }, h('div', { class: 't' }, alarmTitle(a, c.st)),
-        h('div', { class: 's' }, daysLabel(a.days, a.date) + (a.type === 'fixed' ? ' · ' + a.time : '') + (nt ? ' · הבאה ' + hhmm(new Date(nt)) : '') + (a.noRest !== false ? ' · לא בשבת/חג וערבם' : '') + (a.ring === false ? ' · התראה שקטה' : ''))),
+        h('div', { class: 's' }, daysLabel(a.days, a.date) + (a.type === 'fixed' ? ' · ' + a.time : '') + (nt ? ' · הבאה ' + hhmm(new Date(nt)) : '') + (a.noRest !== false ? ' · לא בשבת, חג וערבי חג' : '') + (a.ring === false ? ' · התראה שקטה' : ''))),
       toggle(a.enabled, (v) => { a.enabled = v; commit(); }),
       h('button', { class: 'iconbtn', onclick: (e) => { e.stopPropagation(); alarmMenu(a); } }, '⋮')));
   });
@@ -194,7 +194,7 @@ export function editAlarm(id, type, preset, back) {
     }
     const sw = (label, key, def = true) => h('div', { class: 'row' }, h('div', { class: 'grow' }, label), toggle(d[key] === undefined ? def : d[key], (v) => { d[key] = v; pg.refresh(); }));
     root.appendChild(h('div', { class: 'list' },
-      sw('לא בשבת, חג וערבם (משקיעה עד צאת)', 'noRest', true),
+      sw('לא בשבת, חג וערבי חג (משקיעה עד צאת)', 'noRest', true),
       sw('מסך צלצול מלא (כבוי: התראה בוילון בלבד)', 'ring', d.type !== 'learning'),
       sw('חוזרת עד כיבוי', 'repeat', false),
       sw('אפשר נודניק', 'snooze', true)));
