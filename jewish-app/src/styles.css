@@ -164,3 +164,5 @@ body:not(.ready) #app{visibility:hidden}
 
 .tab .lbl .l1{font-size:1.25em}
 .tab .lbl .l2{font-size:1em}
+.wheels.two{grid-template-columns:1fr 1fr}
+.timebtn{width:100%;min-height:44px;background:var(--card2);border:1.5px solid var(--line);border-radius:var(--radiusS);padding:10px 12px;direction:ltr;text-align:center;font-weight:700;font-size:1.1rem;color:var(--text)}

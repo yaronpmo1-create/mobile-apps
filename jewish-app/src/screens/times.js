@@ -12,6 +12,7 @@ import { openCompass } from './extras.js';
 let view = 'day';
 let offset = 0;
 let weekOff = 0;
+export function shiftTimesDay(delta) { if (view !== 'day') return false; offset += delta; commit(); return true; }
 
 export function times() {
   const c = ctx();

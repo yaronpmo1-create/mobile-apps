@@ -1,10 +1,10 @@
-import { hebDate, chips, field, navBar, h, openPage, openSheet, actionSheet, confirmBox, toggle, toast, press } from '../ui.js';
+import { swipeNav, hebDate, chips, field, navBar, h, openPage, openSheet, actionSheet, confirmBox, toggle, toast, press } from '../ui.js';
 import { ctx, commit, nav } from '../core.js';
 import { HDate } from '@hebcal/core';
 import { dkey, parseKey, addDays, hebrewDate, hebrewMonthYear, hebrewMonthDays, hd, stripNikud, WD_LETTER, weekdayName, WEEKDAYS } from '../lib/dates.js';
 import { setEntry, isDue, dayStatus, dueTracks, activeTracks, getEntry, streak, missingDays, pctRange, trackPct, lateCount, markAll, undoMark, isFreeDay, firstKey, beyondWindow } from '../lib/tracks.js';
 import { isChagDay } from '../lib/zm.js';
-import { trackRow } from './today.js';
+import { trackRow, confirmPending } from './today.js';
 import { setDone, shareText } from '../lib/native.js';
 import { tishreiKey, hebrewMonthAnchor } from '../lib/dates.js';
 import { rerender } from '../core.js';
@@ -38,9 +38,11 @@ export function journal() {
     const ds = dayStatus(st, k);
     const future = k > c.tk;
     let cls = future ? 'none future' : ds.kind;
+    const hue = (r) => (r <= 0.5 ? 10 + r * 50 : 35 + (r - 0.5) * 150);
+    const pstyle = !future && ds.kind === 'partial' && !(k === c.tk) ? 'background:hsl(' + Math.round(hue(ds.ratio)) + ' 78% 50%);color:#1a1a1a' : '';
     if (k === c.tk && ds.kind !== 'full') cls = ds.kind === 'special' ? 'special' : 'none';
     const chag = isChagDay(d, c.loc, c.s);
-    const cell = h('button', { class: 'cell ' + cls + (k === c.tk ? ' today' : '') + (sel.has(k) ? ' sel' : ''), 'data-k': k },
+    const cell = h('button', { class: 'cell ' + cls + (k === c.tk ? ' today' : '') + (sel.has(k) ? ' sel' : ''), 'data-k': k, style: pstyle },
       dayLetter(d), h('small', null, d.getDate()), chag && ds.kind !== 'special' ? h('i', { class: 'dot' }) : null);
     press(cell, () => { if (selMode) { if (sel.has(k)) sel.delete(k); else sel.add(k); if (!sel.size) selMode = false; rerender(); } else openDay(k); },
       () => {
@@ -112,10 +114,12 @@ function lessonsForSelected() {
   });
 }
 
-export function openDay(key) {
-  const c = ctx();
-  const d = parseKey(key);
-  openPage(weekdayName(d) + ' ' + hebrewDate(d), (pg) => {
+const dayPend = new Set();
+export function openDay(key0) {
+  let key = key0;
+  const titleFor = (k) => { const d = parseKey(k); return weekdayName(d) + ' ' + hebrewDate(d); };
+  const pg0 = openPage(titleFor(key), (pg) => {
+    const d = parseKey(key);
     const c2 = ctx();
     const st = c2.st;
     const root = h('div', null);
@@ -126,7 +130,7 @@ export function openDay(key) {
     const ds = dayStatus(st, key);
     if (!due.length) root.appendChild(h('div', { class: 'card empty-note' }, 'אין לימוד מתוזמן ליום הזה.'));
     root.appendChild(h('div', { class: 'list' }, due.map((t) => {
-      const row = trackRow(c2, key, t, { milestone: key === c2.tk, readonly: beyondWindow(key, c2.tk) });
+      const row = trackRow(c2, key, t, { milestone: key === c2.tk, readonly: beyondWindow(key, c2.tk), pend: beyondWindow(key, c2.tk) ? null : dayPend });
       const n = ((st.notes || {})[key] || {})[t.id];
       if (n) row.querySelector('.grow').appendChild(h('div', { class: 's' }, 'הערה: ' + n));
       return row;
@@ -134,12 +138,14 @@ export function openDay(key) {
     const others = activeTracks(st).filter((t) => !due.includes(t));
     if (others.length) root.appendChild(h('p', { class: 'dim small' }, 'מסלולים שלא מתוזמנים ליום הזה לא מוצגים.'));
     if (due.length && !beyondWindow(key, c2.tk)) {
-      root.appendChild(h('button', { class: 'btn block', disabled: ds.kind === 'full', onclick: () => {
-        const ids = markAll(st, key, c2.tk);
-        ids.forEach((id) => setDone(key, id, true));
-        commit();
-        toast('סומנו ' + ids.length, 'ביטול', () => { undoMark(st, key, ids, c2.tk); ids.forEach((id) => setDone(key, id, false)); commit(); });
-      } }, ds.kind === 'full' ? 'כל היום הושלם ✓' : 'סימנתי הכל'));
+      const undone = due.filter((tr) => { const e = getEntry(st, key, tr.id); return !(e && (e.s === 'done' || e.s === 'late')); });
+      const allSel = undone.length && undone.every((tr) => dayPend.has(tr.id));
+      root.appendChild(h('button', { class: 'btn sec block', style: 'flex-direction:column;gap:0', disabled: !undone.length, onclick: () => { if (allSel) undone.forEach((tr) => dayPend.delete(tr.id)); else undone.forEach((tr) => dayPend.add(tr.id)); pg.refresh(); } },
+        h('span', null, !undone.length ? 'כל היום הושלם ✓' : allSel ? 'ביטול בחירת הכל' : 'סמן הכל'),
+        h('span', { style: 'font-weight:400;font-size:.78rem;opacity:.8' }, 'לחיצה ארוכה: הערה ו"איפה עצרתי"')));
+      if (dayPend.size) root.appendChild(h('div', { class: 'confirmbar', style: 'position:static;margin:8px 0' },
+        h('button', { class: 'btn', onclick: () => { confirmPending(c2, key, dayPend); pg.refresh(); } }, 'אישור (' + dayPend.size + ')'),
+        h('button', { class: 'btn sec', onclick: () => { dayPend.clear(); pg.refresh(); } }, 'ביטול')));
     }
     root.appendChild(h('div', { class: 'list', style: 'margin-top:12px' },
       h('div', { class: 'row' }, h('div', { class: 'grow' }, h('div', { class: 't' }, 'חג / מיוחד / לא נספר'), h('div', { class: 's' }, 'לא נספר כהחמצה ולא שובר רצף')),
@@ -147,6 +153,7 @@ export function openDay(key) {
     if (ds.late) root.appendChild(h('p', { class: 'small muted' }, ds.late + ' סימונים באיחור (מסומנים בכתום)'));
     return root;
   });
+  swipeNav(pg0.body, (dir) => { key = dkey(addDays(parseKey(key), dir)); dayPend.clear(); pg0.setTitle(titleFor(key)); pg0.refresh(); });
 }
 nav.openDay = openDay;
 nav.retro = () => retro();
@@ -212,21 +219,24 @@ export function retro() {
       field('מתאריך', hebDate(from, (v) => { from = v; })),
       field('עד תאריך', hebDate(to, (v) => { to = v; }))),
     h('button', { class: 'btn sec sm', style: 'margin-top:8px', onclick: () => { from = tishreiKey(); sh.refresh(); } }, 'התחלה מראש השנה (תשרי)'),
-    h('button', { class: 'btn block', style: 'margin-top:14px', onclick: () => {
+    h('button', { class: 'btn block', style: 'margin-top:14px', onclick: async () => {
       if (!sel.size) { toast('צריך לבחור מסלול'); return; }
       if (to < from) { toast('טווח לא תקין'); return; }
       const end = dkey(addDays(c.today, -1)); if (to > end) to = end;
-      let n = 0;
+      const todo = [];
       for (const t of tracks) {
         if (!sel.has(t.id)) continue;
-        if (t.created > from) t.created = from;
         let d = parseKey(from);
         while (dkey(d) <= to) {
           const k = dkey(d);
-          if (isDue(t, k) && !getEntry(c.st, k, t.id) && !c.st.special[k]) { setEntry(c.st, k, t, 'done', k); setDone(k, t.id, true); n++; }
+          if (isDue(t, k) && !getEntry(c.st, k, t.id) && !c.st.special[k]) todo.push([t, k]);
           d = addDays(d, 1);
         }
       }
-      sh.close(); commit(); toast('סומנו ' + n + ' לימודים');
+      if (!todo.length) { toast('אין מה לסמן בטווח הזה'); return; }
+      if (!(await confirmBox('לסמן ' + todo.length + ' לימודים כהושלמו?', 'אישור'))) return;
+      for (const t of tracks) if (sel.has(t.id) && t.created > from) t.created = from;
+      for (const [t, k] of todo) { setEntry(c.st, k, t, 'done', k); setDone(k, t.id, true); }
+      sh.close(); commit(); toast('סומנו ' + todo.length + ' לימודים');
     } }, 'סמן כהושלם')));
 }

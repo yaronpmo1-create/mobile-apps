@@ -1,11 +1,11 @@
 import { load, get, save, onChange } from './lib/store.js';
 import { applyTheme } from './lib/theme.js';
-import { h, $, layerCount, hasPages, openLayer, icon, compassIcon, backPress } from './ui.js';
+import { h, $, layerCount, hasPages, openLayer, icon, compassIcon, backPress, swipeNav } from './ui.js';
 import { App as CapApp } from '@capacitor/app';
 import { setRender, ctx, commit, nav } from './core.js';
-import { today, nextZman, countdown } from './screens/today.js';
+import { today, nextZman, countdown, shiftDay, resetDay } from './screens/today.js';
 import { learn } from './screens/learn.js';
-import { times } from './screens/times.js';
+import { times, shiftTimesDay } from './screens/times.js';
 import { journal, shiftMonth, consumeSelDrag } from './screens/journal.js';
 import { settingsMain } from './screens/settings.js';
 import { firstRun, openCompass } from './screens/extras.js';
@@ -32,27 +32,17 @@ function render() {
   try { body = SCREENS[tab](); } catch (e) { body = h('pre', { style: 'white-space:pre-wrap;color:var(--bad)' }, 'שגיאה: ' + e.message + '\n' + (e.stack || '')); console.error(e); }
   const main = h('div', { class: 'main' }, body);
   const bar = h('div', { class: 'tabbar' }, TABS.map(([k, l, ic]) => h('button', { class: 'tab' + (k === tab ? ' on' : ''), onclick: () => goTab(k) }, h('span', { class: 'ic' }, ic), h('span', { class: 'lbl' }, l.split('\n').flatMap((x, i) => (i ? [h('br'), h('span', { class: 'l2' }, x)] : [h('span', { class: 'l1' }, x)]))))));
-  if (tab === 'journal') {
-    // החלקה ימינה = חודש הבא, שמאלה = חודש קודם (כיוון עברית)
-    let sx = 0, sy = 0;
-    main.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
-    main.addEventListener('touchend', (e) => {
-      const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
-      if (consumeSelDrag()) return;
-      if (Math.abs(dx) > 70 && Math.abs(dy) < 50) shiftMonth(dx > 0 ? 1 : -1);
-    }, { passive: true });
-  }
+  // החלקה ימינה = הבא, שמאלה = הקודם (כיוון עברית): יום במסך היום ובזמנים, חודש ביומן
+  if (tab === 'today') swipeNav(main, (d) => shiftDay(d));
+  else if (tab === 'times') swipeNav(main, (d) => shiftTimesDay(d));
+  else if (tab === 'journal') swipeNav(main, (d) => { if (consumeSelDrag()) return; shiftMonth(d); });
   app.replaceChildren(top, main, bar);
   mainEl = main;
   main.scrollTop = sc;
 }
-// כל מעבר בין לשוניות נרשם בהיסטוריה, כך שכפתור "חזרה" של המכשיר חוזר ללשונית הקודמת ולא יוצא
+// מעבר בין לשוניות לא נרשם בהיסטוריה: כפתור "חזרה" של המכשיר חוזר ישר ל"היום", ומשם יוצא
 function goTab(k) {
-  if (k !== tab) {
-    const prev = tab;
-    openLayer(() => { tab = prev; nav.tab = tab; if (mainEl) mainEl.scrollTop = 0; render(); });
-    tab = k; if (mainEl) mainEl.scrollTop = 0;
-  }
+  if (k !== tab) { tab = k; if (mainEl) mainEl.scrollTop = 0; }
   nav.tab = tab; render();
 }
 nav.goTab = goTab;
@@ -93,6 +83,7 @@ try {
   CapApp.addListener('backButton', () => {
     if (backPress()) return;
     if (tab !== 'today') { goTab('today'); return; }
+    if (resetDay()) return;
     CapApp.exitApp();
   });
 } catch (e) { /* בדפדפן אין */ }

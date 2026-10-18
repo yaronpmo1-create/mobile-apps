@@ -1,4 +1,4 @@
-import { h, openPage, openSheet, confirmBox, seg, field, sel, txt, toggle, toast } from '../ui.js';
+import { pickGregDate, h, openPage, openSheet, confirmBox, seg, field, sel, txt, toggle, toast } from '../ui.js';
 import { ctx, commit } from '../core.js';
 import { CITIES } from '../lib/cities.js';
 import { bearingTo, distanceKm, getLoc, inIsrael } from '../lib/zm.js';
@@ -79,7 +79,7 @@ function editYahrzeit(id) {
     root.appendChild(seg([['yahrzeit', 'יארצייט'], ['birthday', 'יום הולדת']], d.type, (v) => { d.type = v; pg.refresh(); }));
     root.appendChild(field('שם', txt(d.name, (v) => (d.name = v))));
     root.appendChild(h('div', { class: 'inline' }, field('יום בחודש', txt(d.d, (v) => (d.d = Math.max(1, Math.min(30, Number(v) || 1))), '', 'number')), field('חודש עברי', sel(HMONTHS, d.m, (v) => (d.m = Number(v))))));
-    root.appendChild(field('או להמיר מתאריך לועזי', h('input', { type: 'date', value: greg, onchange: (e) => { const dt = new Date(e.target.value + 'T12:00:00'); if (!isNaN(dt)) { const hh = new HDate(dt); d.m = hh.getMonth(); d.d = hh.getDate(); greg = e.target.value; pg.refresh(); toast('הומר לתאריך עברי'); } } })));
+    root.appendChild(field('או להמיר מתאריך לועזי', h('button', { class: 'timebtn', type: 'button', onclick: () => pickGregDate(greg, (k) => { const dt = new Date(k + 'T12:00:00'); if (!isNaN(dt)) { const hh = new HDate(dt); d.m = hh.getMonth(); d.d = hh.getDate(); greg = k; pg.refresh(); toast('הומר לתאריך עברי'); } }) }, greg || 'בחירת תאריך לועזי')));
     root.appendChild(h('div', { class: 'list' },
       h('div', { class: 'row' }, h('div', { class: 'grow' }, 'תזכורת'), toggle(d.remind !== false, (v) => { d.remind = v; pg.refresh(); })),
       h('div', { class: 'row' }, h('div', { class: 'grow' }, 'גם ערב קודם (תזכורת יום לפני)'), toggle(!!d.before, (v) => { d.before = v; pg.refresh(); }))));

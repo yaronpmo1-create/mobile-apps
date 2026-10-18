@@ -178,7 +178,7 @@ export function dayStatus(st, key) {
   else if (counted >= total) kind = 'full';
   else if (counted > 0) kind = 'partial';
   else kind = 'missing';
-  return { kind, total, done, late, skipped };
+  return { kind, total, done, late, skipped, ratio: total ? Math.max(0, counted) / total : 0 };
 }
 
 // ---- רצף ----

@@ -21,7 +21,7 @@ export function commit() {
   renderBase();
   refreshPages();
 }
-export const rerender = () => renderBase();
+export const rerender = () => { renderBase(); refreshPages(); };
 // שמירה שקטה בלי רענון (בזמן הקלדה)
 export function quietSave() { save(); }
 

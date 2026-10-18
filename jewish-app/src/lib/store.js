@@ -74,12 +74,21 @@ function migrate(s) {
   }
   return s;
 }
+// הגנה על מידע עבר: לפני שדרוג מבנה נתונים נשמר עותק של הנתונים הישנים, ונתונים שלא ניתן לקרוא לא נמחקים אלא נשמרים בצד
+const CUR_V = 5;
 export function load() {
   const base = defaults();
   try {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(KEY) : null;
-    if (raw) state = migrate(merge(base, JSON.parse(raw)));
-    else state = base;
+    if (raw) {
+      let parsed = null;
+      try { parsed = JSON.parse(raw); } catch (e) { try { localStorage.setItem(KEY + '-unreadable', raw); } catch (e2) { /* */ } }
+      if (parsed) {
+        const ov = parsed.v || 1;
+        if (ov < CUR_V) { try { localStorage.setItem(KEY + '-backup-v' + ov, raw); } catch (e) { /* */ } }
+        state = migrate(merge(base, parsed));
+      } else state = base;
+    } else state = base;
   } catch (e) { state = base; }
   return state;
 }

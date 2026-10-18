@@ -131,12 +131,12 @@ export const seg = (opts, val, fn) => h('div', { class: 'seg' }, opts.map(([v, l
 export const chips = (opts, vals, fn) => h('div', { class: 'chips' }, opts.map(([v, l]) => h('button', { class: 'chip' + (vals.includes(v) ? ' on' : ''), onclick: () => fn(v) }, l)));
 export const field = (label, input) => h('div', null, h('label', { class: 'f' }, label), input);
 export const sel = (opts, val, fn) => h('select', { onchange: (e) => fn(e.target.value) }, opts.map(([v, l]) => h('option', { value: v, selected: String(v) === String(val) }, l)));
-export const txt = (val, fn, ph, type = 'text') => h('input', { type, value: val == null ? '' : val, placeholder: ph || '', oninput: (e) => fn(e.target.value) });
+export const txt = (val, fn, ph, type = 'text') => (type === 'time' ? timeBtn(val, fn) : h('input', { type, value: val == null ? '' : val, placeholder: ph || '', oninput: (e) => fn(e.target.value) }));
 
 // לחיצה קצרה / ארוכה
 export function press(el, onTap, onLong) {
   let t = null, fired = false;
-  const start = () => { fired = false; t = setTimeout(() => { fired = true; if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) { /* */ } onLong && onLong(); }, 520); };
+  const start = () => { fired = false; t = setTimeout(() => { fired = true; if (navigator.vibrate) try { navigator.vibrate(20); } catch (e) { /* */ } onLong && onLong(); }, 260); };
   const stop = () => clearTimeout(t);
   el.addEventListener('pointerdown', start);
   ['pointerup', 'pointerleave', 'pointercancel', 'pointermove'].forEach((ev) => el.addEventListener(ev, (e) => { if (ev === 'pointermove' && Math.abs(e.movementY) < 2) return; stop(); }));
@@ -191,7 +191,7 @@ export function dragSort(container, onDone) {
     if (!row || row.parentNode !== container || e.target.closest('.nodrag')) return;
     sy = e.clientY; pid = e.pointerId;
     clearTimeout(timer);
-    timer = setTimeout(() => lift(row, sy), 450);
+    timer = setTimeout(() => lift(row, sy), 225);
   });
   container.addEventListener('pointermove', (e) => {
     if (active) { e.preventDefault(); follow(e.clientY); sy = e.clientY; }
@@ -266,4 +266,45 @@ export function hebDate(valueKey, onChange) {
   }
   draw();
   return wrap;
+}
+
+// ---- בחירת שעה בגלגלים (בעברית, בלי החלון של המכשיר) ----
+const pad2 = (n) => String(n).padStart(2, '0');
+const HOURS = Array.from({ length: 24 }, (_, i) => [i, pad2(i)]);
+const MINS = Array.from({ length: 60 }, (_, i) => [i, pad2(i)]);
+export function timeBtn(val, fn) {
+  let cur = /^\d{1,2}:\d{2}$/.test(val || '') ? val : '09:00';
+  const b = h('button', { class: 'timebtn', type: 'button', onclick: () => {
+    let [hh, mm] = cur.split(':').map(Number);
+    openSheet('בחירת שעה', (sh) => h('div', null,
+      h('div', { class: 'wheels two', style: 'direction:ltr' }, wheel(HOURS, hh, (v) => { hh = Number(v); }), wheel(MINS, mm, (v) => { mm = Number(v); })),
+      h('div', { class: 'inline', style: 'margin-top:12px' },
+        h('button', { class: 'btn', onclick: () => { cur = pad2(hh) + ':' + pad2(mm); b.textContent = cur; fn(cur); sh.close(); } }, 'אישור'),
+        h('button', { class: 'btn sec', onclick: () => sh.close() }, 'ביטול'))));
+  } }, cur);
+  return b;
+}
+// בחירת תאריך לועזי בגלגלים: מחזיר מפתח YYYY-MM-DD ל-cb
+const G_MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+export function pickGregDate(initKey, cb) {
+  const d0 = initKey ? new Date(initKey + 'T12:00:00') : new Date();
+  let y = d0.getFullYear(), m = d0.getMonth(), d = d0.getDate();
+  openSheet('בחירת תאריך לועזי', (sh) => h('div', null,
+    h('div', { class: 'wheels' },
+      wheel(Array.from({ length: 31 }, (_, i) => [i + 1, String(i + 1)]), d, (v) => { d = Number(v); }),
+      wheel(G_MONTHS.map((n, i) => [i, n]), m, (v) => { m = Number(v); }),
+      wheel(Array.from({ length: 9 }, (_, i) => [y - 4 + i, String(y - 4 + i)]), y, (v) => { y = Number(v); })),
+    h('div', { class: 'inline', style: 'margin-top:12px' },
+      h('button', { class: 'btn', onclick: () => { const dt = new Date(y, m, Math.min(d, new Date(y, m + 1, 0).getDate()), 12); sh.close(); cb(dt.getFullYear() + '-' + pad2(dt.getMonth() + 1) + '-' + pad2(dt.getDate())); } }, 'אישור'),
+      h('button', { class: 'btn sec', onclick: () => sh.close() }, 'ביטול'))));
+}
+// החלקה ימינה/שמאלה על כל המסך: ימינה = הבא, שמאלה = הקודם (כיוון עברית). לא פועל על גלגלים וטבלאות
+export function swipeNav(el, onStep) {
+  let sx = 0, sy = 0, skip = false;
+  el.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; skip = !!(e.target.closest && e.target.closest('.wheel,.scrollx,input,textarea,.dragging')); }, { passive: true });
+  el.addEventListener('touchend', (e) => {
+    if (skip) return;
+    const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) > 70 && Math.abs(dy) < 50) onStep(dx > 0 ? 1 : -1);
+  }, { passive: true });
 }

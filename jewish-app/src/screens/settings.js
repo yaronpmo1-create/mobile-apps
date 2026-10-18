@@ -1,4 +1,4 @@
-import { hebDate, h, openPage, openSheet, actionSheet, confirmBox, seg, chips, field, sel, txt, toggle, toast, icon } from '../ui.js';
+import { timeBtn, hebDate, h, openPage, openSheet, actionSheet, confirmBox, seg, chips, field, sel, txt, toggle, toast, icon } from '../ui.js';
 import { ctx, commit } from '../core.js';
 import { PALETTES, exportJson, replaceAll, reset } from '../lib/store.js';
 import { getLoc, METHODS } from '../lib/zm.js';
@@ -59,7 +59,7 @@ function hourField(label, s, key, presets, allowMidnight) {
     h('div', { style: 'font-weight:700;margin-bottom:6px' }, label),
     h('div', { class: 'chips' }, presets.map(([v, l]) => h('button', { class: 'chip' + (Number(s[key]) === v ? ' on' : ''), onclick: () => set(v) }, l))),
     h('div', { class: 'inline' }, h('label', { class: 'f', style: 'flex:none;margin:0' }, 'או הקלדת שעה:'),
-      h('input', { type: 'time', value: hourStr(s[key]), onchange: (e) => { const [hh, mm] = (e.target.value || '').split(':').map(Number); if (isNaN(hh)) return; let v = hh + (mm || 0) / 60; if (v === 0 && allowMidnight) v = 24; if (v === 0) return; set(v); } })));
+      timeBtn(hourStr(s[key]), (val) => { const [hh, mm] = (val || '').split(':').map(Number); if (isNaN(hh)) return; let v = hh + (mm || 0) / 60; if (v === 0 && allowMidnight) v = 24; if (v === 0) return; set(v); })));
 }
 function learning() {
   openPage('לימוד', () => {
