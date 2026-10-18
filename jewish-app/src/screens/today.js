@@ -122,6 +122,25 @@ function confirmPending(c, key, set = pending) {
   if (marked) { toast('נשמר: ' + marked + ' לימודים סומנו'); milestone(c); } else toast('השינויים נשמרו');
 }
 
+// הסבר + "סמן הכל" ו"בטל הכל" + שורת אישור. set = קבוצת הבחירה הממתינה, refresh = רענון המסך
+export function dayMarkControls(c, key, due, set, refresh) {
+  const st = c.st;
+  const isDoneE = (tr) => { const e = getEntry(st, key, tr.id); return !!(e && (e.s === 'done' || e.s === 'late')); };
+  const undone = due.filter((tr) => !isDoneE(tr)), done = due.filter(isDoneE);
+  const same = (arr) => arr.length > 0 && set.size === arr.length && arr.every((tr) => set.has(tr.id));
+  const pick = (arr) => () => { const was = same(arr); set.clear(); if (!was) arr.forEach((tr) => set.add(tr.id)); refresh(); };
+  const out = [
+    h('p', { class: 'dim small', style: 'text-align:center;margin:6px 0' }, 'לחיצה ארוכה על הלימוד הספציפי: להוספת הערה ו"איפה עצרתי"'),
+    h('div', { class: 'inline', style: 'margin-bottom:6px' },
+      h('button', { class: same(undone) ? 'btn' : 'btn sec', disabled: !undone.length, onclick: pick(undone) }, undone.length ? 'סמן הכל' : 'הכל סומן ✓'),
+      h('button', { class: same(done) ? 'btn' : 'btn sec', disabled: !done.length, onclick: pick(done) }, 'בטל הכל')),
+  ];
+  if (set.size) out.push(h('div', { class: 'confirmbar', style: 'position:static;margin:8px 0' },
+    h('button', { class: 'btn', onclick: () => { confirmPending(c, key, set); refresh(); } }, 'אישור (' + set.size + ')'),
+    h('button', { class: 'btn sec', onclick: () => { set.clear(); refresh(); } }, 'ביטול')));
+  return out;
+}
+
 let dayOff = 0;
 let pendKey = '';
 export function shiftDay(delta) { dayOff += delta; rerender(); }
@@ -199,14 +218,7 @@ export function today() {
     root.appendChild(h('div', { class: 'list' }, groups[k].map((t) => trackRow(c, key, t, { pend: future ? null : pending, readonly: future }))));
   }
   if (due.length && !future) {
-    const undone = due.filter((tr) => { const e = getEntry(st, key, tr.id); return !(e && (e.s === 'done' || e.s === 'late')); });
-    const allSel = undone.length && undone.every((tr) => pending.has(tr.id));
-    root.appendChild(h('button', { class: 'btn sec block', style: 'flex-direction:column;gap:0', disabled: !undone.length, onclick: () => { if (allSel) undone.forEach((tr) => pending.delete(tr.id)); else undone.forEach((tr) => pending.add(tr.id)); rerender(); } },
-      h('span', null, !undone.length ? 'כל הלימוד סומן ✓' : allSel ? 'ביטול בחירת הכל' : 'סמן הכל'),
-      h('span', { style: 'font-weight:400;font-size:.78rem;opacity:.8' }, 'לחיצה ארוכה: הערה ו"איפה עצרתי"')));
-    if (pending.size) root.appendChild(h('div', { class: 'confirmbar', style: 'position:static;margin:8px 0' },
-      h('button', { class: 'btn', onclick: () => confirmPending(c, key) }, 'אישור (' + pending.size + ')'),
-      h('button', { class: 'btn sec', onclick: () => { pending.clear(); rerender(); } }, 'ביטול')));
+    dayMarkControls(c, key, due, pending, () => rerender()).forEach((el) => root.appendChild(el));
     const sk = streak(st, c.tk);
     if (isToday && sk.cur) root.appendChild(h('p', { class: 'h-sub', style: 'text-align:center;margin-top:10px' }, 'רצף נוכחי: ' + sk.cur + ' ימים'));
   }

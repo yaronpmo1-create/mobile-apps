@@ -134,5 +134,20 @@ ok(hebrewDate(new Date(2026, 9, 18)).includes('מרחשון'), 'marcheshvan name
   st2.settings.chabadList = [{ id: 'x', m: 8, d: 5, t: 'בדיקה', on: false }];
   eq(buildInstances(st2, new Date(2026, 9, 16, 10), 60).filter((i) => i.id.startsWith('CH|')).length, 0, 'chabad off respected');
 }
+// שבת/חג וערבם: משקיעה עד צאת הכוכבים, ברירת מחדל של התראה חדשה
+{
+  const stR = defaults(); const sR = stR.settings; const locR = getLoc(sR);
+  const fri = new Date(2026, 9, 23, 12), sat = new Date(2026, 9, 24, 12);
+  const zf = zmanimFor(fri, locR, sR.method, sR.tzeitMode), zs = zmanimFor(sat, locR, sR.method, sR.tzeitMode);
+  const iv = restIntervals(fri, sat, locR, sR);
+  const mk = (d, hh, mm) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), hh, mm).getTime();
+  const sunsetMs = zf.shkiah.getTime();
+  ok(inRest(sunsetMs + 60000, iv), 'rest starts at sunset on erev shabbat');
+  ok(!inRest(sunsetMs - 60000, iv), 'before sunset on erev shabbat is not rest');
+  ok(inRest(mk(sat, 12, 0), iv), 'shabbat noon is rest');
+  ok(inRest(zs.tzeit.getTime() - 60000, iv), 'just before tzeit motzei shabbat is rest');
+  ok(!inRest(zs.tzeit.getTime() + 60000, iv), 'after tzeit motzei shabbat is not rest');
+  eq(newAlarm('fixed').noRest, true, 'new alarm excludes shabbat/chag by default');
+}
 console.log(n + ' בדיקות, ' + fails + ' נכשלו');
 process.exit(fails ? 1 : 0);

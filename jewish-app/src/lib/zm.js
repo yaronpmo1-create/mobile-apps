@@ -67,7 +67,7 @@ export function zmanimFor(date, loc, method = 'baal', tzeitMode = 'method') {
 // ---- לוח שנה, חגים והדלקת נרות (מטמון לפי שנה לועזית) ----
 const yCache = new Map();
 function yearData(year, loc, st) {
-  const key = year + '|' + locKey(loc) + '|' + loc.il + '|' + (st.candleMins || 0);
+  const key = year + '|' + locKey(loc) + '|' + loc.il + '|' + (st.candleMins || 0) + '|' + (st.method || '') + '|' + (st.tzeitMode || '');
   if (yCache.has(key)) return yCache.get(key);
   const opts = {
     start: new Date(year, 0, 1, 12), end: new Date(year, 11, 31, 12), il: loc.il, sedrot: true, omer: true,
@@ -87,12 +87,17 @@ function yearData(year, loc, st) {
     (byDay[k] = byDay[k] || []).push(e);
   }
   timed.sort((a, b) => a.t - b.t);
-  // מרווחי שבת/חג: מהדלקת נרות עד הבדלה
+  // מרווחי שבת/חג: משקיעת הערב עד צאת הכוכבים של מוצאי השבת/החג (לפי שיטת החישוב שנבחרה)
   const rest = [];
   let open = null;
+  const zAt = (k) => zmanimFor(parseKey(k), loc, st.method || 'baal', st.tzeitMode || 'method');
   for (const t of timed) {
-    if (t.kind === 'candles' && open === null) open = t.t.getTime();
-    else if (t.kind === 'havdalah' && open !== null) { rest.push([open, t.t.getTime()]); open = null; }
+    if (t.kind === 'candles' && open === null) open = t;
+    else if (t.kind === 'havdalah' && open !== null) {
+      const s0 = zAt(open.key).shkiah, e0 = zAt(t.key).tzeit;
+      rest.push([s0 ? s0.getTime() : open.t.getTime(), e0 ? Math.max(e0.getTime(), (s0 ? s0.getTime() : 0) + 1) : t.t.getTime()]);
+      open = null;
+    }
   }
   const d = { byDay, timed, rest };
   yCache.set(key, d);

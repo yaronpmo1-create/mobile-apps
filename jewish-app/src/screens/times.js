@@ -121,12 +121,20 @@ function alarmsView(c) {
   if (!c.st.alarms.length) root.appendChild(h('div', { class: 'card empty-note' }, 'אין התראות עדיין. אפשר ללחוץ על זמן במסך הזמנים, או על "התראה חדשה".'));
   const nextAt = {};
   for (const i of buildInstances(c.st, c.now, 14)) { const m = /^A\|([^|]+)\|/.exec(i.id); if (m && !nextAt[m[1]]) nextAt[m[1]] = i.t; }
+  // לפי סדר היום: מהמוקדם למאוחר (שעת ההתראה היום)
+  const zToday = zmanimFor(c.today, c.loc, c.s.method, c.s.tzeitMode);
+  const tod = (a) => {
+    let ms = null;
+    if (a.type === 'fixed' || (a.type === 'learning' && (a.timeMode || 'time') === 'time')) { const [hh, mm] = String(a.time || '00:00').split(':').map(Number); ms = ((hh || 0) * 60 + (mm || 0)) * 60000; }
+    else if (zToday[a.zman]) { const z = zToday[a.zman]; ms = ((z.getHours() * 60 + z.getMinutes()) + (a.rel === 'before' ? -(a.mins || 0) : a.rel === 'after' ? (a.mins || 0) : 0)) * 60000; }
+    return ms == null ? 1e12 : ms;
+  };
   const list = h('div', { class: 'list' });
-  c.st.alarms.forEach((a) => {
+  c.st.alarms.slice().sort((a, b) => tod(a) - tod(b)).forEach((a) => {
     const nt = nextAt[a.id];
     list.appendChild(h('div', { class: 'row tap', style: a.enabled ? '' : 'opacity:.55', onclick: () => editAlarm(a.id, a.type) },
       h('div', { class: 'grow' }, h('div', { class: 't' }, alarmTitle(a, c.st)),
-        h('div', { class: 's' }, daysLabel(a.days, a.date) + (a.type === 'fixed' ? ' · ' + a.time : '') + (nt ? ' · הבאה ' + hhmm(new Date(nt)) : '') + (a.noRest !== false ? ' · לא בשבת וחג' : '') + (a.ring === false ? ' · התראה שקטה' : ''))),
+        h('div', { class: 's' }, daysLabel(a.days, a.date) + (a.type === 'fixed' ? ' · ' + a.time : '') + (nt ? ' · הבאה ' + hhmm(new Date(nt)) : '') + (a.noRest !== false ? ' · לא בשבת/חג וערבם' : '') + (a.ring === false ? ' · התראה שקטה' : ''))),
       toggle(a.enabled, (v) => { a.enabled = v; commit(); }),
       h('button', { class: 'iconbtn', onclick: (e) => { e.stopPropagation(); alarmMenu(a); } }, '⋮')));
   });
@@ -186,7 +194,7 @@ export function editAlarm(id, type, preset, back) {
     }
     const sw = (label, key, def = true) => h('div', { class: 'row' }, h('div', { class: 'grow' }, label), toggle(d[key] === undefined ? def : d[key], (v) => { d[key] = v; pg.refresh(); }));
     root.appendChild(h('div', { class: 'list' },
-      sw('לא בשבת וחג', 'noRest', true),
+      sw('לא בשבת, חג וערבם (משקיעה עד צאת)', 'noRest', true),
       sw('מסך צלצול מלא (כבוי: התראה בוילון בלבד)', 'ring', d.type !== 'learning'),
       sw('חוזרת עד כיבוי', 'repeat', false),
       sw('אפשר נודניק', 'snooze', true)));
