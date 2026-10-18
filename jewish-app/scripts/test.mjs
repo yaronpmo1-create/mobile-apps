@@ -141,12 +141,13 @@ ok(hebrewDate(new Date(2026, 9, 18)).includes('מרחשון'), 'marcheshvan name
   const zf = zmanimFor(fri, locR, sR.method, sR.tzeitMode), zs = zmanimFor(sat, locR, sR.method, sR.tzeitMode);
   const iv = restIntervals(fri, sat, locR, sR);
   const mk = (d, hh, mm) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), hh, mm).getTime();
-  const sunsetMs = zf.shkiah.getTime();
-  ok(inRest(sunsetMs + 60000, iv), 'rest starts at sunset on erev shabbat');
-  ok(!inRest(sunsetMs - 60000, iv), 'before sunset on erev shabbat is not rest');
+  const cand = iv.find((x) => x[0] > mk(fri, 0, 0) && x[0] < mk(fri, 23, 59));
+  ok(!!cand, 'rest interval found on erev shabbat');
+  ok(inRest(cand[0] + 60000, iv), 'rest starts at candle lighting');
+  ok(!inRest(cand[0] - 60000, iv), 'before candle lighting is not rest');
   ok(inRest(mk(sat, 12, 0), iv), 'shabbat noon is rest');
-  ok(inRest(zs.tzeit.getTime() - 60000, iv), 'just before tzeit motzei shabbat is rest');
-  ok(!inRest(zs.tzeit.getTime() + 60000, iv), 'after tzeit motzei shabbat is not rest');
+  ok(inRest(cand[1] - 60000, iv), 'just before havdalah is rest');
+  ok(!inRest(cand[1] + 60000, iv), 'after havdalah is not rest');
   eq(newAlarm('fixed').noRest, true, 'new alarm excludes shabbat/chag by default');
 }
 console.log(n + ' בדיקות, ' + fails + ' נכשלו');

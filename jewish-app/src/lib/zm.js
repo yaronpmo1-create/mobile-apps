@@ -87,15 +87,13 @@ function yearData(year, loc, st) {
     (byDay[k] = byDay[k] || []).push(e);
   }
   timed.sort((a, b) => a.t - b.t);
-  // מרווחי שבת/חג: משקיעת הערב עד צאת הכוכבים של מוצאי השבת/החג (לפי שיטת החישוב שנבחרה)
+  // מרווחי שבת/חג: מהדלקת נרות עד הבדלה
   const rest = [];
   let open = null;
-  const zAt = (k) => zmanimFor(parseKey(k), loc, st.method || 'baal', st.tzeitMode || 'method');
   for (const t of timed) {
     if (t.kind === 'candles' && open === null) open = t;
     else if (t.kind === 'havdalah' && open !== null) {
-      const s0 = zAt(open.key).shkiah, e0 = zAt(t.key).tzeit;
-      rest.push([s0 ? s0.getTime() : open.t.getTime(), e0 ? Math.max(e0.getTime(), (s0 ? s0.getTime() : 0) + 1) : t.t.getTime()]);
+      rest.push([open.t.getTime(), t.t.getTime()]);
       open = null;
     }
   }

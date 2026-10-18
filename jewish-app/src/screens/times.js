@@ -194,7 +194,7 @@ export function editAlarm(id, type, preset, back) {
     }
     const sw = (label, key, def = true) => h('div', { class: 'row' }, h('div', { class: 'grow' }, label), toggle(d[key] === undefined ? def : d[key], (v) => { d[key] = v; pg.refresh(); }));
     root.appendChild(h('div', { class: 'list' },
-      sw('לא בשבת, חג וערבי חג (משקיעה עד צאת)', 'noRest', true),
+      sw('לא בשבת, חג וערבי חג (מהדלקת נרות עד הבדלה)', 'noRest', true),
       sw('מסך צלצול מלא (כבוי: התראה בוילון בלבד)', 'ring', d.type !== 'learning'),
       sw('חוזרת עד כיבוי', 'repeat', false),
       sw('אפשר נודניק', 'snooze', true)));
