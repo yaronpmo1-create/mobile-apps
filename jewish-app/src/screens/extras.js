@@ -4,7 +4,7 @@ import { CITIES } from '../lib/cities.js';
 import { bearingTo, distanceKm, getLoc, inIsrael } from '../lib/zm.js';
 import { startCompass, stopCompass, dirName } from '../lib/compass.js';
 import { addTemplate } from '../lib/tracks.js';
-import { status, requestExact, requestNotifications, openBattery, requestFullScreen, testAlarm, syncNow } from '../lib/native.js';
+import { status, requestExact, requestNotifications, openBattery, requestFullScreen, requestOverlay, testAlarm, syncNow } from '../lib/native.js';
 import { replaceAll } from '../lib/store.js';
 import { HDate } from '@hebcal/core';
 import { uid } from '../lib/store.js';
@@ -139,6 +139,7 @@ export function openHealth() {
         ['התראות', s.notif, 'חובה כדי לקבל תזכורות', requestNotifications],
         ['פטור מחיסכון בסוללה', s.battery, 'מונע מהמערכת לעכב צלצולים', openBattery],
         ['מסך צלצול מלא על הנעילה', s.fullScreen, 'כך הצלצול נפתח גם כשהמסך נעול', requestFullScreen],
+        ['הצגה מעל אפליקציות אחרות', s.overlay !== false, 'כך מסך הצלצול עם כפתור הנודניק הגדול נפתח גם כשאתם משתמשים בטלפון, ולא רק כהתראה בוילון', requestOverlay],
       ];
       items.forEach(([n, okv, why, fn]) => box.appendChild(h('div', { class: 'row' },
         h('div', { class: 'chk' + (okv ? ' on' : ''), style: okv ? '' : 'border-color:var(--bad);color:var(--bad)' }, okv ? '✓' : '!'),
@@ -148,8 +149,8 @@ export function openHealth() {
     });
     root.appendChild(h('div', { class: 'section-title' }, 'בדיקת צלצול'));
     root.appendChild(h('div', { class: 'inline' },
-      h('button', { class: 'btn', onclick: () => { testAlarm('ring'); toast('צלצול בעוד 10 שניות. אפשר לנעול את המסך'); } }, 'צלצול בעוד 10 שניות'),
-      h('button', { class: 'btn sec', onclick: () => { testAlarm('learn'); toast('התראת לימוד בעוד 10 שניות'); } }, 'בדיקת תזכורת לימוד')));
+      h('button', { class: 'btn', onclick: () => { testAlarm('ring'); toast('צלצול בעוד 5 שניות. אפשר לנעול את המסך'); } }, 'צלצול בעוד 5 שניות'),
+      h('button', { class: 'btn sec', onclick: () => { testAlarm('learn'); toast('התראת לימוד בעוד 5 שניות'); } }, 'בדיקת תזכורת לימוד')));
     root.appendChild(h('button', { class: 'btn ghost block', style: 'margin-top:10px', onclick: async () => { await syncNow(); toast('ההתראות תוזמנו מחדש'); } }, 'תזמון ההתראות מחדש עכשיו'));
     return root;
   });
@@ -178,6 +179,7 @@ export function firstRun(done) {
       root.appendChild(h('button', { class: 'btn block', onclick: async () => { await requestNotifications(); } }, 'אישור התראות'));
       root.appendChild(h('button', { class: 'btn sec block', style: 'margin-top:8px', onclick: () => requestExact() }, 'אישור שעון מעורר מדויק'));
       root.appendChild(h('button', { class: 'btn sec block', style: 'margin-top:8px', onclick: () => openBattery() }, 'פטור מחיסכון בסוללה'));
+      root.appendChild(h('button', { class: 'btn sec block', style: 'margin-top:8px', onclick: () => requestOverlay() }, 'הצגה מעל אפליקציות אחרות (מסך צלצול מלא)'));
     }
     root.appendChild(h('div', { class: 'inline', style: 'margin-top:20px' },
       step > 0 ? h('button', { class: 'btn sec', onclick: () => { step--; pg.refresh(); } }, 'הקודם') : null,

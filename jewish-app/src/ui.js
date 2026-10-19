@@ -159,19 +159,31 @@ export const navBar = (mid, onPrev, onNext) => h('div', { class: 'navbar' },
   mid,
   h('button', { class: 'navbtn', 'aria-label': 'הבא', onclick: onNext }, icon('left', 34)));
 
-// גרירה לשינוי סדר בלחיצה ארוכה. לכל שורה data-id; onDone מקבל מערך מזהים בסדר החדש
-export function dragSort(container, onDone) {
-  let timer = null, active = null, sy = 0, pid = null;
+// גרירה לשינוי סדר בלחיצה ארוכה, גם בין קבוצות. wrap מכיל רשימות עם data-group; לכל שורה data-id.
+// onDone מקבל אובייקט {מפתח-קבוצה: [מזהים בסדר החדש]}
+export function dragSort(wrap, onDone) {
+  let timer = null, active = null, sy = 0;
+  const lists = () => [...wrap.querySelectorAll('[data-group]')];
+  const rowsOf = (l) => [...l.children].filter((r) => r.dataset && r.dataset.id);
   const lift = (row, y) => {
     active = row; row.classList.add('dragging');
+    wrap.classList.add('drag-on');
     if (navigator.vibrate) try { navigator.vibrate(25); } catch (e) { /* */ }
     follow(y);
   };
   const follow = (y) => {
-    const rows = [...container.children].filter((r) => r !== active && r.dataset && r.dataset.id);
+    // הרשימה הקרובה לגובה האצבע (גם רשימה ריקה)
+    let target = null, best = 1e9;
+    for (const l of lists()) {
+      const b = l.getBoundingClientRect();
+      const dist = y < b.top ? b.top - y : y > b.bottom ? y - b.bottom : 0;
+      if (dist < best) { best = dist; target = l; }
+    }
+    if (!target) return;
     let before = null;
-    for (const r of rows) { const b = r.getBoundingClientRect(); if (y < b.top + b.height / 2) { before = r; break; } }
-    if (before) { if (active.nextSibling !== before) container.insertBefore(active, before); } else if (container.lastChild !== active) container.appendChild(active);
+    for (const r of rowsOf(target)) { if (r === active) continue; const b = r.getBoundingClientRect(); if (y < b.top + b.height / 2) { before = r; break; } }
+    if (before) { if (active.nextSibling !== before || active.parentNode !== target) target.insertBefore(active, before); }
+    else if (active.parentNode !== target || rowsOf(target).slice(-1)[0] !== active) target.appendChild(active);
     active.style.transform = '';
     const b = active.getBoundingClientRect();
     active.style.transform = 'translateY(' + (y - (b.top + b.height / 2)) + 'px)';
@@ -181,26 +193,27 @@ export function dragSort(container, onDone) {
     if (!active) return;
     const row = active; active = null;
     row.classList.remove('dragging'); row.style.transform = '';
+    wrap.classList.remove('drag-on');
     const swallow = (e) => { e.stopPropagation(); e.preventDefault(); };
     row.addEventListener('click', swallow, { capture: true, once: true });
     setTimeout(() => row.removeEventListener('click', swallow, true), 400);
-    if (!cancel) onDone([...container.children].filter((r) => r.dataset && r.dataset.id).map((r) => r.dataset.id));
+    if (!cancel) { const out = {}; lists().forEach((l) => { out[l.dataset.group] = rowsOf(l).map((r) => r.dataset.id); }); onDone(out); }
   };
-  container.addEventListener('pointerdown', (e) => {
+  wrap.addEventListener('pointerdown', (e) => {
     const row = e.target.closest('[data-id]');
-    if (!row || row.parentNode !== container || e.target.closest('.nodrag')) return;
-    sy = e.clientY; pid = e.pointerId;
+    if (!row || !row.parentNode || !row.parentNode.dataset.group || e.target.closest('.nodrag')) return;
+    sy = e.clientY;
     clearTimeout(timer);
     timer = setTimeout(() => lift(row, sy), 225);
   });
-  container.addEventListener('pointermove', (e) => {
+  wrap.addEventListener('pointermove', (e) => {
     if (active) { e.preventDefault(); follow(e.clientY); sy = e.clientY; }
     else if (timer && Math.abs(e.clientY - sy) > 9) { clearTimeout(timer); timer = null; }
   });
-  container.addEventListener('touchmove', (e) => { if (active) { e.preventDefault(); follow(e.touches[0].clientY); } }, { passive: false });
-  ['pointerup'].forEach((ev) => container.addEventListener(ev, () => end(false)));
-  ['pointercancel'].forEach((ev) => container.addEventListener(ev, () => { clearTimeout(timer); if (active) end(false); }));
-  container.addEventListener('contextmenu', (e) => e.preventDefault());
+  wrap.addEventListener('touchmove', (e) => { if (active) { e.preventDefault(); follow(e.touches[0].clientY); } }, { passive: false });
+  wrap.addEventListener('pointerup', () => end(false));
+  wrap.addEventListener('pointercancel', () => { clearTimeout(timer); if (active) end(false); });
+  wrap.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
 // אייקון מצפן (קו דק, בצבע הנוכחי)
@@ -255,14 +268,18 @@ export function hebDate(valueKey, onChange) {
     if (m === 13 && !HDate.isLeapYear(y)) m = 12;
     d = Math.min(d, HDate.daysInMonth(m, y));
     const days = Array.from({ length: HDate.daysInMonth(m, y) }, (_, i) => [i + 1, gematria(i + 1)]);
-    const years = Array.from({ length: 9 }, (_, i) => y - 4 + i).map((v) => [v, yearName(v)]);
+    const yrs = Array.from({ length: 14 }, (_, i) => 5786 + i);
+    if (!yrs.includes(y)) { yrs.push(y); yrs.sort((p, q) => p - q); }
+    const years = yrs.map((v) => [v, yearName(v)]);
     const g = new HDate(d, m, y).greg();
     wrap.replaceChildren(
       h('div', { class: 'wheels' },
         wheel(days, d, (v) => { d = Number(v); fire(); }),
         wheel(monthsOf(y), m, (v) => { m = Number(v); fire(); }),
         wheel(years, y, (v) => { y = Number(v); fire(); })),
-      h('div', { class: 'dim small', style: 'margin-top:2px' }, 'לועזי: ' + g.getDate() + '.' + (g.getMonth() + 1) + '.' + g.getFullYear()));
+      h('div', { class: 'inline', style: 'margin-top:4px;align-items:center' },
+        h('div', { class: 'dim small' }, 'לועזי: ' + g.getDate() + '.' + (g.getMonth() + 1) + '.' + g.getFullYear()),
+        h('button', { class: 'btn sec sm', style: 'flex:none', onclick: () => { const t = new HDate(new Date()); y = t.getFullYear(); m = t.getMonth(); d = t.getDate(); fire(); } }, 'היום')));
   }
   draw();
   return wrap;

@@ -28,32 +28,35 @@ export function learn() {
   const arch = st.tracks.filter((t) => t.archived);
   if (!act.length) root.appendChild(h('div', { class: 'card empty-note' }, 'עוד אין מסלולים. אפשר להתחיל מערכת חת״ת מוכנה או מכל תבנית אחרת.'));
   const ORDER = ['morning', 'afternoon', 'evening', 'any'];
-  const groups = ORDER.map((k) => [k, act.filter((t) => (ORDER.includes(t.part) ? t.part : 'any') === k)]).filter(([, l]) => l.length);
-  const renumber = (changedKey, ids) => {
-    const seq = [];
-    for (const [k, l] of groups) (k === changedKey ? ids.map((id) => st.tracks.find((x) => x.id === id)).filter(Boolean) : l).forEach((t) => seq.push(t));
-    seq.forEach((t, i) => { t.order = i; });
-  };
+  const groups = ORDER.map((k) => [k, act.filter((t) => (ORDER.includes(t.part) ? t.part : 'any') === k)]);
+  const wrap = h('div', { class: 'groups' });
   for (const [gk, gl] of groups) {
-    root.appendChild(h('div', { class: 'section-title' }, PARTS[gk]));
-    const list = h('div', { class: 'list' });
+    const list = h('div', { class: 'list', 'data-group': gk });
     gl.forEach((t) => {
       const pr = progressOf(t);
       list.appendChild(h('div', { class: 'row tap', 'data-id': t.id, style: t.paused ? 'opacity:.6' : '', onclick: () => editTrack(t.id) },
+        h('span', { class: 'updown', 'aria-hidden': 'true' }, '⇅'),
         h('div', { class: 'grow' },
           h('div', { class: 't' }, t.name, t.paused ? h('span', { class: 'tag blue' }, 'מושהה') : null),
           h('div', { class: 's' }, trackSummary(t, c)),
           pr != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(pr * 100) + '%' })) : null),
         h('button', { class: 'iconbtn nodrag', onclick: (e) => { e.stopPropagation(); trackMenu(t); } }, '⋮')));
     });
-    dragSort(list, (ids) => { renumber(gk, ids); commit(); });
-    root.appendChild(list);
+    if (!gl.length) list.appendChild(h('div', { class: 'ph dim small' }, 'גררו לכאן מסלול'));
+    wrap.appendChild(h('div', { class: 'grp' + (gl.length ? '' : ' grp-empty') }, h('div', { class: 'section-title' }, PARTS[gk]), list));
   }
+  // לחיצה ארוכה וגרירה: שינוי סדר, וגם העברה בין הקבוצות (בוקר / אחה״צ / ערב / במהלך היום)
+  dragSort(wrap, (byGroup) => {
+    let i = 0;
+    for (const gk of ORDER) for (const id of byGroup[gk] || []) { const t = st.tracks.find((x) => x.id === id); if (t) { t.part = gk; t.order = i++; } }
+    commit();
+  });
+  root.appendChild(wrap);
   if (arch.length) {
     root.appendChild(h('div', { class: 'section-title' }, 'ארכיון'));
     root.appendChild(h('div', { class: 'list' }, arch.map((t) => h('div', { class: 'row tap', onclick: () => trackMenu(t) }, h('div', { class: 'grow' }, h('div', { class: 't' }, t.name), h('div', { class: 's' }, 'בארכיון. ההיסטוריה נשמרה'))))));
   }
-  root.appendChild(h('p', { class: 'dim small', style: 'text-align:center;margin-top:12px' }, 'לחיצה ארוכה על מסלול וגרירה משנות סדר בתוך הקבוצה · ⋮ להשהיה, שכפול וארכיון · את הקבוצה (בוקר וכו׳) משנים בעריכת המסלול'));
+  root.appendChild(h('p', { class: 'dim small', style: 'text-align:center;margin-top:12px' }, 'לחיצה ארוכה על מסלול וגרירה: שינוי סדר, והעברה בין הקבוצות (בוקר, אחה״צ, ערב, במהלך היום) · ⋮ להשהיה, שכפול וארכיון'));
   return root;
 }
 
@@ -85,8 +88,9 @@ export function trackMenu(t) {
 export function pickTemplate() {
   const c = ctx();
   openSheet('מסלול חדש', (sh) => h('div', null,
+    h('button', { class: 'opt', onclick: () => { sh.close(); const n = newTrack('free'); n.order = c.st.tracks.length; editTrack(null, n); } }, h('div', null, h('b', null, 'מסלול בהתאמה אישית'), h('div', { class: 's muted small' }, 'שם, תדירות ותזכורת לפי בחירתכם'))),
     h('button', { class: 'opt', onclick: () => { addTemplate(c.st, 'chitas'); sh.close(); commit(); toast('נוספו ארבעת מסלולי החת״ת'); } }, h('div', null, h('b', null, 'חת״ת - ארבעה מסלולים'), h('div', { class: 's muted small' }, 'חומש, תהילים, תניא והיום יום'))),
-    TEMPLATES.map((t) => h('button', { class: 'opt', onclick: () => { sh.close(); const n = newTrack(t.tpl); n.order = c.st.tracks.length; editTrack(null, n); } }, t.name))));
+    TEMPLATES.filter((t) => t.tpl !== 'free').map((t) => h('button', { class: 'opt', onclick: () => { sh.close(); const n = newTrack(t.tpl); n.order = c.st.tracks.length; editTrack(null, n); } }, t.name))));
 }
 
 // עריכה: טיוטה נשמרת רק בלחיצה על שמירה
@@ -129,10 +133,8 @@ export function editTrack(id, fresh) {
     root.appendChild(field('קישור לטקסט (אופציונלי)', txt(d.url, (v) => up('url', v), 'https://...')));
     root.appendChild(field('איפה עצרתי', txt(d.where, (v) => up('where', v))));
     root.appendChild(h('label', { class: 'f' }, 'המסלול מתחיל בתאריך (אפשר אחורה, כדי להשלים רטרואקטיבית)'));
-    root.appendChild(h('div', { class: 'inline' },
-      h('div', { style: 'flex:3' }, hebDate(d.created || dkey(new Date()), (v) => { up('created', v); })),
-      h('button', { class: 'btn sec sm', style: 'flex:none', onclick: () => { up('created', tishreiKey()); pg.refresh(); } }, 'ראש השנה (תשרי)'),
-      h('button', { class: 'btn sec sm', style: 'flex:none', onclick: () => { up('created', dkey(new Date())); pg.refresh(); } }, 'היום')));
+    root.appendChild(hebDate(d.created || dkey(new Date()), (v) => { up('created', v); }));
+    root.appendChild(h('button', { class: 'btn sec sm', style: 'margin-top:6px', onclick: () => { up('created', tishreiKey()); pg.refresh(); } }, 'ראש השנה (תשרי)'));
     root.appendChild(h('button', { class: 'btn block', style: 'margin-top:18px', onclick: () => {
       if (!d.name.trim()) { toast('צריך שם למסלול'); return; }
       if (fresh) c.st.tracks.push(d);

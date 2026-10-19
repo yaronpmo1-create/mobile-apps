@@ -5,7 +5,7 @@ import { dkey, parseKey, addDays, hebrewDate, hebrewMonthYear, hebrewMonthDays, 
 import { setEntry, isDue, dayStatus, dueTracks, activeTracks, getEntry, streak, missingDays, pctRange, trackPct, lateCount, markAll, undoMark, isFreeDay, firstKey, beyondWindow } from '../lib/tracks.js';
 import { isChagDay } from '../lib/zm.js';
 import { trackRow, dayMarkControls } from './today.js';
-import { setDone, shareText } from '../lib/native.js';
+import { setDone } from '../lib/native.js';
 import { tishreiKey, hebrewMonthAnchor } from '../lib/dates.js';
 import { rerender } from '../core.js';
 
@@ -173,21 +173,6 @@ export function openDay(key0) {
 nav.openDay = openDay;
 nav.retro = () => retro();
 
-export function summaryText(c) {
-  const st = c.st;
-  const to = c.tk, from = dkey(addDays(c.today, -6));
-  const s = streak(st, c.tk);
-  const lines = ['סיכום שבועי - ' + hebrewDate(c.today)];
-  let d = parseKey(from);
-  for (let i = 0; i < 7; i++) {
-    const k = dkey(d), ds = dayStatus(st, k);
-    lines.push(WEEKDAYS[d.getDay()] + ': ' + (ds.kind === 'none' || ds.kind === 'special' ? '-' : ds.done + '/' + ds.total));
-    d = addDays(d, 1);
-  }
-  lines.push('הצלחה: ' + pctRange(st, from, to) + '%', 'רצף: ' + s.cur + ' ימים (שיא ' + s.best + ')');
-  return lines.join('\n');
-}
-
 export function stats() {
   openPage('סטטיסטיקה', (pg) => {
     const c = ctx();
@@ -213,7 +198,6 @@ export function stats() {
       root.appendChild(h('div', { class: 'section-title' }, 'אבני דרך'));
       root.appendChild(h('div', { class: 'chips' }, ms.map((m) => h('span', { class: 'chip' + (sk.best >= m ? ' on' : '') }, (sk.best >= m ? '✓ ' : '') + m + ' ימים'))));
     }
-    root.appendChild(h('button', { class: 'btn block', style: 'margin-top:14px', onclick: async () => { const r = await shareText('סיכום שבועי', summaryText(c)); if (r === 'copied') toast('הסיכום הועתק ללוח'); } }, 'שיתוף סיכום שבועי'));
     return root;
   });
 }
@@ -230,9 +214,8 @@ export function retro() {
     h('p', { class: 'muted small' }, 'מסמן כהושלם את הימים שבטווח, רק במסלולים שנבחרו ורק בימים שהם מתוזמנים. ימים שכבר סומנו לא משתנים.'),
     h('label', { class: 'f' }, 'מסלולים'),
     chips(tracks.map((t) => [t.id, t.name]), [...sel], (v) => { if (sel.has(v)) sel.delete(v); else sel.add(v); sh.refresh(); }),
-    h('div', { class: 'inline' },
-      field('מתאריך', hebDate(from, (v) => { from = v; })),
-      field('עד תאריך', hebDate(to, (v) => { to = v; }))),
+    field('מתאריך', hebDate(from, (v) => { from = v; })),
+    field('עד תאריך', hebDate(to, (v) => { to = v; })),
     h('button', { class: 'btn sec sm', style: 'margin-top:8px', onclick: () => { from = tishreiKey(); sh.refresh(); } }, 'התחלה מראש השנה (תשרי)'),
     h('button', { class: 'btn block', style: 'margin-top:14px', onclick: async () => {
       if (!sel.size) { toast('צריך לבחור מסלול'); return; }

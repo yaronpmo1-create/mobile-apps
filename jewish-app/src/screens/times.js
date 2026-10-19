@@ -6,7 +6,7 @@ import { hhmm, weekdayName, hebrewDate, addDays, dkey, parseKey, WD_LETTER } fro
 import { hebrewMonthAnchor, hebrewMonthDays, hebrewMonthYear } from '../lib/dates.js';
 import { newAlarm, ALARM_TEMPLATES, alarmTitle, daysLabel, REL, buildInstances } from '../lib/alarms.js';
 import { activeTracks } from '../lib/tracks.js';
-import { shareText, testAlarm } from '../lib/native.js';
+import { testAlarm } from '../lib/native.js';
 import { openCompass } from './extras.js';
 
 let view = 'day';
@@ -55,12 +55,7 @@ function dayView(c) {
   if (tt.havdalah) list.appendChild(h('div', { class: 'row' }, h('div', { class: 'grow t' }, 'הבדלה'), h('div', { class: 'ztime' }, hhmm(tt.havdalah, c.loc.tz))));
   root.appendChild(list);
   root.appendChild(h('p', { class: 'dim small', style: 'text-align:center' }, 'לחיצה על זמן: הוספת התראה'));
-  root.appendChild(h('div', { class: 'inline' },
-    h('button', { class: 'btn sec', onclick: async () => { const r = await shareText('זמני היום', dayText(c, d)); if (r === 'copied') toast('הזמנים הועתקו ללוח'); } }, 'שיתוף זמנים')));
   return root;
-}
-function dayText(c, d) {
-  return weekdayName(d) + ' ' + hebrewDate(d) + ' · ' + c.loc.name + '\n' + zmanLines(c, d).map((l) => l.name + ': ' + hhmm(l.t, c.loc.tz)).join('\n');
 }
 
 function weekView(c) {
@@ -76,17 +71,13 @@ function weekView(c) {
       return h('tr', { style: dkey(d) === c.tk ? 'color:var(--accent);font-weight:700' : '' }, h('td', null, WD_LETTER[d.getDay()] + '׳ ' + hebrewDayMonth(d)), cols.map((id) => h('td', { style: 'direction:ltr' }, hhmm(z[id], c.loc.tz))));
     })));
   root.appendChild(h('div', { class: 'scrollx card' }, tbl));
-  root.appendChild(h('button', { class: 'btn sec block', onclick: async () => {
-    const txt0 = [0, 1, 2, 3, 4, 5, 6].map((i) => dayText(c, addDays(start, i))).join('\n\n');
-    const r = await shareText('זמני השבוע', txt0); if (r === 'copied') toast('הטבלה הועתקה ללוח');
-  } }, 'שיתוף זמני השבוע'));
   return root;
 }
 
 export function newAlarmSheet() {
   const back = () => newAlarmSheet();
   openSheet('התראה חדשה', (sh) => h('div', null,
-    h('button', { class: 'opt', onclick: () => { sh.close(); editAlarm(null, 'fixed', null, back); } }, h('div', null, h('b', null, 'התראה כללית בשעה קבועה'), h('div', { class: 's muted small' }, 'אפשר גם בתאריך מסוים בלבד (כמו אירוע ביומן)'))),
+    h('button', { class: 'opt', onclick: () => { sh.close(); editAlarm(null, 'fixed', null, back); } }, h('div', null, h('b', null, 'התראה בהתאמה אישית'), h('div', { class: 's muted small' }, 'שעה קבועה, ימים או תאריך מסוים (כמו אירוע ביומן)'))),
     h('button', { class: 'opt', onclick: () => { sh.close(); editAlarm(null, 'zman', null, back); } }, 'לפי זמן הלכתי (לפני / בזמן / אחרי)'),
     h('button', { class: 'opt', onclick: () => { sh.close(); editAlarm(null, 'learning', null, back); } }, 'תזכורת לימוד (רק אם לא סומן)'),
     h('div', { class: 'section-title' }, 'תבניות מוכנות'),
@@ -109,9 +100,6 @@ function monthView(c) {
       return h('tr', { style: dkey(d) === c.tk ? 'color:var(--accent);font-weight:700' : '' }, h('td', null, WD_LETTER[d.getDay()] + '׳ ' + hebrewDayMonth(d)), cols.map((id) => h('td', { style: 'direction:ltr' }, hhmm(z[id], c.loc.tz))));
     })));
   root.appendChild(h('div', { class: 'scrollx card' }, tbl));
-  root.appendChild(h('button', { class: 'btn sec block', onclick: async () => {
-    const r = await shareText('זמני החודש', days.map((d) => dayText(c, d)).join('\n\n')); if (r === 'copied') toast('הטבלה הועתקה ללוח');
-  } }, 'שיתוף זמני החודש'));
   return root;
 }
 
@@ -129,16 +117,29 @@ function alarmsView(c) {
     else if (zToday[a.zman]) { const z = zToday[a.zman]; ms = ((z.getHours() * 60 + z.getMinutes()) + (a.rel === 'before' ? -(a.mins || 0) : a.rel === 'after' ? (a.mins || 0) : 0)) * 60000; }
     return ms == null ? 1e12 : ms;
   };
-  const list = h('div', { class: 'list' });
-  c.st.alarms.slice().sort((a, b) => tod(a) - tod(b)).forEach((a) => {
+  const rowOf = (a) => {
     const nt = nextAt[a.id];
-    list.appendChild(h('div', { class: 'row tap', style: a.enabled ? '' : 'opacity:.55', onclick: () => editAlarm(a.id, a.type) },
+    return h('div', { class: 'row tap', style: a.enabled ? '' : 'opacity:.55', onclick: () => editAlarm(a.id, a.type) },
       h('div', { class: 'grow' }, h('div', { class: 't' }, alarmTitle(a, c.st)),
         h('div', { class: 's' }, daysLabel(a.days, a.date) + (a.type === 'fixed' ? ' · ' + a.time : '') + (nt ? ' · הבאה ' + hhmm(new Date(nt)) : '') + (a.noRest !== false ? ' · לא בשבת, חג וערבי חג' : '') + (a.ring === false ? ' · התראה שקטה' : ''))),
       toggle(a.enabled, (v) => { a.enabled = v; commit(); }),
-      h('button', { class: 'iconbtn', onclick: (e) => { e.stopPropagation(); alarmMenu(a); } }, '⋮')));
-  });
-  if (c.st.alarms.length) root.appendChild(list);
+      h('button', { class: 'iconbtn', 'aria-label': 'מחיקה, שכפול ועוד', onclick: (e) => { e.stopPropagation(); alarmMenu(a); } }, '⋮'));
+  };
+  // רובריקות לפי סדר כרונולוגי: קבועות (לפי שעה ביום), ואז התראות לתאריך מסוים: השבוע, החודש, מאוחר יותר, שעברו
+  const dayDiff = (a) => Math.round((parseKey(a.date).getTime() - c.today.getTime()) / 86400000);
+  const dateTime = (a) => parseKey(a.date).getTime() + tod(a);
+  const groups = [
+    ['קבועות (לפי שעה ביום)', c.st.alarms.filter((a) => !a.date).sort((a, b) => tod(a) - tod(b))],
+    ['השבוע', c.st.alarms.filter((a) => a.date && dayDiff(a) >= 0 && dayDiff(a) < 7).sort((a, b) => dateTime(a) - dateTime(b))],
+    ['החודש', c.st.alarms.filter((a) => a.date && dayDiff(a) >= 7 && dayDiff(a) < 30).sort((a, b) => dateTime(a) - dateTime(b))],
+    ['מאוחר יותר', c.st.alarms.filter((a) => a.date && dayDiff(a) >= 30).sort((a, b) => dateTime(a) - dateTime(b))],
+    ['שעברו', c.st.alarms.filter((a) => a.date && dayDiff(a) < 0).sort((a, b) => dateTime(b) - dateTime(a))],
+  ];
+  for (const [title, arr] of groups) {
+    if (!arr.length) continue;
+    root.appendChild(h('div', { class: 'section-title' }, title));
+    root.appendChild(h('div', { class: 'list' }, arr.map(rowOf)));
+  }
   root.appendChild(h('div', { class: 'section-title' }, 'תזכורות אוטומטיות (ראש חודש, ערב שבת, הדלקת נרות) - בהגדרות'));
   return root;
 }
@@ -184,9 +185,10 @@ export function editAlarm(id, type, preset, back) {
       root.appendChild(h('p', { class: 'dim small' }, 'מצלצלת/מתריעה רק אם המסלול עדיין לא סומן, ושותקת אם כבר למדת.'));
     } else {
       root.appendChild(h('label', { class: 'f' }, 'תאריך מסוים (לא חובה): ההתראה תפעל רק בו'));
-      root.appendChild(h('div', { class: 'inline' },
-        d.date ? h('div', { style: 'flex:3' }, hebDate(d.date, (v) => { d.date = v; })) : h('button', { class: 'btn sec', onclick: () => { d.date = c.tk; pg.refresh(); } }, 'קביעת תאריך מסוים'),
-        d.date ? h('button', { class: 'btn sec sm', style: 'flex:none', onclick: () => { d.date = ''; pg.refresh(); } }, 'ניקוי תאריך') : null));
+      if (d.date) {
+        root.appendChild(hebDate(d.date, (v) => { d.date = v; }));
+        root.appendChild(h('button', { class: 'btn sec sm', style: 'margin-top:6px', onclick: () => { d.date = ''; pg.refresh(); } }, 'ניקוי תאריך'));
+      } else root.appendChild(h('button', { class: 'btn sec block', onclick: () => { d.date = c.tk; pg.refresh(); } }, 'קביעת תאריך מסוים'));
       if (!d.date) {
         root.appendChild(h('label', { class: 'f' }, 'ימים'));
         root.appendChild(chips(WD_LETTER.map((l, i) => [i, l]), d.days, (v) => { d.days = d.days.includes(v) ? d.days.filter((x) => x !== v) : d.days.concat(v).sort(); pg.refresh(); }));
@@ -205,7 +207,12 @@ export function editAlarm(id, type, preset, back) {
       saved = true;
       pg.close(); commit(); toast('ההתראה נשמרה');
     } }, 'שמירה'));
-    if (orig) root.appendChild(h('button', { class: 'btn ghost block', style: 'margin-top:10px', onclick: () => testAlarm(d.ring === false ? 'notify' : 'ring') }, 'בדיקה: צלצול בעוד 10 שניות'));
+    if (orig) root.appendChild(h('button', { class: 'btn ghost block', style: 'margin-top:10px', onclick: () => testAlarm(d.ring === false ? 'notify' : 'ring') }, 'בדיקה: צלצול בעוד 5 שניות'));
+    if (orig) root.appendChild(h('button', { class: 'btn danger block', style: 'margin-top:10px', onclick: async () => {
+      if (!(await confirmBox('למחוק את ההתראה?', 'מחיקה', true))) return;
+      c.st.alarms = c.st.alarms.filter((x) => x.id !== orig.id);
+      saved = true; pg.close(); commit(); toast('ההתראה נמחקה');
+    } }, 'מחיקת ההתראה'));
     return root;
   }, { onClose: () => { if (!saved && back) setTimeout(back, 40); } });
 }

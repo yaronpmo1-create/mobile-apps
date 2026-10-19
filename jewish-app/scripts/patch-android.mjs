@@ -27,7 +27,7 @@ for (const d of fs.readdirSync(path.join(root, 'assets/icons'), { withFileTypes:
 // 4. מניפסט
 let mf = fs.readFileSync(path.join(main, 'AndroidManifest.xml'), 'utf8');
 const perms = ['SCHEDULE_EXACT_ALARM', 'USE_EXACT_ALARM', 'POST_NOTIFICATIONS', 'USE_FULL_SCREEN_INTENT', 'FOREGROUND_SERVICE', 'FOREGROUND_SERVICE_MEDIA_PLAYBACK',
-  'RECEIVE_BOOT_COMPLETED', 'WAKE_LOCK', 'VIBRATE', 'ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION', 'REQUEST_IGNORE_BATTERY_OPTIMIZATIONS']
+  'RECEIVE_BOOT_COMPLETED', 'WAKE_LOCK', 'VIBRATE', 'ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION', 'REQUEST_IGNORE_BATTERY_OPTIMIZATIONS', 'SYSTEM_ALERT_WINDOW']
   .filter((p) => !mf.includes('android.permission.' + p))
   .map((p) => '    <uses-permission android:name="android.permission.' + p + '" />\n').join('');
 mf = mf.replace('</manifest>', perms + '</manifest>');

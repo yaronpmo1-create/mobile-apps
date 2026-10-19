@@ -24,11 +24,12 @@ export async function syncNow() {
 }
 export const setDone = async (dk, tid, v) => (isNative() ? safe(() => JA.setDone({ key: dk + '|' + tid, value: !!v })) : null);
 export const takeDone = async () => (isNative() ? safe(async () => JSON.parse((await JA.takeDone()).items || '[]'), []) : []);
-export const status = async () => (isNative() ? safe(() => JA.status(), {}) : { exact: true, notif: true, battery: true, fullScreen: true, sdk: 0, web: true });
+export const status = async () => (isNative() ? safe(() => JA.status(), {}) : { exact: true, notif: true, battery: true, fullScreen: true, overlay: true, sdk: 0, web: true });
 export const requestExact = () => isNative() && safe(() => JA.requestExact());
 export const openBattery = () => isNative() && safe(() => JA.openBattery());
 export const requestNotifications = () => isNative() && safe(() => JA.requestNotifications());
 export const requestFullScreen = () => isNative() && safe(() => JA.requestFullScreen());
+export const requestOverlay = () => isNative() && safe(() => JA.requestOverlay());
 export const testAlarm = async (kind) => isNative() && safe(() => JA.testAlarm({ kind, snd: get().settings.soundUri || '' }));
 export const getPending = async () => (isNative() ? safe(() => JA.getPending(), { count: 0 }) : { count: 0 });
 export const setWidget = async (next, left) => isNative() && safe(() => JA.setWidget({ next, left }));

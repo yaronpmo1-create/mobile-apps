@@ -98,6 +98,7 @@ public class JewishAlarmPlugin extends Plugin {
         r.put("notif", notif);
         r.put("battery", battery);
         r.put("fullScreen", full);
+        r.put("overlay", Build.VERSION.SDK_INT < 23 || Settings.canDrawOverlays(c));
         r.put("sdk", Build.VERSION.SDK_INT);
         call.resolve(r);
     }
@@ -149,6 +150,14 @@ public class JewishAlarmPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void requestOverlay(PluginCall call) {
+        if (Build.VERSION.SDK_INT >= 23) {
+            launch(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + ctx().getPackageName())));
+        }
+        call.resolve();
+    }
+
+    @PluginMethod
     public void testAlarm(PluginCall call) {
         try {
             String kind = call.getString("kind", "ring");
@@ -165,7 +174,7 @@ public class JewishAlarmPlugin extends Plugin {
                 it.put("dk", "test");
                 it.put("tid", "test");
             }
-            Store.addSnooze(ctx(), it, System.currentTimeMillis() + 10000L);
+            Store.addSnooze(ctx(), it, System.currentTimeMillis() + 5000L);
             Scheduler.channels(ctx());
             Scheduler.scheduleNext(ctx());
             call.resolve();

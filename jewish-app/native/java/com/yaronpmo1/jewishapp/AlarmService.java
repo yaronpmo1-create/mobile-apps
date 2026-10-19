@@ -82,6 +82,13 @@ public class AlarmService extends Service {
             return START_NOT_STICKY;
         }
         startSound();
+        // כשהטלפון בשימוש (לא נעול) אנדרואיד מציג רק התראה צפה; עם הרשאת "הצגה מעל אפליקציות" פותחים את מסך הצלצול ישירות
+        try {
+            if (Build.VERSION.SDK_INT < 23 || android.provider.Settings.canDrawOverlays(this)) {
+                startActivity(new Intent(this, AlarmActivity.class).putExtra("item", item.toString())
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_USER_ACTION));
+            }
+        } catch (Exception ignored) { }
         // ללא "חוזרת עד כיבוי": נעצר אחרי דקה; עם: עד 10 דקות
         h.postDelayed(this::finish, item.optBoolean("rep", false) ? 10 * 60000L : 60000L);
         return START_NOT_STICKY;

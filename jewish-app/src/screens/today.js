@@ -223,8 +223,5 @@ export function today() {
     if (isToday && sk.cur) root.appendChild(h('p', { class: 'h-sub', style: 'text-align:center;margin-top:10px' }, 'רצף נוכחי: ' + sk.cur + ' ימים'));
   }
 
-  // עדכון לימוד: השלמות והוספת מסלול (בסוף)
-  root.appendChild(secHead('עדכון לימוד', [['השלמות', () => nav.goTab('journal')], ['+ מסלול', () => pickTemplate()]]));
-
   return root;
 }
