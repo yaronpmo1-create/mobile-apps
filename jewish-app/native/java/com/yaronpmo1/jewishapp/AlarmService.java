@@ -130,12 +130,16 @@ public class AlarmService extends Service {
                     .setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
             try { player.setDataSource(this, uri); } catch (Exception bad) { player.reset(); player.setDataSource(this, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)); }
             player.setLooping(true);
-            player.prepare();
             ramp = item.optBoolean("ramp", true);
             vol = ramp ? 0.08f : 1f;
             player.setVolume(vol, vol);
-            player.start();
-            if (ramp) h.postDelayed(rampUp, 1500);
+            final MediaPlayer mp = player;
+            mp.setOnPreparedListener(p -> {
+                if (player != mp) return;
+                try { mp.start(); } catch (Exception ignored) { }
+                if (ramp) h.postDelayed(rampUp, 1500);
+            });
+            mp.prepareAsync();
         } catch (Exception ignored) {
         }
         if (item.optBoolean("vib", true)) {

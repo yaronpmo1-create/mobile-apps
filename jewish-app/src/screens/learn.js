@@ -56,7 +56,8 @@ export function learn() {
     root.appendChild(h('div', { class: 'section-title' }, 'ארכיון'));
     root.appendChild(h('div', { class: 'list' }, arch.map((t) => h('div', { class: 'row tap', onclick: () => trackMenu(t) }, h('div', { class: 'grow' }, h('div', { class: 't' }, t.name), h('div', { class: 's' }, 'בארכיון. ההיסטוריה נשמרה'))))));
   }
-  root.appendChild(h('p', { class: 'dim small', style: 'text-align:center;margin-top:12px' }, 'לחיצה ארוכה על מסלול וגרירה: שינוי סדר, והעברה בין הקבוצות (בוקר, אחה״צ, ערב, במהלך היום) · ⋮ להשהיה, שכפול וארכיון'));
+  root.appendChild(h('p', { class: 'dim small', style: 'text-align:center;margin:12px 0 2px' }, 'לחיצה ארוכה וגרירה: שינוי סדר והעברה בין הקבוצות'));
+  root.appendChild(h('p', { class: 'dim small', style: 'text-align:center;margin:2px 0' }, '⋮ בכל מסלול: השהיה, שכפול, ארכיון ומחיקה'));
   return root;
 }
 
@@ -89,7 +90,7 @@ export function pickTemplate() {
   const c = ctx();
   openSheet('מסלול חדש', (sh) => h('div', null,
     h('button', { class: 'opt', onclick: () => { sh.close(); const n = newTrack('free'); n.order = c.st.tracks.length; editTrack(null, n); } }, h('div', null, h('b', null, 'מסלול בהתאמה אישית'), h('div', { class: 's muted small' }, 'שם, תדירות ותזכורת לפי בחירתכם'))),
-    h('button', { class: 'opt', onclick: () => { addTemplate(c.st, 'chitas'); sh.close(); commit(); toast('נוספו ארבעת מסלולי החת״ת'); } }, h('div', null, h('b', null, 'חת״ת - ארבעה מסלולים'), h('div', { class: 's muted small' }, 'חומש, תהילים, תניא והיום יום'))),
+    h('button', { class: 'opt', onclick: () => { addTemplate(c.st, 'chitas'); sh.close(); commit(); toast('נוספו חמשת מסלולי החת״ת'); } }, h('div', null, h('b', null, 'חת״ת יומי - חמישה מסלולים'), h('div', { class: 's muted small' }, 'חומש, תהילים, תניא, היום יום, משיח וגאולה'))),
     TEMPLATES.filter((t) => t.tpl !== 'free').map((t) => h('button', { class: 'opt', onclick: () => { sh.close(); const n = newTrack(t.tpl); n.order = c.st.tracks.length; editTrack(null, n); } }, t.name))));
 }
 

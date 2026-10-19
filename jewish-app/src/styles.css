@@ -180,3 +180,4 @@ button{transition:transform .08s,opacity .08s}
 .pressed{opacity:.6;filter:saturate(.6)}
 .chips.one{flex-wrap:nowrap;gap:4px}
 .chips.one .chip{min-width:0;flex:1;padding:7px 4px;font-size:.9rem;white-space:nowrap}
+.seg button{white-space:nowrap;padding:8px 2px;font-size:.88rem;min-width:0}

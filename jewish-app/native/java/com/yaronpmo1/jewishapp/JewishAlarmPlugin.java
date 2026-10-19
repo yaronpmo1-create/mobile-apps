@@ -165,7 +165,7 @@ public class JewishAlarmPlugin extends Plugin {
             it.put("ramp", false);
             it.put("vib", true);
             it.put("timer", true);
-            Store.addSnooze(ctx(), it, System.currentTimeMillis() + Math.max(1000L, ms));
+            Store.addSnooze(ctx(), it, System.currentTimeMillis() + Math.max(1000L, ms - 1500L));
             Scheduler.channels(ctx());
             Scheduler.scheduleNext(ctx());
             call.resolve();
@@ -261,7 +261,7 @@ public class JewishAlarmPlugin extends Plugin {
 
     @PluginMethod
     public void setWidget(PluginCall call) {
-        Store.p(ctx()).edit().putString("w_next", call.getString("next", "")).putString("w_left", call.getString("left", "")).apply();
+        Store.p(ctx()).edit().putString("w_next", call.getString("next", "")).putString("w_left", call.getString("left", "")).putString("w_dates", call.getString("dates", "[]")).apply();
         WidgetBase.updateAll(ctx());
         call.resolve();
     }

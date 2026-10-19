@@ -1,5 +1,5 @@
 // בדיקות לוגיקה: node scripts/test.mjs
-import { defaults } from '../src/lib/store.js';
+import { defaults, replaceAll, get } from '../src/lib/store.js';
 import { getLoc, zmanimFor, parshaOfWeek, isRestDay, restIntervals, inRest, todayKey, bearingTo, dayEvents } from '../src/lib/zm.js';
 import { gematria, tishreiKey, hhmm, dkey, parseKey, hebrewDate, addDays } from '../src/lib/dates.js';
 import { addTemplate, dueTracks, setEntry, dayStatus, streak, learnInfo, isLateMark, missingDays, markAll, undoMark, getEntry } from '../src/lib/tracks.js';
@@ -38,10 +38,10 @@ ok(b > 53 && b < 56, 'bearing NY ' + b);
 
 // מסלולים
 addTemplate(st, 'chitas');
-eq(st.tracks.length, 4, 'chitas = 4 tracks');
+eq(st.tracks.length, 5, 'chitas = 5 tracks');
 const today = '2026-10-16';
 st.tracks.forEach((t) => (t.created = '2026-10-01'));
-eq(dueTracks(st, today).length, 4, 'all due daily');
+eq(dueTracks(st, today).length, 5, 'all due daily');
 const chumash = st.tracks.find((t) => t.tpl === 'chumash');
 eq(learnInfo(chumash, parseKey(today), st).sub, 'פרשת נח - שישי', 'chumash label');
 const tehilim = st.tracks.find((t) => t.tpl === 'tehilim');
@@ -149,6 +149,23 @@ ok(hebrewDate(new Date(2026, 9, 18)).includes('מרחשון'), 'marcheshvan name
   ok(inRest(cand[1] - 60000, iv), 'just before havdalah is rest');
   ok(!inRest(cand[1] + 60000, iv), 'after havdalah is not rest');
   eq(newAlarm('fixed').noRest, true, 'new alarm excludes shabbat/chag by default');
+}
+// חת״ת חמישה מסלולים: שדרוג ממצב ישן מוסיף "משיח וגאולה" ולא נוגע בקיים
+{
+  const old = defaults(); old.v = 5;
+  for (const k of ['chumash', 'tehilim', 'tanya', 'hayomyom']) addTemplate(old, k);
+  const t0 = old.tracks[0];
+  old.entries['2026-10-18'] = { [t0.id]: { s: 'done', t: 1 } };
+  replaceAll(JSON.parse(JSON.stringify(old)));
+  const s2 = get();
+  eq(s2.tracks.length, 5, 'moshiach added on upgrade');
+  eq(s2.tracks[4].name, 'משיח וגאולה', 'moshiach name');
+  eq(s2.tracks[0].name, 'חומש עם רש״י', 'existing name kept');
+  eq(s2.entries['2026-10-18'][t0.id].s, 'done', 'history kept');
+  replaceAll(JSON.parse(JSON.stringify(s2)));
+  eq(get().tracks.length, 5, 'moshiach not added twice');
+  const fresh = defaults(); addTemplate(fresh, 'chitas');
+  eq(fresh.tracks.length, 5, 'chitas template has 5');
 }
 console.log(n + ' בדיקות, ' + fails + ' נכשלו');
 process.exit(fails ? 1 : 0);

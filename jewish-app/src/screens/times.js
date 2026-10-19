@@ -4,11 +4,11 @@ import { ctx, commit, nav } from '../core.js';
 import { ZMAN_DEFS, zmanimFor, zmanName, METHODS, timedOn, dayEvents, parshaOfWeek, isRestDay } from '../lib/zm.js';
 import { hhmm, weekdayName, hebrewDate, addDays, dkey, parseKey, WD_LETTER } from '../lib/dates.js';
 import { hebrewMonthAnchor, hebrewMonthDays, hebrewMonthYear } from '../lib/dates.js';
-import { newAlarm, ALARM_TEMPLATES, alarmTitle, daysLabel, REL, buildInstances } from '../lib/alarms.js';
+import { newAlarm, ALARM_TEMPLATES, alarmTitle, daysLabel, REL, buildInstances, instTitle } from '../lib/alarms.js';
 import { activeTracks } from '../lib/tracks.js';
 import { testAlarm } from '../lib/native.js';
 import { openCompass } from './extras.js';
-import { clockView, timerView } from './clock.js';
+import { clockView, timerView, durationPicker } from './clock.js';
 
 let view = 'day';
 let offset = 0;
@@ -109,10 +109,14 @@ function monthView(c) {
 
 function alarmsView(c) {
   const root = h('div', null);
-  root.appendChild(h('div', { class: 'inline', style: 'margin-bottom:12px' }, h('button', { class: 'btn', onclick: () => newAlarmSheet() }, '+ התראה חדשה'), h('button', { class: 'btn sec', onclick: () => remindSheet() }, 'הזכר לי בעוד...')));
-  if (!c.st.alarms.length) root.appendChild(h('div', { class: 'card empty-note' }, 'אין התראות עדיין. אפשר ללחוץ על זמן במסך הזמנים, או על "התראה חדשה".'));
-  const nextAt = {};
-  for (const i of buildInstances(c.st, c.now, 60, 3000)) { const m = /^A\|([^|]+)\|/.exec(i.id); if (m && !nextAt[m[1]]) nextAt[m[1]] = i.t; }
+  root.appendChild(h('div', { class: 'inline', style: 'margin-bottom:12px' }, h('button', { class: 'btn', onclick: () => newAlarmSheet() }, '+ התראה חדשה'), h('button', { class: 'btn sec', onclick: () => remindSheet() }, 'תזכורת מהירה')));
+  const nextAt = {}, autos = {};
+  for (const i of buildInstances(c.st, c.now, 60, 3000)) {
+    const m = /^A\|([^|]+)\|/.exec(i.id);
+    if (m) { if (!nextAt[m[1]]) nextAt[m[1]] = i.t; continue; }
+    const parts = i.id.split('|'), key = parts.slice(0, parts[0] === 'L' || parts[0] === 'Y' ? 2 : 1).join('|');
+    if (!autos[key]) autos[key] = i;
+  }
   // לפי סדר היום: מהמוקדם למאוחר (שעת ההתראה היום)
   const zToday = zmanimFor(c.today, c.loc, c.s.method, c.s.tzeitMode);
   const tod = (a) => {
@@ -121,15 +125,6 @@ function alarmsView(c) {
     else if (zToday[a.zman]) { const z = zToday[a.zman]; ms = ((z.getHours() * 60 + z.getMinutes()) + (a.rel === 'before' ? -(a.mins || 0) : a.rel === 'after' ? (a.mins || 0) : 0)) * 60000; }
     return ms == null ? 1e12 : ms;
   };
-  const rowOf = (a) => {
-    const nt = nextAt[a.id];
-    return h('div', { class: 'row tap', style: a.enabled ? '' : 'opacity:.55', onclick: () => editAlarm(a.id, a.type) },
-      h('div', { class: 'grow' }, h('div', { class: 't' }, alarmTitle(a, c.st)),
-        h('div', { class: 's' }, daysLabel(a.days, a.date) + (a.type === 'fixed' ? ' · ' + a.time : '') + (nt ? ' · הבאה ' + hhmm(new Date(nt)) : '') + (a.noRest !== false ? ' · לא בשבת, חג וערבי חג' : '') + (a.ring === false ? ' · התראה שקטה' : ''))),
-      toggle(a.enabled, (v) => { a.enabled = v; commit(); }),
-      h('button', { class: 'iconbtn', 'aria-label': 'מחיקה, שכפול ועוד', onclick: (e) => { e.stopPropagation(); alarmMenu(a); } }, '⋮'));
-  };
-  // כל התראה מופיעה פעם אחת, לפי המועד הקרוב שלה: היום, השבוע, החודש, מאוחר יותר (תאריך ספציפי), וכבויות או שעברו
   const d0 = new Date(c.now.getFullYear(), c.now.getMonth(), c.now.getDate()).getTime(), nowMs = c.now.getTime();
   const nextTime = (a) => {
     if (nextAt[a.id]) return nextAt[a.id];
@@ -137,39 +132,52 @@ function alarmsView(c) {
     const t = d0 + tod(a);
     return t < nowMs ? t + 86400000 : t;
   };
-  const bucket = (a) => {
-    if (!a.enabled) return 4;
-    const t = nextTime(a);
-    if (t < nowMs) return 4;
-    const days = Math.floor((t - d0) / 86400000);
+  // כל התראה מופיעה פעם אחת, לפי המועד הקרוב שלה: היום, השבוע, החודש, מאוחר יותר (תאריך ספציפי), וכבויות או שעברו.
+  // תזכורות אוטומטיות ותזכורות לימוד מופיעות גם הן (לקריאה בלבד)
+  const items = c.st.alarms.map((a) => ({ a, t: nextTime(a), off: !a.enabled }))
+    .concat(Object.values(autos).map((i) => ({ auto: i, t: i.t, off: false })));
+  const bucket = (it) => {
+    if (it.off || it.t < nowMs) return 4;
+    const days = Math.floor((it.t - d0) / 86400000);
     return days < 1 ? 0 : days < 7 ? 1 : days < 30 ? 2 : 3;
   };
+  const rowOf = (it) => {
+    if (it.auto) {
+      return h('div', { class: 'row tap', onclick: () => toast('תזכורת אוטומטית: מנוהלת בהגדרות או בעריכת המסלול') },
+        h('div', { class: 'grow' }, h('div', { class: 't' }, instTitle(it.auto)), h('div', { class: 's' }, 'אוטומטית · ' + hhmm(new Date(it.t)))));
+    }
+    const a = it.a, nt = nextAt[a.id];
+    return h('div', { class: 'row tap', style: a.enabled ? '' : 'opacity:.55', onclick: () => editAlarm(a.id, a.type) },
+      h('div', { class: 'grow' }, h('div', { class: 't' }, alarmTitle(a, c.st)),
+        h('div', { class: 's' }, daysLabel(a.days, a.date) + (a.type === 'fixed' ? ' · ' + a.time : '') + (nt ? ' · הבאה ' + hhmm(new Date(nt)) : '') + (a.noRest !== false ? ' · לא בשבת, חג וערבי חג' : '') + (a.ring === false ? ' · התראה שקטה' : ''))),
+      toggle(a.enabled, (v) => { a.enabled = v; commit(); }),
+      h('button', { class: 'iconbtn', 'aria-label': 'מחיקה, שכפול ועוד', onclick: (e) => { e.stopPropagation(); alarmMenu(a); } }, '⋮'));
+  };
   const titles = ['היום', 'השבוע (7 הימים הקרובים)', 'החודש', 'מאוחר יותר (תאריך ספציפי)', 'כבויות או שעברו'];
-  const groups = titles.map((tt, k) => [tt, c.st.alarms.filter((a) => bucket(a) === k).sort((a, b) => nextTime(a) - nextTime(b))]);
-  for (const [title, arr] of groups) {
-    if (!arr.length) continue;
-    root.appendChild(h('div', { class: 'section-title' }, title));
+  if (!items.length) root.appendChild(h('div', { class: 'card empty-note' }, 'אין התראות עדיין. אפשר ללחוץ על זמן במסך הזמנים, או על "התראה חדשה".'));
+  titles.forEach((tt, k) => {
+    const arr = items.filter((it) => bucket(it) === k).sort((a, b) => a.t - b.t);
+    if (!arr.length) return;
+    root.appendChild(h('div', { class: 'section-title' }, tt));
     root.appendChild(h('div', { class: 'list' }, arr.map(rowOf)));
-  }
-  root.appendChild(h('div', { class: 'section-title' }, 'תזכורות אוטומטיות (ראש חודש, ערב שבת, הדלקת נרות) - בהגדרות'));
+  });
   return root;
 }
-// "הזכר לי בעוד...": התראה חד-פעמית בעוד X דקות (נשמרת ברשימה, אפשר למחוק)
+// תזכורת מהירה: התראה חד-פעמית בעוד זמן שנבחר (נשמרת ברשימה, אפשר למחוק)
+const remSel = { h: 0, m: 10, s: 0 };
 function remindSheet() {
   const c = ctx();
-  let label = '', custom = 20;
-  const make = (m, sh) => {
+  const make = (sh) => {
+    const m = remSel.h * 60 + remSel.m;
+    if (m < 1) { toast('צריך לבחור לפחות דקה'); return; }
     const tm = Math.ceil((Date.now() + m * 60000) / 60000) * 60000, d = new Date(tm);
     const time = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-    c.st.alarms.push(Object.assign(newAlarm('fixed'), { label: label.trim() || 'תזכורת', time, date: dkey(d), noRest: false, ring: true, snooze: true }));
+    c.st.alarms.push(Object.assign(newAlarm('fixed'), { label: 'תזכורת', time, date: dkey(d), noRest: false, ring: true, snooze: true }));
     sh.close(); commit(); toast('התזכורת נקבעה לשעה ' + time);
   };
-  openSheet('הזכר לי בעוד...', (sh) => h('div', null,
-    field('על מה להזכיר (לא חובה)', txt('', (v) => (label = v), 'למשל: להוציא את העוגה')),
-    h('label', { class: 'f' }, 'בעוד כמה זמן'),
-    h('div', { class: 'chips' }, [5, 10, 15, 30, 60, 120].map((m) => h('button', { class: 'chip', onclick: () => make(m, sh) }, m < 60 ? m + ' דק׳' : m / 60 + ' שע׳'))),
-    h('div', { class: 'inline', style: 'align-items:flex-end' }, field('או מספר דקות', txt(custom, (v) => (custom = Number(v) || 0), '', 'number')),
-      h('button', { class: 'btn', style: 'flex:none', onclick: () => { if (custom < 1) { toast('צריך לפחות דקה'); return; } make(Math.round(custom), sh); } }, 'קביעה'))));
+  openSheet('תזכורת מהירה', (sh) => h('div', null,
+    durationPicker(remSel, { seconds: false, chips: [5, 10, 15, 30, 60], refresh: () => sh.refresh() }),
+    h('button', { class: 'btn block', style: 'margin-top:12px', onclick: () => make(sh) }, 'קביעה')));
 }
 function alarmMenu(a) {
   const c = ctx();
@@ -194,10 +202,10 @@ export function editAlarm(id, type, preset, back) {
   const orig = id ? c.st.alarms.find((a) => a.id === id) : null;
   const d = JSON.parse(JSON.stringify(orig || preset || newAlarm(type || 'zman')));
   if (!orig && !d.type) d.type = type;
-  if (d.type === 'learning') { d.timeMode = d.timeMode || 'time'; if (!d.trackId) { const t = activeTracks(c.st)[0]; d.trackId = t ? t.id : ''; } d.time = d.time || '21:00'; d.ring = d.ring === true; }
+  if (d.type === 'learning') { d.timeMode = d.timeMode || 'time'; if (!d.trackId) { const t = activeTracks(c.st)[0]; d.trackId = t ? t.id : ''; } d.time = d.time || '21:00'; d.ring = orig ? d.ring === true : true; }
   openPage(orig ? 'עריכת התראה' : 'התראה חדשה', (pg) => {
     const root = h('div', null);
-    root.appendChild(seg([['zman', 'זמן הלכתי'], ['fixed', 'שעה קבועה'], ['learning', 'תזכורת לימוד']], d.type, (v) => { d.type = v; if (v === 'learning') { d.timeMode = d.timeMode || 'time'; d.ring = false; const t = activeTracks(c.st)[0]; if (!d.trackId && t) d.trackId = t.id; } pg.refresh(); }));
+    root.appendChild(seg([['zman', 'זמן הלכתי'], ['fixed', 'שעה קבועה'], ['learning', 'תזכורת לימוד']], d.type, (v) => { d.type = v; if (v === 'learning') { d.timeMode = d.timeMode || 'time'; if (d.ring === undefined) d.ring = true; const t = activeTracks(c.st)[0]; if (!d.trackId && t) d.trackId = t.id; } pg.refresh(); }));
     root.appendChild(field('שם (אופציונלי)', txt(d.label, (v) => (d.label = v), 'למשל: מנחה')));
     const zmanPick = () => h('div', { class: 'inline' },
       field('זמן', sel(ZMAN_DEFS.map((z) => [z.id, z.name]), d.zman, (v) => { d.zman = v; pg.refresh(); })),
@@ -225,7 +233,7 @@ export function editAlarm(id, type, preset, back) {
     const sw = (label, key, def = true) => h('div', { class: 'row' }, h('div', { class: 'grow' }, label), toggle(d[key] === undefined ? def : d[key], (v) => { d[key] = v; pg.refresh(); }));
     root.appendChild(h('div', { class: 'list' },
       sw('לא בשבת, חג וערבי חג (מהדלקת נרות עד הבדלה)', 'noRest', true),
-      sw('מסך צלצול מלא (כבוי: התראה בוילון בלבד)', 'ring', d.type !== 'learning'),
+      sw('מסך צלצול מלא (כבוי: התראה בוילון בלבד)', 'ring', true),
       ));
     const sn = d.repeat ? 'rep' : d.snooze === false ? 0 : (d.snoozeMin || c.s.snoozeMin || 10);
     const snOpts = [...new Set([1, 3, 10, sn].filter((x) => typeof x === 'number' && x > 0))].sort((a, b) => a - b);

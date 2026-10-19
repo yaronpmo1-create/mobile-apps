@@ -222,6 +222,18 @@ export function dragSort(wrap, onDone) {
   wrap.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
+// אייקונים של שורת הלשוניות: כולם באותו גודל וסגנון קו
+const TAB_ICONS = {
+  today: '<circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.3M12 19.2v2.3M2.5 12h2.3M19.2 12h2.3M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/>',
+  times: '<circle cx="12" cy="12" r="9"/><path d="M12 6.5V12l3.6 2.2"/>',
+  learn: '<path d="M3.5 5.5c2.9-.9 5.6-.7 8.5 1v13c-2.9-1.7-5.6-1.9-8.5-1zM20.5 5.5c-2.9-.9-5.6-.7-8.5 1v13c2.9-1.7 5.6-1.9 8.5-1z"/>',
+  journal: '<rect x="3.5" y="4.5" width="17" height="16" rx="2.5"/><path d="M3.5 9.5h17M8 2.8v3.4M16 2.8v3.4M8 14h2M14 14h2M8 17.2h2"/>',
+};
+export function tabIcon(k, size = 27) {
+  const s = h('span', { class: 'ico', 'aria-hidden': 'true' });
+  s.innerHTML = '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + TAB_ICONS[k] + '</svg>';
+  return s;
+}
 // אייקון מצפן (קו דק, בצבע הנוכחי)
 export function compassIcon(size = 28) {
   const s = h('span', { class: 'ico', 'aria-hidden': 'true' });

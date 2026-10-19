@@ -31,6 +31,10 @@ export function alarmTitle(a, st) {
   }
   return (a.rel === 'at' ? '' : a.mins + ' דקות ' + REL[a.rel] + ' ') + zmanName(a.zman);
 }
+// כותרת קצרה להתראה מחושבת (גם תזכורות אוטומטיות ולימוד)
+export function instTitle(i) {
+  return i.title === 'זמן לימוד' && i.text ? i.text.replace(' - עדיין לא סומן היום', '').replace('עכשיו ', 'לימוד: ') : i.title;
+}
 export function daysLabel(days, date) {
   if (date) { const p = date.split('-'); return 'בתאריך ' + hebrewDayMonth(new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), 12)); }
   if (!days || days.length === 7) return 'כל יום';

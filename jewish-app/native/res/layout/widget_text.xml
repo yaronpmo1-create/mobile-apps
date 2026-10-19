@@ -23,7 +23,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
         android:gravity="start"
-        android:maxLines="3"
+        android:maxLines="4"
         android:textColor="#F3EFE8"
         android:textSize="16sp" />
 </LinearLayout>

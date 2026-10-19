@@ -5,5 +5,5 @@ public class NextWidget extends WidgetBase {
     protected String key() { return "w_next"; }
 
     @Override
-    protected String title() { return "הזמן הבא"; }
+    protected String title() { return "האירועים הבאים"; }
 }

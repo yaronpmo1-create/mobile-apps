@@ -1,6 +1,6 @@
 import { load, get, save, onChange } from './lib/store.js';
 import { applyTheme } from './lib/theme.js';
-import { h, $, layerCount, hasPages, openLayer, icon, compassIcon, backPress, swipeNav } from './ui.js';
+import { h, $, layerCount, hasPages, openLayer, icon, compassIcon, tabIcon, backPress, swipeNav } from './ui.js';
 import { App as CapApp } from '@capacitor/app';
 import { setRender, ctx, commit, nav } from './core.js';
 import { today, nextZman, countdown, shiftDay, resetDay } from './screens/today.js';
@@ -11,12 +11,13 @@ import { settingsMain } from './screens/settings.js';
 import { firstRun, openCompass } from './screens/extras.js';
 import { syncNow, takeDone, setWidget, setDone } from './lib/native.js';
 import { dueTracks, getEntry, setEntry, addTemplate } from './lib/tracks.js';
-import { hhmm } from './lib/dates.js';
+import { hhmm, hebrewDate, hebrewDayLetter, WD_LETTER, dkey, addDays } from './lib/dates.js';
+import { buildInstances, instTitle } from './lib/alarms.js';
 
 load();
 // תצוגה מקדימה בדפדפן: נתוני דוגמה (ערכת חת״ת) כדי שהמסך הראשי לא יהיה ריק
 if (window.__PREVIEW && !get().tracks.length) { addTemplate(get(), 'chitas'); get().first = false; }
-const TABS = [['today', 'היום', '◉'], ['times', 'זמנים\nוהתראות', '◔'], ['learn', 'לימוד\nומסלולים', '☰'], ['journal', 'יומן\nומעקב', '▦']];
+const TABS = [['today', 'היום'], ['times', 'זמנים\nוהתראות'], ['learn', 'לימוד\nומסלולים'], ['journal', 'יומן\nומעקב']];
 const TITLES = { today: 'אפליקציה יהודית', learn: 'לימוד ומסלולים', times: 'זמנים והתראות', journal: 'יומן ומעקב' };
 const SCREENS = { today, learn, times, journal };
 let tab = 'today';
@@ -31,7 +32,7 @@ function render() {
   let body;
   try { body = SCREENS[tab](); } catch (e) { body = h('pre', { style: 'white-space:pre-wrap;color:var(--bad)' }, 'שגיאה: ' + e.message + '\n' + (e.stack || '')); console.error(e); }
   const main = h('div', { class: 'main' }, body);
-  const bar = h('div', { class: 'tabbar' }, TABS.map(([k, l, ic]) => h('button', { class: 'tab' + (k === tab ? ' on' : ''), onclick: () => goTab(k) }, h('span', { class: 'ic' }, ic), h('span', { class: 'lbl' }, l.split('\n').flatMap((x, i) => (i ? [h('br'), h('span', { class: 'l2' }, x)] : [h('span', { class: 'l1' }, x)]))))));
+  const bar = h('div', { class: 'tabbar' }, TABS.map(([k, l]) => h('button', { class: 'tab' + (k === tab ? ' on' : ''), onclick: () => goTab(k) }, h('span', { class: 'ic' }, tabIcon(k)), h('span', { class: 'lbl' }, l.split('\n').flatMap((x, i) => (i ? [h('br'), h('span', { class: 'l2' }, x)] : [h('span', { class: 'l1' }, x)]))))));
   // החלקה ימינה = הבא, שמאלה = הקודם (כיוון עברית): יום במסך היום ובזמנים, חודש ביומן
   if (tab === 'today') swipeNav(main, (d) => shiftDay(d));
   else if (tab === 'times') swipeNav(main, (d) => shiftTimesDay(d));
@@ -65,7 +66,18 @@ function pushWidget() {
     const c = ctx();
     const nz = nextZman(c);
     const due = dueTracks(c.st, c.tk).filter((t) => { const e = getEntry(c.st, c.tk, t.id); return !e; });
-    setWidget(nz ? nz.name + ' ' + hhmm(nz.t, c.loc.tz) + ' · בעוד ' + countdown(nz.t - c.now) : '', due.length ? 'נשאר ללמוד: ' + due.map((t) => t.name).slice(0, 4).join(', ') : 'כל הלימוד של היום הושלם');
+    let al = null;
+    try { al = buildInstances(c.st, c.now, 3, 40)[0] || null; } catch (e) { /* */ }
+    const events = (nz ? 'הזמן הבא: ' + nz.name + ' ' + hhmm(nz.t, c.loc.tz) + ' · בעוד ' + countdown(nz.t - c.now) : '') + (al ? '\nהתראה: ' + instTitle(al) + ' ' + hhmm(new Date(al.t)) : '');
+    // 62 ימים קדימה: תאריך עברי לווידג'ט (מתעדכן בחצות גם כשהאפליקציה סגורה)
+    const dates = [];
+    for (let i = 0; i < 62; i++) {
+      const d = addDays(c.now, i);
+      const parts = hebrewDate(d).split(' ');
+      const letter = hebrewDayLetter(d);
+      dates.push({ k: dkey(d), wd: 'יום ' + WD_LETTER[d.getDay()] + '׳', d: letter.length <= 2 ? letter.replace('׳', '') : letter, m: parts.slice(1, -1).join(' '), y: parts[parts.length - 1] });
+    }
+    setWidget(events, due.length ? 'נשאר ללמוד: ' + due.map((t) => t.name).slice(0, 5).join(', ') : 'כל הלימוד של היום הושלם', dates);
   } catch (e) { /* */ }
 }
 

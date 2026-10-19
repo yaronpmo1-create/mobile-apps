@@ -34,7 +34,7 @@ export const cancelTimer = async () => isNative() && safe(() => JA.cancelTimer()
 export const requestOverlay = () => isNative() && safe(() => JA.requestOverlay());
 export const testAlarm = async (kind) => isNative() && safe(() => JA.testAlarm({ kind, snd: get().settings.soundUri || '' }));
 export const getPending = async () => (isNative() ? safe(() => JA.getPending(), { count: 0 }) : { count: 0 });
-export const setWidget = async (next, left) => isNative() && safe(() => JA.setWidget({ next, left }));
+export const setWidget = async (next, left, dates) => isNative() && safe(() => JA.setWidget({ next, left, dates: JSON.stringify(dates || []) }));
 
 // שיתוף טקסט דרך מערכת ההפעלה; אם אין, העתקה ללוח
 export async function shareText(title, text) {

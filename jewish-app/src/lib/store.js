@@ -10,7 +10,7 @@ export const TAB_COLORS = { today: '#C99A2E', learn: '#2E8B57', times: '#2F6FB5'
 
 export function defaults() {
   return {
-    v: 5,
+    v: 6,
     first: true,
     settings: {
       theme: 'auto', palette: 'gold', fontScale: 1, density: 'normal', contrast: false, tabColors: false, corners: 'round',
@@ -72,10 +72,19 @@ function migrate(s) {
     for (const t of s.tracks) if (t.name === 'מסלול חופשי') t.name = 'מסלול בהתאמה אישית';
     s.v = 5;
   }
+  if (s.v < 6) {
+    // חת״ת חמישה מסלולים: מוסיפים "משיח וגאולה" למי שיש לו את מסלולי החת״ת. לא נמחק ולא משתנה שום דבר קיים
+    const has = (p) => s.tracks.some((t) => t.tpl === p);
+    if (has('chumash') && has('tanya') && !has('moshiach')) {
+      const base = s.tracks.find((t) => t.tpl === 'tanya');
+      s.tracks.push({ id: 't' + Date.now().toString(36) + 'mg', tpl: 'moshiach', name: 'משיח וגאולה', auto: '', counter: false, unit: '', pos: 1, total: 0, step: 1, freq: 'daily', days: [0, 1, 2, 3, 4, 5, 6], weeklyDay: 6, monthlyDay: 1, target: 1, part: 'morning', remind: { mode: 'none', time: '21:00', zman: 'shkiah', rel: 'before', mins: 30, ring: true }, url: '', paused: false, archived: false, order: s.tracks.length, where: '', created: (base && base.created) || tishreiKey() });
+    }
+    s.v = 6;
+  }
   return s;
 }
 // הגנה על מידע עבר: לפני שדרוג מבנה נתונים נשמר עותק של הנתונים הישנים, ונתונים שלא ניתן לקרוא לא נמחקים אלא נשמרים בצד
-const CUR_V = 5;
+const CUR_V = 6;
 export function load() {
   const base = defaults();
   try {

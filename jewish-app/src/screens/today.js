@@ -130,7 +130,7 @@ export function dayMarkControls(c, key, due, set, refresh) {
   const same = (arr) => arr.length > 0 && set.size === arr.length && arr.every((tr) => set.has(tr.id));
   const pick = (arr) => () => { const was = same(arr); set.clear(); if (!was) arr.forEach((tr) => set.add(tr.id)); refresh(); };
   const out = [
-    h('p', { class: 'dim small', style: 'text-align:center;margin:6px 0' }, 'לחיצה ארוכה על הלימוד הספציפי: להוספת הערה ו"איפה עצרתי"'),
+    h('p', { class: 'dim small', style: 'text-align:center;margin:6px 0;white-space:nowrap;font-size:.78rem' }, 'לחיצה ארוכה על לימוד: הערה ו"איפה עצרתי"'),
     h('div', { class: 'inline', style: 'margin-bottom:6px' },
       h('button', { class: same(undone) ? 'btn' : 'btn sec', disabled: !undone.length, onclick: pick(undone) }, undone.length ? 'סמן הכל' : 'הכל סומן ✓'),
       h('button', { class: same(done) ? 'btn' : 'btn sec', disabled: !done.length, onclick: pick(done) }, 'בטל הכל')),
@@ -186,11 +186,11 @@ export function today() {
     let nextAl = null;
     try { nextAl = buildInstances(st, c.now, 3, 40)[0] || null; } catch (e) { /* */ }
     root.appendChild(h('div', { class: 'pair' },
-      h('div', { class: 'card mini tap', onclick: () => nav.goTab('times') },
+      h('div', { class: 'card mini tap', onclick: () => { nav.timesView('day'); nav.goTab('times'); } },
         h('div', { class: 'muted small' }, 'הזמן הבא · ' + (nz ? hhmm(nz.t, loc.tz) : '')),
         h('div', { class: 'big mid wrap' }, nz ? nz.name : '-'),
         h('div', { class: 'muted small' }, nz ? 'בעוד ' + countdown(nz.t - c.now) : '')),
-      h('div', { class: 'card mini tap', onclick: () => nav.goTab('times') },
+      h('div', { class: 'card mini tap', onclick: () => { nav.timesView('alarms'); nav.goTab('times'); } },
         h('div', { class: 'muted small' }, 'ההתראה הבאה · ' + (nextAl ? hhmm(new Date(nextAl.t)) : '')),
         h('div', { class: 'big mid wrap' }, nextAl ? nextAl.title : 'אין התראה בקרוב'),
         h('div', { class: 'muted small' }, nextAl ? 'בעוד ' + countdown(nextAl.t - c.now.getTime()) : ''))));

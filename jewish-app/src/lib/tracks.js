@@ -31,6 +31,7 @@ export const TEMPLATES = [
   { tpl: 'tehilim', name: 'תהילים יומי', auto: 'psalms', freq: 'daily', part: 'morning', url: CH + 'tehillim.asp' },
   { tpl: 'tanya', name: 'תניא יומי', auto: 'tanyaYomi', freq: 'daily', part: 'morning', url: CH + 'tanya.asp' },
   { tpl: 'hayomyom', name: 'היום יום', auto: 'hayomyom', freq: 'daily', part: 'morning', url: CH + 'hayomyom.asp' },
+  { tpl: 'moshiach', name: 'משיח וגאולה', freq: 'daily', part: 'morning' },
   { tpl: 'rambam1', name: 'רמב״ם - פרק אחד ביום', auto: 'rambam1', freq: 'daily', part: 'afternoon' },
   { tpl: 'rambam3', name: 'רמב״ם - שלושה פרקים ביום', auto: 'rambam3', freq: 'daily', part: 'afternoon' },
   { tpl: 'dafyomi', name: 'דף יומי', auto: 'dafYomi', freq: 'daily', part: 'afternoon' },
@@ -47,14 +48,14 @@ export const AUTO_KINDS = {
   chumash: 'חומש לפי פרשת השבוע', tanyaYomi: 'תניא יומי (לוח חב״ד)', psalms: 'תהילים חודשי', hayomyom: 'היום יום', rambam1: 'רמב״ם 1', rambam3: 'רמב״ם 3',
   dafYomi: 'דף יומי', mishnaYomi: 'משנה יומית', tanakhYomi: 'נ״ך יומי', nachYomi: 'נביאים יומי', dafWeekly: 'דף שבועי',
 };
-export const CHITAS = ['chumash', 'tehilim', 'tanya', 'hayomyom'];
+export const CHITAS = ['chumash', 'tehilim', 'tanya', 'hayomyom', 'moshiach'];
 
 export function newTrack(tpl, extra = {}) {
   const t = TEMPLATES.find((x) => x.tpl === tpl) || TEMPLATES[TEMPLATES.length - 1];
   const o = {
     id: uid('t'), tpl: t.tpl, name: t.name, auto: t.auto || '', counter: !!t.counter, unit: t.unit || '', pos: t.pos || 1, total: t.total || 0, step: t.step || 1,
     freq: t.freq || 'daily', days: [0, 1, 2, 3, 4, 5, 6], weeklyDay: t.weeklyDay == null ? 6 : t.weeklyDay, monthlyDay: 1,
-    target: 1, part: t.part || 'any', remind: { mode: 'none', time: '21:00', zman: 'shkiah', rel: 'before', mins: 30, ring: false },
+    target: 1, part: t.part || 'any', remind: { mode: 'none', time: '21:00', zman: 'shkiah', rel: 'before', mins: 30, ring: true },
     url: t.url || '', paused: false, archived: false, order: 0, where: '', created: tishreiKey(),
   };
   return Object.assign(o, extra);

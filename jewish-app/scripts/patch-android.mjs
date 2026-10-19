@@ -46,9 +46,13 @@ const comps = `
                 <action android:name="android.intent.action.TIME_SET" />
             </intent-filter>
         </receiver>
-        <receiver android:name=".NextWidget" android:exported="true" android:label="הזמן הבא">
+        <receiver android:name=".NextWidget" android:exported="true" android:label="האירועים הבאים">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_next_info" />
+        </receiver>
+        <receiver android:name=".DateWidget" android:exported="true" android:label="התאריך העברי">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_date_info" />
         </receiver>
         <receiver android:name=".LeftWidget" android:exported="true" android:label="הלימוד שנשאר">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
