@@ -83,7 +83,7 @@ export function buildInstances(st, now = new Date(), days = 60, max = 480) {
       else if (z[a.zman]) t = relMs(z[a.zman], a.rel, a.mins);
       if (t == null) continue;
       if (a.noRest !== false && inRest(t, intervals)) continue;
-      push({ id: 'A|' + a.id + '|' + key, t, kind: a.ring === false ? 'notify' : 'ring', title: alarmTitle(a, st), text: a.type === 'zman' && z[a.zman] ? zmanName(a.zman) + ' ב-' + hhmm(z[a.zman], loc.tz) : '', rep: a.repeat ? true : common.rep, snooze: a.snooze === false ? 0 : s.snoozeMin });
+      push({ id: 'A|' + a.id + '|' + key, t, kind: a.ring === false ? 'notify' : 'ring', title: alarmTitle(a, st), text: a.type === 'zman' && z[a.zman] ? zmanName(a.zman) + ' ב-' + hhmm(z[a.zman], loc.tz) : '', rep: a.repeat ? true : common.rep, snooze: a.repeat || a.snooze === false ? 0 : (a.snoozeMin || s.snoozeMin) });
     }
     // תזכורות לימוד: רק אם לא סומן
     for (const { track, r, alarm } of learnAlarms) {

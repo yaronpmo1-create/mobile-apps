@@ -56,9 +56,9 @@ export function timerView() {
     root.appendChild(h('div', { class: 'inline', style: 'text-align:center;margin-top:8px;direction:ltr' }, h('span', { class: 'muted small' }, 'שעות'), h('span', { class: 'muted small' }, 'דקות'), h('span', { class: 'muted small' }, 'שניות')));
     root.appendChild(h('div', { class: 'wheels', style: 'direction:ltr;grid-template-columns:1fr 1fr 1fr' },
       wheel(num(24), sel.h, (v) => { sel.h = Number(v); }), wheel(num(60), sel.m, (v) => { sel.m = Number(v); }), wheel(num(60), sel.s, (v) => { sel.s = Number(v); })));
-    root.appendChild(h('div', { class: 'chips', style: 'justify-content:center;margin-top:12px' }, [1, 5, 10, 15, 30].map((m) => h('button', { class: 'chip', onclick: () => { sel.h = 0; sel.m = m; sel.s = 0; rerender(); } }, m + ' דק׳'))));
+    root.appendChild(h('div', { class: 'chips one', style: 'margin-top:12px' }, [1, 5, 10, 15, 30].map((m) => h('button', { class: 'chip', onclick: () => { sel.h = 0; sel.m = m; sel.s = 0; rerender(); } }, m + ' דק׳'))));
     root.appendChild(btn('התחל', () => { const ms = ((sel.h * 60 + sel.m) * 60 + sel.s) * 1000; if (!ms) { toast('צריך לבחור זמן'); return; } begin(ms); }, 'btn block'));
-    root.appendChild(h('p', { class: 'dim small', style: 'text-align:center;margin-top:10px' }, 'בסיום יהיה צלצול מלא עם כפתור כיבוי, גם אם האפליקציה סגורה'));
+    root.appendChild(h('p', { class: 'dim small', style: 'text-align:center;margin-top:10px;white-space:nowrap;font-size:.78rem' }, 'בסיום: צלצול עם כפתור כיבוי, גם כשהאפליקציה סגורה'));
     return root;
   }
   const big = h('div', { class: 'clockbig', style: 'text-align:center;margin:14px 0' });

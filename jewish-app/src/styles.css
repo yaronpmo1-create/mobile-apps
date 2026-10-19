@@ -174,3 +174,9 @@ body:not(.ready) #app{visibility:hidden}
 .groups.drag-on .list[data-group]{min-height:52px;outline:1.5px dashed var(--line);outline-offset:-3px}
 .clockbig{font-size:3.2rem;font-weight:800;color:var(--accent);direction:ltr;font-variant-numeric:tabular-nums;line-height:1.1}
 .updown{flex:none;color:var(--dim);font-size:1.15rem;line-height:1;width:16px;text-align:center}
+
+button{transition:transform .08s,opacity .08s}
+.btn:active,.chip:active,.seg button:active,.sheet .opt:active,.navbtn:active,.iconbtn:active{transform:scale(.97);opacity:.8}
+.pressed{opacity:.6;filter:saturate(.6)}
+.chips.one{flex-wrap:nowrap;gap:4px}
+.chips.one .chip{min-width:0;flex:1;padding:7px 4px;font-size:.9rem;white-space:nowrap}

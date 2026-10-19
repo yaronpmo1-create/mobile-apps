@@ -153,7 +153,7 @@ public class JewishAlarmPlugin extends Plugin {
     @PluginMethod
     public void startTimer(PluginCall call) {
         try {
-            long ms = call.getLong("ms", 0L);
+            long ms = call.getData().optLong("ms", 0L);
             Store.removeTimers(ctx());
             JSONObject it = new JSONObject();
             it.put("kind", "ring");

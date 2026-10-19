@@ -1,4 +1,4 @@
-import { pickGregDate, h, openPage, openSheet, confirmBox, seg, field, sel, txt, toggle, toast } from '../ui.js';
+import { flash, pickGregDate, h, openPage, openSheet, confirmBox, seg, field, sel, txt, toggle, toast } from '../ui.js';
 import { ctx, commit } from '../core.js';
 import { CITIES } from '../lib/cities.js';
 import { bearingTo, distanceKm, getLoc, inIsrael } from '../lib/zm.js';
@@ -149,8 +149,8 @@ export function openHealth() {
     });
     root.appendChild(h('div', { class: 'section-title' }, 'בדיקת צלצול'));
     root.appendChild(h('div', { class: 'inline' },
-      h('button', { class: 'btn', onclick: () => { testAlarm('ring'); toast('צלצול בעוד 5 שניות. אפשר לנעול את המסך'); } }, 'צלצול בעוד 5 שניות'),
-      h('button', { class: 'btn sec', onclick: () => { testAlarm('learn'); toast('התראת לימוד בעוד 5 שניות'); } }, 'בדיקת תזכורת לימוד')));
+      h('button', { class: 'btn', onclick: (e) => { testAlarm('ring'); flash(e.currentTarget, 'צלצול בעוד 5 שניות...'); toast('אפשר לנעול את המסך'); } }, 'צלצול בעוד 5 שניות'),
+      h('button', { class: 'btn sec', onclick: (e) => { testAlarm('learn'); flash(e.currentTarget, 'התראת לימוד בעוד 5 שניות...'); } }, 'בדיקת תזכורת לימוד')));
     root.appendChild(h('button', { class: 'btn ghost block', style: 'margin-top:10px', onclick: async () => { await syncNow(); toast('ההתראות תוזמנו מחדש'); } }, 'תזמון ההתראות מחדש עכשיו'));
     return root;
   });

@@ -92,7 +92,7 @@ function alerts() {
     return h('div', null,
       h('div', { class: 'list' },
         row('צליל ההתראה', s.soundName || 'צליל השעון של המכשיר (ברירת מחדל)', arrow(), () => chooseSound()),
-        row('בדיקת צלצול עכשיו', 'מצלצל בעוד כמה שניות עם הצליל שבחרת', arrow(), () => testAlarm('ring'))),
+        row('בדיקת צלצול עכשיו', 'מצלצל בעוד כמה שניות עם הצליל שבחרת', arrow(), () => { testAlarm('ring'); toast('צלצול בעוד 5 שניות'); })),
       h('div', { class: 'list', style: 'margin-top:10px' },
         sw('עוצמה עולה בהדרגה', 'הצלצול מתחיל חלש ועולה', s, 'ramp'),
         sw('רטט', '', s, 'vibrate'),

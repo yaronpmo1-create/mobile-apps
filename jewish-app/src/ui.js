@@ -24,6 +24,12 @@ export function h(tag, props, ...kids) {
   return el;
 }
 export const $ = (s, r = document) => r.querySelector(s);
+// משוב עדין ללחיצה: הכפתור מחוויר ומציג הודעה לכמה שניות
+export function flash(btn, text, ms = 5000) {
+  const old = btn.textContent;
+  btn.textContent = text; btn.classList.add('pressed'); btn.style.pointerEvents = 'none';
+  setTimeout(() => { if (btn.isConnected) { btn.textContent = old; btn.classList.remove('pressed'); btn.style.pointerEvents = ''; } }, ms);
+}
 
 // ---- שכבות ----
 // כל שכבה (דף/חלון) מוסיפה רשומת היסטוריה, כדי שכפתור החזרה של אנדרואיד יסגור אותה

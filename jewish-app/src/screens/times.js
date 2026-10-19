@@ -1,5 +1,5 @@
 import { hebrewDayMonth } from '../lib/dates.js';
-import { hebDate, navBar, h, openPage, openSheet, actionSheet, confirmBox, seg, chips, field, sel, txt, toggle, toast } from '../ui.js';
+import { flash, hebDate, navBar, h, openPage, openSheet, actionSheet, confirmBox, seg, chips, field, sel, txt, toggle, toast } from '../ui.js';
 import { ctx, commit, nav } from '../core.js';
 import { ZMAN_DEFS, zmanimFor, zmanName, METHODS, timedOn, dayEvents, parshaOfWeek, isRestDay } from '../lib/zm.js';
 import { hhmm, weekdayName, hebrewDate, addDays, dkey, parseKey, WD_LETTER } from '../lib/dates.js';
@@ -112,7 +112,7 @@ function alarmsView(c) {
   root.appendChild(h('div', { class: 'inline', style: 'margin-bottom:12px' }, h('button', { class: 'btn', onclick: () => newAlarmSheet() }, '+ התראה חדשה'), h('button', { class: 'btn sec', onclick: () => remindSheet() }, 'הזכר לי בעוד...')));
   if (!c.st.alarms.length) root.appendChild(h('div', { class: 'card empty-note' }, 'אין התראות עדיין. אפשר ללחוץ על זמן במסך הזמנים, או על "התראה חדשה".'));
   const nextAt = {};
-  for (const i of buildInstances(c.st, c.now, 14)) { const m = /^A\|([^|]+)\|/.exec(i.id); if (m && !nextAt[m[1]]) nextAt[m[1]] = i.t; }
+  for (const i of buildInstances(c.st, c.now, 60, 3000)) { const m = /^A\|([^|]+)\|/.exec(i.id); if (m && !nextAt[m[1]]) nextAt[m[1]] = i.t; }
   // לפי סדר היום: מהמוקדם למאוחר (שעת ההתראה היום)
   const zToday = zmanimFor(c.today, c.loc, c.s.method, c.s.tzeitMode);
   const tod = (a) => {
@@ -129,16 +129,23 @@ function alarmsView(c) {
       toggle(a.enabled, (v) => { a.enabled = v; commit(); }),
       h('button', { class: 'iconbtn', 'aria-label': 'מחיקה, שכפול ועוד', onclick: (e) => { e.stopPropagation(); alarmMenu(a); } }, '⋮'));
   };
-  // רובריקות לפי סדר כרונולוגי: קבועות (לפי שעה ביום), ואז התראות לתאריך מסוים: השבוע, החודש, מאוחר יותר, שעברו
-  const dayDiff = (a) => Math.round((parseKey(a.date).getTime() - c.today.getTime()) / 86400000);
-  const dateTime = (a) => parseKey(a.date).getTime() + tod(a);
-  const groups = [
-    ['קבועות (לפי שעה ביום)', c.st.alarms.filter((a) => !a.date).sort((a, b) => tod(a) - tod(b))],
-    ['השבוע', c.st.alarms.filter((a) => a.date && dayDiff(a) >= 0 && dayDiff(a) < 7).sort((a, b) => dateTime(a) - dateTime(b))],
-    ['החודש', c.st.alarms.filter((a) => a.date && dayDiff(a) >= 7 && dayDiff(a) < 30).sort((a, b) => dateTime(a) - dateTime(b))],
-    ['מאוחר יותר', c.st.alarms.filter((a) => a.date && dayDiff(a) >= 30).sort((a, b) => dateTime(a) - dateTime(b))],
-    ['שעברו', c.st.alarms.filter((a) => a.date && dayDiff(a) < 0).sort((a, b) => dateTime(b) - dateTime(a))],
-  ];
+  // כל התראה מופיעה פעם אחת, לפי המועד הקרוב שלה: היום, השבוע, החודש, מאוחר יותר (תאריך ספציפי), וכבויות או שעברו
+  const d0 = new Date(c.now.getFullYear(), c.now.getMonth(), c.now.getDate()).getTime(), nowMs = c.now.getTime();
+  const nextTime = (a) => {
+    if (nextAt[a.id]) return nextAt[a.id];
+    if (a.date) return parseKey(a.date).getTime() + tod(a);
+    const t = d0 + tod(a);
+    return t < nowMs ? t + 86400000 : t;
+  };
+  const bucket = (a) => {
+    if (!a.enabled) return 4;
+    const t = nextTime(a);
+    if (t < nowMs) return 4;
+    const days = Math.floor((t - d0) / 86400000);
+    return days < 1 ? 0 : days < 7 ? 1 : days < 30 ? 2 : 3;
+  };
+  const titles = ['היום', 'השבוע (7 הימים הקרובים)', 'החודש', 'מאוחר יותר (תאריך ספציפי)', 'כבויות או שעברו'];
+  const groups = titles.map((tt, k) => [tt, c.st.alarms.filter((a) => bucket(a) === k).sort((a, b) => nextTime(a) - nextTime(b))]);
   for (const [title, arr] of groups) {
     if (!arr.length) continue;
     root.appendChild(h('div', { class: 'section-title' }, title));
@@ -219,8 +226,11 @@ export function editAlarm(id, type, preset, back) {
     root.appendChild(h('div', { class: 'list' },
       sw('לא בשבת, חג וערבי חג (מהדלקת נרות עד הבדלה)', 'noRest', true),
       sw('מסך צלצול מלא (כבוי: התראה בוילון בלבד)', 'ring', d.type !== 'learning'),
-      sw('חוזרת עד כיבוי', 'repeat', false),
-      sw('אפשר נודניק', 'snooze', true)));
+      ));
+    const sn = d.repeat ? 'rep' : d.snooze === false ? 0 : (d.snoozeMin || c.s.snoozeMin || 10);
+    const snOpts = [...new Set([1, 3, 10, sn].filter((x) => typeof x === 'number' && x > 0))].sort((a, b) => a - b);
+    root.appendChild(h('label', { class: 'f' }, 'נודניק (בחירה אחת)'));
+    root.appendChild(seg([[0, 'בלי'], ...snOpts.map((m) => [m, m + ' דק׳']), ['rep', 'עד כיבוי']], sn, (v) => { d.repeat = v === 'rep'; d.snooze = !(v === 0 || v === 'rep'); if (typeof v === 'number' && v > 0) d.snoozeMin = v; pg.refresh(); }));
     root.appendChild(h('button', { class: 'btn block', onclick: () => {
       if (d.type === 'learning' && !d.trackId) { toast('צריך לבחור מסלול'); return; }
       if (d.date && d.type !== 'learning' && d.date < c.tk) { toast('התאריך כבר עבר'); return; }
@@ -228,7 +238,7 @@ export function editAlarm(id, type, preset, back) {
       saved = true;
       pg.close(); commit(); toast('ההתראה נשמרה');
     } }, 'שמירה'));
-    if (orig) root.appendChild(h('button', { class: 'btn ghost block', style: 'margin-top:10px', onclick: () => testAlarm(d.ring === false ? 'notify' : 'ring') }, 'בדיקה: צלצול בעוד 5 שניות'));
+    if (orig) root.appendChild(h('button', { class: 'btn ghost block', style: 'margin-top:10px', onclick: (e) => { testAlarm(d.ring === false ? 'notify' : 'ring'); flash(e.currentTarget, 'הצלצול יופיע בעוד 5 שניות...'); } }, 'בדיקה: צלצול בעוד 5 שניות'));
     if (orig) root.appendChild(h('button', { class: 'btn danger block', style: 'margin-top:10px', onclick: async () => {
       if (!(await confirmBox('למחוק את ההתראה?', 'מחיקה', true))) return;
       c.st.alarms = c.st.alarms.filter((x) => x.id !== orig.id);
