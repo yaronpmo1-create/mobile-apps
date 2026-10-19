@@ -149,6 +149,38 @@ public class JewishAlarmPlugin extends Plugin {
         call.resolve();
     }
 
+    /** טיימר: צלצול חד-פעמי בעוד ms מילישניות (מחליף טיימר קודם) */
+    @PluginMethod
+    public void startTimer(PluginCall call) {
+        try {
+            long ms = call.getLong("ms", 0L);
+            Store.removeTimers(ctx());
+            JSONObject it = new JSONObject();
+            it.put("kind", "ring");
+            it.put("title", call.getString("title", "הטיימר הסתיים"));
+            it.put("text", call.getString("text", ""));
+            it.put("snd", call.getString("snd", ""));
+            it.put("snooze", 0);
+            it.put("rep", false);
+            it.put("ramp", false);
+            it.put("vib", true);
+            it.put("timer", true);
+            Store.addSnooze(ctx(), it, System.currentTimeMillis() + Math.max(1000L, ms));
+            Scheduler.channels(ctx());
+            Scheduler.scheduleNext(ctx());
+            call.resolve();
+        } catch (Exception e) {
+            call.reject(String.valueOf(e.getMessage()));
+        }
+    }
+
+    @PluginMethod
+    public void cancelTimer(PluginCall call) {
+        Store.removeTimers(ctx());
+        Scheduler.scheduleNext(ctx());
+        call.resolve();
+    }
+
     @PluginMethod
     public void requestOverlay(PluginCall call) {
         if (Build.VERSION.SDK_INT >= 23) {

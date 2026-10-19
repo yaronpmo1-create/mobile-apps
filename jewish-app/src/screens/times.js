@@ -8,6 +8,7 @@ import { newAlarm, ALARM_TEMPLATES, alarmTitle, daysLabel, REL, buildInstances }
 import { activeTracks } from '../lib/tracks.js';
 import { testAlarm } from '../lib/native.js';
 import { openCompass } from './extras.js';
+import { clockView, timerView } from './clock.js';
 
 let view = 'day';
 let offset = 0;
@@ -17,9 +18,12 @@ export function shiftTimesDay(delta) { if (view !== 'day') return false; offset 
 export function times() {
   const c = ctx();
   const root = h('div', null);
-  root.appendChild(h('div', { class: 'inline', style: 'margin-bottom:6px' },
-    h('div', { style: 'flex:3' }, seg([['day', 'היום'], ['week', 'שבוע'], ['month', 'חודש']], view === 'alarms' ? '' : view, (v) => { view = v; commit(); })),
-    h('button', { class: view === 'alarms' ? 'btn' : 'btn sec', style: 'flex:1;margin-bottom:8px', onclick: () => { view = 'alarms'; commit(); } }, 'התראות')));
+  const other = ['clock', 'alarms', 'timer'].includes(view);
+  root.appendChild(seg([['day', 'היום'], ['week', 'שבוע'], ['month', 'חודש']], other ? '' : view, (v) => { view = v; commit(); }));
+  root.appendChild(h('div', { class: 'inline', style: 'margin-bottom:10px' }, [['clock', 'שעון'], ['alarms', 'התראות'], ['timer', 'טיימר']].map(([k, l]) =>
+    h('button', { class: view === k ? 'btn' : 'btn ghost', onclick: () => { view = k; commit(); } }, l))));
+  if (view === 'clock') { root.appendChild(clockView(c)); return root; }
+  if (view === 'timer') { root.appendChild(timerView()); return root; }
   if (view === 'alarms') { root.appendChild(alarmsView(c)); return root; }
   if (view === 'day') root.appendChild(dayView(c));
   else if (view === 'week') root.appendChild(weekView(c));
@@ -105,7 +109,7 @@ function monthView(c) {
 
 function alarmsView(c) {
   const root = h('div', null);
-  root.appendChild(h('button', { class: 'btn block', style: 'margin-bottom:12px', onclick: () => newAlarmSheet() }, '+ התראה חדשה'));
+  root.appendChild(h('div', { class: 'inline', style: 'margin-bottom:12px' }, h('button', { class: 'btn', onclick: () => newAlarmSheet() }, '+ התראה חדשה'), h('button', { class: 'btn sec', onclick: () => remindSheet() }, 'הזכר לי בעוד...')));
   if (!c.st.alarms.length) root.appendChild(h('div', { class: 'card empty-note' }, 'אין התראות עדיין. אפשר ללחוץ על זמן במסך הזמנים, או על "התראה חדשה".'));
   const nextAt = {};
   for (const i of buildInstances(c.st, c.now, 14)) { const m = /^A\|([^|]+)\|/.exec(i.id); if (m && !nextAt[m[1]]) nextAt[m[1]] = i.t; }
@@ -142,6 +146,23 @@ function alarmsView(c) {
   }
   root.appendChild(h('div', { class: 'section-title' }, 'תזכורות אוטומטיות (ראש חודש, ערב שבת, הדלקת נרות) - בהגדרות'));
   return root;
+}
+// "הזכר לי בעוד...": התראה חד-פעמית בעוד X דקות (נשמרת ברשימה, אפשר למחוק)
+function remindSheet() {
+  const c = ctx();
+  let label = '', custom = 20;
+  const make = (m, sh) => {
+    const tm = Math.ceil((Date.now() + m * 60000) / 60000) * 60000, d = new Date(tm);
+    const time = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    c.st.alarms.push(Object.assign(newAlarm('fixed'), { label: label.trim() || 'תזכורת', time, date: dkey(d), noRest: false, ring: true, snooze: true }));
+    sh.close(); commit(); toast('התזכורת נקבעה לשעה ' + time);
+  };
+  openSheet('הזכר לי בעוד...', (sh) => h('div', null,
+    field('על מה להזכיר (לא חובה)', txt('', (v) => (label = v), 'למשל: להוציא את העוגה')),
+    h('label', { class: 'f' }, 'בעוד כמה זמן'),
+    h('div', { class: 'chips' }, [5, 10, 15, 30, 60, 120].map((m) => h('button', { class: 'chip', onclick: () => make(m, sh) }, m < 60 ? m + ' דק׳' : m / 60 + ' שע׳'))),
+    h('div', { class: 'inline', style: 'align-items:flex-end' }, field('או מספר דקות', txt(custom, (v) => (custom = Number(v) || 0), '', 'number')),
+      h('button', { class: 'btn', style: 'flex:none', onclick: () => { if (custom < 1) { toast('צריך לפחות דקה'); return; } make(Math.round(custom), sh); } }, 'קביעה'))));
 }
 function alarmMenu(a) {
   const c = ctx();

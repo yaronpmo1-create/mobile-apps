@@ -233,7 +233,7 @@ export function backPress() {
 
 // גלגל בחירה (גלילה עם הצמדה): items = [[ערך, תווית]], מחזיר אלמנט. onPick נקרא כשהגלגל נעצר על ערך חדש
 const WH = 44;
-function wheel(items, value, onPick) {
+export function wheel(items, value, onPick) {
   const el = h('div', { class: 'wheel', role: 'listbox' }, items.map(([v, l]) => h('div', { class: 'wi' + (String(v) === String(value) ? ' on' : ''), onclick: () => el.scrollTo({ top: items.findIndex((x) => String(x[0]) === String(v)) * WH, behavior: 'smooth' }) }, l)));
   const idx0 = Math.max(0, items.findIndex((x) => String(x[0]) === String(value)));
   const place = () => { el.scrollTop = idx0 * WH; };

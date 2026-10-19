@@ -29,6 +29,8 @@ export const requestExact = () => isNative() && safe(() => JA.requestExact());
 export const openBattery = () => isNative() && safe(() => JA.openBattery());
 export const requestNotifications = () => isNative() && safe(() => JA.requestNotifications());
 export const requestFullScreen = () => isNative() && safe(() => JA.requestFullScreen());
+export const startTimer = async (ms, title, text) => isNative() && safe(() => JA.startTimer({ ms, title, text, snd: get().settings.soundUri || '' }));
+export const cancelTimer = async () => isNative() && safe(() => JA.cancelTimer());
 export const requestOverlay = () => isNative() && safe(() => JA.requestOverlay());
 export const testAlarm = async (kind) => isNative() && safe(() => JA.testAlarm({ kind, snd: get().settings.soundUri || '' }));
 export const getPending = async () => (isNative() ? safe(() => JA.getPending(), { count: 0 }) : { count: 0 });

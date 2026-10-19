@@ -71,6 +71,19 @@ public class Store {
         }
     }
 
+    static void removeTimers(Context c) {
+        try {
+            JSONArray a = arr(c, "snoozes");
+            JSONArray b = new JSONArray();
+            for (int i = 0; i < a.length(); i++) {
+                JSONObject o = a.optJSONObject(i);
+                if (o != null && !o.optBoolean("timer", false)) b.put(o);
+            }
+            p(c).edit().putString("snoozes", b.toString()).apply();
+        } catch (Exception ignored) {
+        }
+    }
+
     static void addSnooze(Context c, JSONObject it, long at) {
         try {
             JSONObject n = new JSONObject(it.toString());
