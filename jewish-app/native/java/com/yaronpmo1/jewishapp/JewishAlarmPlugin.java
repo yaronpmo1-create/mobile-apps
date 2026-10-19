@@ -155,17 +155,19 @@ public class JewishAlarmPlugin extends Plugin {
         try {
             long ms = call.getData().optLong("ms", 0L);
             Store.removeTimers(ctx());
+            Store.p(ctx()).edit().putBoolean("timerDismissed", false).apply();
             JSONObject it = new JSONObject();
             it.put("kind", "ring");
             it.put("title", call.getString("title", "הטיימר הסתיים"));
             it.put("text", call.getString("text", ""));
             it.put("snd", call.getString("snd", ""));
-            it.put("snooze", 0);
+            it.put("snooze", 5);
+            it.put("snoozeLeft", 3);
             it.put("rep", false);
             it.put("ramp", false);
             it.put("vib", true);
             it.put("timer", true);
-            Store.addSnooze(ctx(), it, System.currentTimeMillis() + Math.max(1000L, ms - 1500L));
+            Store.addSnooze(ctx(), it, System.currentTimeMillis() + Math.max(1000L, ms));
             Scheduler.channels(ctx());
             Scheduler.scheduleNext(ctx());
             call.resolve();
@@ -175,7 +177,16 @@ public class JewishAlarmPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void timerState(PluginCall call) {
+        JSObject r = new JSObject();
+        r.put("end", (double) Store.p(ctx()).getLong("timer_end", 0L));
+        r.put("dismissed", Store.p(ctx()).getBoolean("timerDismissed", false));
+        call.resolve(r);
+    }
+
+    @PluginMethod
     public void cancelTimer(PluginCall call) {
+        Store.p(ctx()).edit().putLong("timer_end", 0L).apply();
         Store.removeTimers(ctx());
         Scheduler.scheduleNext(ctx());
         call.resolve();

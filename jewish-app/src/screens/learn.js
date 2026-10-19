@@ -35,11 +35,13 @@ export function learn() {
     gl.forEach((t) => {
       const pr = progressOf(t);
       list.appendChild(h('div', { class: 'row tap', 'data-id': t.id, style: t.paused ? 'opacity:.6' : '', onclick: () => editTrack(t.id) },
-        h('span', { class: 'updown', 'aria-hidden': 'true' }, '⇅'),
         h('div', { class: 'grow' },
           h('div', { class: 't' }, t.name, t.paused ? h('span', { class: 'tag blue' }, 'מושהה') : null),
           h('div', { class: 's' }, trackSummary(t, c)),
           pr != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(pr * 100) + '%' })) : null),
+        h('div', { class: 'mv nodrag' },
+          h('button', { 'aria-label': 'הזזה למעלה', onclick: (e) => { e.stopPropagation(); moveTrack(t.id, -1); } }, '▲'),
+          h('button', { 'aria-label': 'הזזה למטה', onclick: (e) => { e.stopPropagation(); moveTrack(t.id, 1); } }, '▼')),
         h('button', { class: 'iconbtn nodrag', onclick: (e) => { e.stopPropagation(); trackMenu(t); } }, '⋮')));
     });
     if (!gl.length) list.appendChild(h('div', { class: 'ph dim small' }, 'גררו לכאן מסלול'));
@@ -61,6 +63,28 @@ export function learn() {
   return root;
 }
 
+// חיצי ▲▼: הזזה צעד אחד, ובקצה הקבוצה מעבר לקבוצה הסמוכה
+const ORDER_P = ['morning', 'afternoon', 'evening', 'any'];
+function moveTrack(id, dir) {
+  const c = ctx();
+  const act = c.st.tracks.filter((t) => !t.archived).sort((a, b) => a.order - b.order);
+  const groups = ORDER_P.map((k) => act.filter((t) => (ORDER_P.includes(t.part) ? t.part : 'any') === k));
+  const gi = groups.findIndex((g) => g.some((t) => t.id === id));
+  if (gi < 0) return;
+  const g = groups[gi], i = g.findIndex((t) => t.id === id), t = g[i];
+  const j = i + dir;
+  if (j >= 0 && j < g.length) { g[i] = g[j]; g[j] = t; }
+  else {
+    const ng = gi + dir;
+    if (ng < 0 || ng >= groups.length) return;
+    g.splice(i, 1);
+    t.part = ORDER_P[ng];
+    if (dir < 0) groups[ng].push(t); else groups[ng].unshift(t);
+  }
+  let n = 0;
+  for (const grp of groups) for (const x of grp) x.order = n++;
+  commit();
+}
 function move(act, i, dir) {
   const j = i + dir;
   if (j < 0 || j >= act.length) return;
@@ -90,7 +114,7 @@ export function pickTemplate() {
   const c = ctx();
   openSheet('מסלול חדש', (sh) => h('div', null,
     h('button', { class: 'opt', onclick: () => { sh.close(); const n = newTrack('free'); n.order = c.st.tracks.length; editTrack(null, n); } }, h('div', null, h('b', null, 'מסלול בהתאמה אישית'), h('div', { class: 's muted small' }, 'שם, תדירות ותזכורת לפי בחירתכם'))),
-    h('button', { class: 'opt', onclick: () => { addTemplate(c.st, 'chitas'); sh.close(); commit(); toast('נוספו חמשת מסלולי החת״ת'); } }, h('div', null, h('b', null, 'חת״ת יומי - חמישה מסלולים'), h('div', { class: 's muted small' }, 'חומש, תהילים, תניא, היום יום, משיח וגאולה'))),
+    h('button', { class: 'opt', onclick: () => { addTemplate(c.st, 'chitas'); sh.close(); commit(); toast('נוספו חמשת מסלולי החת״ת'); } }, h('div', null, h('b', null, 'חת״ת יומי - חמישה מסלולים'), h('div', { class: 's muted small' }, 'חומש, תהילים, תניא, היום יום, משיח וגאולה יומי'))),
     TEMPLATES.filter((t) => t.tpl !== 'free').map((t) => h('button', { class: 'opt', onclick: () => { sh.close(); const n = newTrack(t.tpl); n.order = c.st.tracks.length; editTrack(null, n); } }, t.name))));
 }
 

@@ -89,6 +89,7 @@ public class Store {
             JSONObject n = new JSONObject(it.toString());
             n.put("id", "SZ|" + at);
             n.put("t", at);
+            if (n.optBoolean("timer", false)) p(c).edit().putLong("timer_end", at).apply();
             JSONArray a = arr(c, "snoozes");
             JSONArray b = new JSONArray();
             long now = System.currentTimeMillis();

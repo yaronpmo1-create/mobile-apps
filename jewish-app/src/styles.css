@@ -181,3 +181,9 @@ button{transition:transform .08s,opacity .08s}
 .chips.one{flex-wrap:nowrap;gap:4px}
 .chips.one .chip{min-width:0;flex:1;padding:7px 4px;font-size:.9rem;white-space:nowrap}
 .seg button{white-space:nowrap;padding:8px 2px;font-size:.88rem;min-width:0}
+.card.evt{display:flex;align-items:center;gap:14px;border:1.5px solid var(--line);border-inline-start:5px solid var(--accent);padding:12px 14px}
+.card.evt .ztime{font-size:1.5rem;color:var(--accent);flex:none}
+.card.evt .grow{min-width:0}
+.mv{display:flex;flex-direction:column;flex:none;width:30px}
+.mv button{height:22px;line-height:22px;color:var(--muted);font-size:.8rem;text-align:center;width:100%}
+.mv button:active{color:var(--accent);background:var(--card2)}

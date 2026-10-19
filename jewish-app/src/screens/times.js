@@ -192,8 +192,9 @@ function alarmMenu(a) {
 function quickAlarm(l) {
   const opts = [[30, 'before'], [15, 'before'], [0, 'at'], [10, 'after']];
   openSheet(l.name + ' - הוספת התראה', (sh) => h('div', null,
+    h('button', { class: 'opt', onclick: () => { sh.close(); const a = Object.assign(newAlarm('zman'), { zman: l.id }); editAlarm(null, 'zman', a, () => quickAlarm(l)); } }, h('div', null, h('b', null, 'התראה בהתאמה אישית'), h('div', { class: 's muted small' }, 'שעה קבועה, ימים או תאריך מסוים (כמו אירוע ביומן)'))),
     opts.map(([m, rel]) => h('button', { class: 'opt', onclick: () => { sh.close(); const a = Object.assign(newAlarm('zman'), { zman: l.id, rel, mins: m }); editAlarm(null, 'zman', a, () => quickAlarm(l)); } }, rel === 'at' ? 'בזמן ' + l.name : m + ' דקות ' + REL[rel] + ' ' + l.name)),
-    h('button', { class: 'opt', onclick: () => { sh.close(); const a = Object.assign(newAlarm('zman'), { zman: l.id }); editAlarm(null, 'zman', a, () => quickAlarm(l)); } }, 'התאמה אישית...')));
+    null));
 }
 
 export function editAlarm(id, type, preset, back) {
@@ -236,7 +237,7 @@ export function editAlarm(id, type, preset, back) {
       sw('מסך צלצול מלא (כבוי: התראה בוילון בלבד)', 'ring', true),
       ));
     const sn = d.repeat ? 'rep' : d.snooze === false ? 0 : (d.snoozeMin || c.s.snoozeMin || 10);
-    const snOpts = [...new Set([1, 3, 10, sn].filter((x) => typeof x === 'number' && x > 0))].sort((a, b) => a - b);
+    const snOpts = [...new Set([1, 3, 5, 10, c.s.snoozeMin, sn].filter((x) => typeof x === 'number' && x > 0))].sort((a, b) => a - b);
     root.appendChild(h('label', { class: 'f' }, 'נודניק (בחירה אחת)'));
     root.appendChild(seg([[0, 'בלי'], ...snOpts.map((m) => [m, m + ' דק׳']), ['rep', 'עד כיבוי']], sn, (v) => { d.repeat = v === 'rep'; d.snooze = !(v === 0 || v === 'rep'); if (typeof v === 'number' && v > 0) d.snoozeMin = v; pg.refresh(); }));
     root.appendChild(h('button', { class: 'btn block', onclick: () => {

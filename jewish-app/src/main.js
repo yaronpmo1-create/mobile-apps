@@ -13,6 +13,7 @@ import { syncNow, takeDone, setWidget, setDone } from './lib/native.js';
 import { dueTracks, getEntry, setEntry, addTemplate } from './lib/tracks.js';
 import { hhmm, hebrewDate, hebrewDayLetter, WD_LETTER, dkey, addDays } from './lib/dates.js';
 import { buildInstances, instTitle } from './lib/alarms.js';
+import { syncTimer } from './screens/clock.js';
 
 load();
 // תצוגה מקדימה בדפדפן: נתוני דוגמה (ערכת חת״ת) כדי שהמסך הראשי לא יהיה ריק
@@ -81,7 +82,7 @@ function pushWidget() {
   } catch (e) { /* */ }
 }
 
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { intake().then(() => { render(); syncNow(); pushWidget(); }); } });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { Promise.all([intake(), syncTimer()]).then(() => { render(); syncNow(); pushWidget(); }); } });
 setInterval(() => { if (!document.hidden && !hasPages() && (tab === 'today' || tab === 'times')) render(); }, 60000);
 setInterval(pushWidget, 15 * 60000);
 try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render); } catch (e) { /* */ }
@@ -108,5 +109,5 @@ const showApp = () => {
 };
 setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(showApp)), 1700);
 if (get().first) setTimeout(() => firstRun(() => { render(); }), 2300);
-intake().then(() => { syncNow(); pushWidget(); });
+Promise.all([intake(), syncTimer()]).then(() => { syncNow(); pushWidget(); });
 window.__app = { get, render, goTab, ctx, commit };

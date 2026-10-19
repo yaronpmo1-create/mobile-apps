@@ -35,6 +35,7 @@ public class AlarmService extends Service {
     private JSONObject item;
     private float vol = 1f;
     private boolean ramp;
+    private boolean snoozed;
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -55,9 +56,21 @@ public class AlarmService extends Service {
             }
             if (it != null) {
                 int m = it.optInt("snooze", 9);
-                Store.addSnooze(this, it, System.currentTimeMillis() + m * 60000L);
+                if (it.optBoolean("timer", false)) {
+                    // טיימר: עד 3 נודניקים, ואחרי האחרון נשאר רק כפתור כיבוי
+                    try {
+                        JSONObject nit = new JSONObject(it.toString());
+                        int left = it.optInt("snoozeLeft", 0) - 1;
+                        nit.put("snoozeLeft", Math.max(0, left));
+                        nit.put("snooze", left > 0 ? it.optInt("snooze", 5) : 0);
+                        Store.addSnooze(this, nit, System.currentTimeMillis() + m * 60000L);
+                    } catch (Exception ignored) { }
+                } else {
+                    Store.addSnooze(this, it, System.currentTimeMillis() + m * 60000L);
+                }
                 Scheduler.scheduleNext(this);
             }
+            snoozed = true;
             finish();
             return START_NOT_STICKY;
         }
@@ -165,6 +178,8 @@ public class AlarmService extends Service {
 
     private void finish() {
         h.removeCallbacksAndMessages(null);
+        if (item != null && item.optBoolean("timer", false) && !snoozed) Store.p(this).edit().putLong("timer_end", 0L).putBoolean("timerDismissed", true).apply();
+        snoozed = false;
         try { if (player != null) { player.stop(); player.release(); } } catch (Exception ignored) { }
         player = null;
         try { if (vib != null) vib.cancel(); } catch (Exception ignored) { }

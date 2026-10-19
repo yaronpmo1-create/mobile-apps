@@ -31,7 +31,7 @@ export const TEMPLATES = [
   { tpl: 'tehilim', name: 'תהילים יומי', auto: 'psalms', freq: 'daily', part: 'morning', url: CH + 'tehillim.asp' },
   { tpl: 'tanya', name: 'תניא יומי', auto: 'tanyaYomi', freq: 'daily', part: 'morning', url: CH + 'tanya.asp' },
   { tpl: 'hayomyom', name: 'היום יום', auto: 'hayomyom', freq: 'daily', part: 'morning', url: CH + 'hayomyom.asp' },
-  { tpl: 'moshiach', name: 'משיח וגאולה', freq: 'daily', part: 'morning' },
+  { tpl: 'moshiach', name: 'משיח וגאולה יומי', freq: 'daily', part: 'morning' },
   { tpl: 'rambam1', name: 'רמב״ם - פרק אחד ביום', auto: 'rambam1', freq: 'daily', part: 'afternoon' },
   { tpl: 'rambam3', name: 'רמב״ם - שלושה פרקים ביום', auto: 'rambam3', freq: 'daily', part: 'afternoon' },
   { tpl: 'dafyomi', name: 'דף יומי', auto: 'dafYomi', freq: 'daily', part: 'afternoon' },

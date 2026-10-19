@@ -172,7 +172,7 @@ export function firstRun(done) {
     } else if (step === 1) {
       root.appendChild(h('h2', null, 'ערכת מסלולים'));
       root.appendChild(seg([['chitas', 'חת״ת'], ['rambam', 'רמב״ם'], ['none', 'להתחיל ריק']], kit, (v) => { kit = v; pg.refresh(); }));
-      root.appendChild(h('p', { class: 'muted' }, kit === 'chitas' ? 'חומש עם רש״י, תהילים, תניא, היום יום, משיח וגאולה.' : kit === 'rambam' ? 'מסלול רמב״ם (שלושה פרקים ביום) ודף יומי.' : 'תוכלו להוסיף מסלולים בלשונית "לימוד".'));
+      root.appendChild(h('p', { class: 'muted' }, kit === 'chitas' ? 'חומש עם רש״י, תהילים, תניא, היום יום, משיח וגאולה יומי.' : kit === 'rambam' ? 'מסלול רמב״ם (שלושה פרקים ביום) ודף יומי.' : 'תוכלו להוסיף מסלולים בלשונית "לימוד".'));
     } else {
       root.appendChild(h('h2', null, 'הרשאות להתראות'));
       root.appendChild(h('p', null, 'כדי לצלצל בזמן, נדרשות הרשאות להתראות ולשעון מעורר מדויק. אפשר לדלג ולהגדיר אחר כך ב"הרשאות ואמינות".'));

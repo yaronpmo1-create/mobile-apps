@@ -22,8 +22,13 @@ import java.util.Locale;
 public class DateWidget extends AppWidgetProvider {
     @Override
     public void onUpdate(Context c, AppWidgetManager m, int[] ids) {
-        for (int id : ids) m.updateAppWidget(id, build(c));
+        for (int id : ids) m.updateAppWidget(id, build(c, m.getAppWidgetOptions(id)));
         scheduleMidnight(c);
+    }
+
+    @Override
+    public void onAppWidgetOptionsChanged(Context c, AppWidgetManager m, int id, android.os.Bundle opts) {
+        m.updateAppWidget(id, build(c, opts));
     }
 
     @Override
@@ -31,7 +36,7 @@ public class DateWidget extends AppWidgetProvider {
         scheduleMidnight(c);
     }
 
-    static RemoteViews build(Context c) {
+    static RemoteViews build(Context c, android.os.Bundle opts) {
         RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.widget_date);
         String key = new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date());
         String wd = "", day = "", month = "", year = "";
@@ -46,6 +51,19 @@ public class DateWidget extends AppWidgetProvider {
             }
         } catch (Exception ignored) { }
         if (day.isEmpty()) { wd = "פתחו את"; day = "·"; month = "האפליקציה"; year = ""; }
+        // תמיד ריבוע 1:1: הכרטיס הריבועי ממורכז בתוך התא, והכתב גדל עם הגודל
+        // אורך ורוחב התא בפועל: במצב אנכי רוחב מינימלי וגובה מקסימלי, ובמצב אופקי להפך
+        boolean portrait = c.getResources().getConfiguration().orientation != android.content.res.Configuration.ORIENTATION_LANDSCAPE;
+        float w = opts == null ? 110 : opts.getInt(portrait ? AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH : AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 110);
+        float hgt = opts == null ? 110 : opts.getInt(portrait ? AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT : AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 110);
+        float side = Math.max(60f, Math.min(w, hgt));
+        float dens = c.getResources().getDisplayMetrics().density;
+        int padX = Math.max(0, Math.round((w - side) / 2f * dens)), padY = Math.max(0, Math.round((hgt - side) / 2f * dens));
+        v.setViewPadding(R.id.w_root, padX, padY, padX, padY);
+        v.setTextViewTextSize(R.id.d_wd, android.util.TypedValue.COMPLEX_UNIT_DIP, side * 0.10f);
+        v.setTextViewTextSize(R.id.d_day, android.util.TypedValue.COMPLEX_UNIT_DIP, side * 0.36f);
+        v.setTextViewTextSize(R.id.d_month, android.util.TypedValue.COMPLEX_UNIT_DIP, side * 0.12f);
+        v.setTextViewTextSize(R.id.d_year, android.util.TypedValue.COMPLEX_UNIT_DIP, side * 0.095f);
         v.setTextViewText(R.id.d_wd, wd);
         v.setTextViewText(R.id.d_day, day);
         v.setTextViewText(R.id.d_month, month);

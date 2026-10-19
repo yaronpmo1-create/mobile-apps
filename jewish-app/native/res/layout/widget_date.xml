@@ -3,40 +3,51 @@
     android:id="@+id/w_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_bg"
     android:gravity="center"
-    android:layoutDirection="rtl"
-    android:orientation="vertical"
-    android:padding="6dp">
+    android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/d_wd"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="#AEB9CC"
-        android:textSize="15sp" />
+    <LinearLayout
+        android:id="@+id/w_card"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/widget_bg"
+        android:gravity="center"
+        android:layoutDirection="rtl"
+        android:orientation="vertical"
+        android:padding="5dp">
 
-    <TextView
-        android:id="@+id/d_day"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:includeFontPadding="false"
-        android:textColor="#E8C26A"
-        android:textSize="64sp"
-        android:textStyle="bold" />
+        <TextView
+            android:id="@+id/d_wd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:textColor="#AEB9CC"
+            android:textSize="14sp" />
 
-    <TextView
-        android:id="@+id/d_month"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="#F3EFE8"
-        android:textSize="17sp"
-        android:textStyle="bold" />
+        <TextView
+            android:id="@+id/d_day"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:textColor="#E8C26A"
+            android:textSize="60sp"
+            android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/d_year"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="#AEB9CC"
-        android:textSize="14sp" />
+        <TextView
+            android:id="@+id/d_month"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:textColor="#F3EFE8"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/d_year"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:includeFontPadding="false"
+            android:textColor="#AEB9CC"
+            android:textSize="13sp" />
+    </LinearLayout>
 </LinearLayout>

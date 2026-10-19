@@ -3,7 +3,7 @@ import { rerender } from '../core.js';
 import { hebrewDate, weekdayName, hhmm, pad, dkey } from '../lib/dates.js';
 import { nextZman, countdown } from './today.js';
 import { buildInstances, instTitle } from '../lib/alarms.js';
-import { startTimer, cancelTimer } from '../lib/native.js';
+import { startTimer, cancelTimer, timerState } from '../lib/native.js';
 
 const hms = (ms) => { const t = Math.max(0, Math.ceil(ms / 1000)); return pad(Math.floor(t / 3600)) + ':' + pad(Math.floor(t / 60) % 60) + ':' + pad(t % 60); };
 // מרענן אלמנט כל שנייה, ונעצר כשהוא יוצא מהמסך
@@ -32,9 +32,10 @@ export function clockView(c) {
   for (const [title, k] of [['היום', todayK], ['מחר', tmrK]]) {
     const rows = inst.filter((i) => dkey(new Date(i.t)) === k);
     root.appendChild(h('div', { class: 'section-title' }, title));
-    root.appendChild(rows.length
-      ? h('div', { class: 'list' }, rows.map((i) => h('div', { class: 'row' }, h('div', { class: 'ztime' }, hhmm(new Date(i.t))), h('div', { class: 'grow' }, h('div', { class: 't' }, instTitle(i))))))
-      : h('div', { class: 'card empty-note', style: 'padding:12px' }, k === todayK ? 'אין עוד התראות או תזכורות להיום' : 'אין התראות או תזכורות למחר'));
+    if (!rows.length) root.appendChild(h('div', { class: 'card empty-note', style: 'padding:12px' }, k === todayK ? 'אין עוד התראות או תזכורות להיום' : 'אין התראות או תזכורות למחר'));
+    rows.forEach((i) => root.appendChild(h('div', { class: 'card evt' },
+      h('div', { class: 'ztime' }, hhmm(new Date(i.t))),
+      h('div', { class: 'grow' }, h('div', { class: 'big mid wrap' }, instTitle(i)), h('div', { class: 'muted small' }, 'בעוד ' + countdown(i.t - c.now.getTime()))))));
   }
   return root;
 }
@@ -57,6 +58,22 @@ const KEY = 'jewish-app-timer';
 const load = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
 const save = (t) => { try { if (t) localStorage.setItem(KEY, JSON.stringify(t)); else localStorage.removeItem(KEY); } catch (e) { /* */ } };
 const sel = { h: 0, m: 5, s: 0 };
+// חוזרים למסך הבחירה עם הבחירה האחרונה
+function reset(t) {
+  const s = Math.round(((t && t.total) || 0) / 1000);
+  if (s) { sel.h = Math.min(23, Math.floor(s / 3600)); sel.m = Math.floor(s / 60) % 60; sel.s = s % 60; }
+  save(null);
+}
+// סנכרון עם הצד של אנדרואיד: נודניק מאריך את הטיימר, וכיבוי הצלצול מאפס אותו. מחזיר true אם משהו השתנה
+export async function syncTimer() {
+  const t = load();
+  if (!t || !t.end) return false;
+  const s = await timerState();
+  if (!s) return false;
+  if (s.end > 0 && s.end !== t.end) { t.end = s.end; save(t); return true; }
+  if (s.end === 0 && s.dismissed && t.end <= Date.now() + 1000) { reset(t); return true; }
+  return false;
+}
 
 function begin(ms) {
   save({ total: ms, end: Date.now() + ms });
@@ -67,12 +84,8 @@ function begin(ms) {
 export function timerView() {
   const root = h('div', null);
   let t = load();
-  // הטיימר הסתיים (גם אם האפליקציה הייתה סגורה): חוזרים למסך הבחירה, עם הבחירה האחרונה
-  if (t && t.end && t.end <= Date.now()) {
-    const s = Math.round((t.total || 0) / 1000);
-    sel.h = Math.min(23, Math.floor(s / 3600)); sel.m = Math.floor(s / 60) % 60; sel.s = s % 60;
-    save(null); t = null;
-  }
+  // רשת ביטחון: הצלצול הסתיים מזמן (למשל בדפדפן בלי אנדרואיד)
+  if (t && t.end && Date.now() - t.end > 180000) { reset(t); t = null; }
   const btn = (label, fn, cls = 'btn') => h('button', { class: cls, onclick: fn }, label);
   if (!t) {
     root.appendChild(durationPicker(sel, { refresh: () => rerender() }));
@@ -83,15 +96,24 @@ export function timerView() {
   const big = h('div', { class: 'clockbig', style: 'text-align:center;margin:14px 0' });
   root.appendChild(big);
   if (t.end) {
-    let fired = false;
+    const note = h('p', { class: 'h-sub', style: 'text-align:center;min-height:1.4em' });
+    root.appendChild(note);
+    let polling = false;
     every(big, () => {
       const left = t.end - Date.now();
-      if (left <= 0) { big.textContent = '00:00:00'; if (!fired) { fired = true; rerender(); } return; }
+      if (left <= 0) {
+        big.textContent = '00:00:00';
+        note.textContent = 'הטיימר הסתיים. ממתין לכיבוי הצלצול';
+        if (!polling) { polling = true; syncTimer().then((ch) => { polling = false; if (ch) rerender(); }); }
+        return;
+      }
       big.textContent = hms(left);
     });
-    root.appendChild(h('div', { class: 'inline' },
-      btn('השהיה', () => { save({ total: t.total, left: t.end - Date.now() }); cancelTimer(); rerender(); }, 'btn sec'),
-      btn('ביטול', () => { save(null); cancelTimer(); rerender(); }, 'btn sec')));
+    if (t.end > Date.now()) {
+      root.appendChild(h('div', { class: 'inline' },
+        btn('השהיה', () => { save({ total: t.total, left: t.end - Date.now() }); cancelTimer(); rerender(); }, 'btn sec'),
+        btn('ביטול', () => { save(null); cancelTimer(); rerender(); }, 'btn sec')));
+    }
   } else {
     big.textContent = hms(t.left);
     root.appendChild(h('p', { class: 'h-sub', style: 'text-align:center' }, 'מושהה'));

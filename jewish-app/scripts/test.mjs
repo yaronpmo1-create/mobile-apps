@@ -159,7 +159,7 @@ ok(hebrewDate(new Date(2026, 9, 18)).includes('מרחשון'), 'marcheshvan name
   replaceAll(JSON.parse(JSON.stringify(old)));
   const s2 = get();
   eq(s2.tracks.length, 5, 'moshiach added on upgrade');
-  eq(s2.tracks[4].name, 'משיח וגאולה', 'moshiach name');
+  eq(s2.tracks[4].name, 'משיח וגאולה יומי', 'moshiach name');
   eq(s2.tracks[0].name, 'חומש עם רש״י', 'existing name kept');
   eq(s2.entries['2026-10-18'][t0.id].s, 'done', 'history kept');
   replaceAll(JSON.parse(JSON.stringify(s2)));

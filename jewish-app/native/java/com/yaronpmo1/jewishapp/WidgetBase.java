@@ -35,7 +35,7 @@ public class WidgetBase extends AppWidgetProvider {
         for (Class<?> k : new Class<?>[]{NextWidget.class, LeftWidget.class, DateWidget.class}) {
             int[] ids = m.getAppWidgetIds(new ComponentName(c, k));
             if (ids.length == 0) continue;
-            if (k == DateWidget.class) { for (int id : ids) m.updateAppWidget(id, DateWidget.build(c)); continue; }
+            if (k == DateWidget.class) { for (int id : ids) m.updateAppWidget(id, DateWidget.build(c, m.getAppWidgetOptions(id))); continue; }
             WidgetBase w = k == NextWidget.class ? new NextWidget() : new LeftWidget();
             for (int id : ids) m.updateAppWidget(id, w.build(c));
         }
