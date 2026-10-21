@@ -34,14 +34,30 @@ public class Store {
     /** כל הפריטים: המחושבים מ-JS ועוד נודניקים דינמיים. */
     static List<JSONObject> all(Context c) {
         List<JSONObject> out = new ArrayList<>();
+        JSONObject cancelled = obj(c, "cancelled");
         for (String k : new String[]{"items", "snoozes"}) {
             JSONArray a = arr(c, k);
             for (int i = 0; i < a.length(); i++) {
                 JSONObject o = a.optJSONObject(i);
-                if (o != null) out.add(o);
+                if (o != null && !cancelled.has(o.optString("id"))) out.add(o);
             }
         }
         return out;
+    }
+
+    /** ביטול מופע בודד של התראה/תזכורת (למשל מכפתור "בטל" בהתראה המקדימה) */
+    static void cancelItem(Context c, String id) {
+        try {
+            JSONObject d = obj(c, "cancelled");
+            long now = System.currentTimeMillis();
+            java.util.Iterator<String> ks = d.keys();
+            List<String> old = new ArrayList<>();
+            while (ks.hasNext()) { String k = ks.next(); if (now - d.optLong(k) > 3 * 86400000L * 30) old.add(k); }
+            for (String k : old) d.remove(k);
+            d.put(id, now);
+            p(c).edit().putString("cancelled", d.toString()).apply();
+        } catch (Exception ignored) {
+        }
     }
 
     static boolean isDone(Context c, JSONObject it) {

@@ -69,6 +69,11 @@ public class AlarmReceiver extends BroadcastReceiver {
         // התראה מקדימה (פינג): נעלמת מהוילון ברגע שההתראה עצמה מגיעה
         long until = it.optLong("until", 0L);
         if (until > 0) b.setTimeoutAfter(Math.max(1000L, until - System.currentTimeMillis()));
+        if (it.optBoolean("pre", false) && (!it.optString("cancels").isEmpty() || it.optBoolean("timer", false))) {
+            Intent cancel = new Intent(c, ActionReceiver.class).setAction(ActionReceiver.ACT_CANCEL)
+                    .putExtra("cancels", it.optString("cancels")).putExtra("timer", it.optBoolean("timer", false)).putExtra("nid", id);
+            b.addAction(0, it.optBoolean("timer", false) ? "בטל את הטיימר" : "בטל את התזכורת", PendingIntent.getBroadcast(c, id + 3, cancel, fl));
+        }
         if (learn && !it.optString("tid").isEmpty()) {
             Intent done = new Intent(c, ActionReceiver.class).setAction(ActionReceiver.ACT_LEARNED)
                     .putExtra("key", it.optString("dk") + "|" + it.optString("tid")).putExtra("nid", id);

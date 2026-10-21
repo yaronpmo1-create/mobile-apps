@@ -13,7 +13,7 @@ const safe = async (fn, fb) => { try { return await fn(); } catch (e) { return f
 function timerPre() {
   try {
     const t = JSON.parse(localStorage.getItem('jewish-app-timer') || 'null');
-    if (t && t.end && t.pre > 0 && t.end - t.pre * 60000 > Date.now() + 1000) return { id: 'TP|' + t.end, t: t.end - t.pre * 60000, kind: 'notify', pre: true, until: t.end, title: 'הטיימר מסתיים בקרוב', text: 'בעוד ' + t.pre + ' דקות' };
+    if (t && t.end && t.pre > 0 && t.end - t.pre * 60000 > Date.now() + 1000) return { id: 'TP|' + t.end, t: t.end - t.pre * 60000, kind: 'notify', pre: true, timer: true, until: t.end, title: 'הטיימר מסתיים בקרוב', text: 'בעוד ' + t.pre + ' דקות' };
   } catch (e) { /* */ }
   return null;
 }

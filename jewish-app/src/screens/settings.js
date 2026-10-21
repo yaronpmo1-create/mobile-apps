@@ -8,6 +8,7 @@ import { chabadList, HMONTHS, monthName } from '../lib/chabad.js';
 import { uid } from '../lib/store.js';
 import { openLocation, openHealth, openYahrzeits, openCompass } from './extras.js';
 import { dayStatus, activeTracks, firstKey } from '../lib/tracks.js';
+import { chime } from '../lib/chime.js';
 import { backupNow, listBackups, backupStamp } from '../lib/autobackup.js';
 
 const row = (label, sub, control, onclick) => h('div', { class: 'row' + (onclick ? ' tap' : ''), onclick }, h('div', { class: 'grow' }, h('div', { class: 't' }, label), sub ? h('div', { class: 's' }, sub) : null), control);
@@ -98,6 +99,7 @@ function alerts() {
         sw('עוצמה עולה בהדרגה', 'הצלצול מתחיל חלש ועולה', s, 'ramp'),
         sw('רטט', '', s, 'vibrate'),
         sw('צליל עדין בסימון לימוד', 'צליל קצר בסימון, ומעט מלא יותר כשכל משימות היום הושלמו', s, 'markSound'),
+        row('בדיקת צליל הסימון', 'נוגן בעוצמת המדיה: לחיצה = צליל סימון אחד, ואחריו צליל "הכל הושלם"', arrow(), () => { chime('one'); setTimeout(() => chime('all'), 900); }),
         sw('חוזרת עד כיבוי (ברירת מחדל)', 'צלצול ממשיך עד שמכבים', s, 'repeatUntilOff'),
         sw('שעות שקט', 'צלצול הופך להתראה שקטה', s, 'quiet')),
       s.quiet ? h('div', { class: 'inline' }, field('מ-', txt(s.quietFrom, (v) => { s.quietFrom = v; }, '', 'time')), field('עד', txt(s.quietTo, (v) => { s.quietTo = v; }, '', 'time'))) : null,
