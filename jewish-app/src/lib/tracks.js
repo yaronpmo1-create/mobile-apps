@@ -109,6 +109,7 @@ export function learnInfo(track, date, st) {
           const rng = out.sub.replace(/^תה[יל]*ים/, '').replace(/\s+/g, ' ').trim();
           out.sub = 'ליום ' + hebrewDayLetter(date) + ' לחודש, ' + (rng.includes('-') ? 'פרקים ' + rng.replace(/\s*-\s*/, ' - ') : 'פרק ' + rng);
         }
+        if (track.auto === 'kitzurShulchanAruch') out.sub = out.sub.replace(/^Kitzur Shulchan Arukh/i, 'קיצור שולחן ערוך');
         if (track.auto === 'seferHaMitzvot' && r.reading && r.reading.day) out.sub = 'ספר המצוות, יום ' + r.reading.day + ' מתוך 339';
         if (r.url) out.url = r.url();
       }
