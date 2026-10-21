@@ -126,22 +126,23 @@ function confirmPending(c, key, set = pending) {
   if (marked) { toast('נשמר: ' + marked + ' לימודים סומנו'); chime(dayStatus(c.st, key).kind === 'full' ? 'all' : 'one'); milestone(c); } else toast('השינויים נשמרו');
 }
 
-// הסבר + "סמן הכל" ו"בטל הכל" + שורת אישור. set = קבוצת הבחירה הממתינה, refresh = רענון המסך
+// הסבר + "סמן הכל" ו"בטל הכל" (פועלים מיד, עם "ביטול" בהודעה). set לא בשימוש, refresh = רענון המסך
 export function dayMarkControls(c, key, due, set, refresh) {
   const st = c.st;
   const isDoneE = (tr) => { const e = getEntry(st, key, tr.id); return !!(e && (e.s === 'done' || e.s === 'late')); };
   const undone = due.filter((tr) => !isDoneE(tr)), done = due.filter(isDoneE);
-  const same = (arr) => arr.length > 0 && set.size === arr.length && arr.every((tr) => set.has(tr.id));
-  const pick = (arr) => () => { const was = same(arr); set.clear(); if (!was) arr.forEach((tr) => set.add(tr.id)); refresh(); };
+  const apply = (arr) => () => {
+    const ids = new Set(arr.map((tr) => tr.id));
+    confirmPending(c, key, ids);
+    toast(arr === undone ? 'סומנו ' + arr.length + ' לימודים' : 'בוטל הסימון של ' + arr.length + ' לימודים', 'ביטול', () => { confirmPending(c, key, new Set(ids)); refresh(); });
+    refresh();
+  };
   const out = [
     h('p', { class: 'dim small', style: 'text-align:center;margin:6px 0;white-space:nowrap;font-size:.78rem' }, 'לחיצה ארוכה על לימוד: הערה ו"איפה עצרתי"'),
     h('div', { class: 'inline', style: 'margin-bottom:6px' },
-      h('button', { class: same(undone) ? 'btn' : 'btn sec', disabled: !undone.length, onclick: pick(undone) }, undone.length ? 'סמן הכל' : 'הכל סומן ✓'),
-      h('button', { class: same(done) ? 'btn' : 'btn sec', disabled: !done.length, onclick: pick(done) }, 'בטל הכל')),
+      h('button', { class: 'btn', disabled: !undone.length, onclick: apply(undone) }, undone.length ? 'סמן הכל' : 'הכל סומן ✓'),
+      h('button', { class: 'btn sec', disabled: !done.length, onclick: apply(done) }, 'בטל הכל')),
   ];
-  if (set.size) out.push(h('div', { class: 'confirmbar', style: 'position:static;margin:8px 0' },
-    h('button', { class: 'btn', onclick: () => { confirmPending(c, key, set); refresh(); } }, 'אישור (' + set.size + ')'),
-    h('button', { class: 'btn sec', onclick: () => { set.clear(); refresh(); } }, 'ביטול')));
   return out;
 }
 
@@ -219,7 +220,7 @@ export function today() {
   for (const k of ['morning', 'afternoon', 'evening', 'any']) {
     if (!groups[k].length) continue;
     root.appendChild(h('div', { class: 'section-title' }, PARTS[k]));
-    root.appendChild(h('div', { class: 'list' }, groups[k].map((t) => trackRow(c, key, t, { pend: future ? null : pending, readonly: future }))));
+    root.appendChild(h('div', { class: 'list' }, groups[k].map((t) => trackRow(c, key, t, { readonly: future }))));
   }
   if (due.length && !future) {
     dayMarkControls(c, key, due, pending, () => rerender()).forEach((el) => root.appendChild(el));

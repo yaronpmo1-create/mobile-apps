@@ -152,7 +152,7 @@ export function openDay(key0) {
     const ds = dayStatus(st, key);
     if (!due.length) root.appendChild(h('div', { class: 'card empty-note' }, 'אין לימוד מתוזמן ליום הזה.'));
     root.appendChild(h('div', { class: 'list' }, due.map((t) => {
-      const row = trackRow(c2, key, t, { milestone: key === c2.tk, readonly: beyondWindow(key, c2.tk), pend: beyondWindow(key, c2.tk) ? null : dayPend });
+      const row = trackRow(c2, key, t, { milestone: key === c2.tk, readonly: beyondWindow(key, c2.tk) });
       const n = ((st.notes || {})[key] || {})[t.id];
       if (n) row.querySelector('.grow').appendChild(h('div', { class: 's' }, 'הערה: ' + n));
       return row;
