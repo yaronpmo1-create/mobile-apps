@@ -14,21 +14,26 @@ import java.util.List;
 
 /** תזמון ההתראה הבאה עם שעון מעורר מדויק (AlarmManager.setAlarmClock). */
 public class Scheduler {
-    static final String CH_RING = "ja_ring";
-    static final String CH_LEARN = "ja_learn";
-    static final String CH_INFO = "ja_info";
+    static final String CH_RING = "ja_ring2";
+    static final String CH_LEARN = "ja_learn2";
+    static final String CH_INFO = "ja_info2";
 
     static void channels(Context c) {
         if (Build.VERSION.SDK_INT < 26) return;
         NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
+        // ערוצים ישנים (עם נקודת התראה על סמל האפליקציה) נמחקים; החדשים בלי סימון על הסמל
+        for (String old : new String[]{"ja_ring", "ja_learn", "ja_info"}) nm.deleteNotificationChannel(old);
         NotificationChannel ring = new NotificationChannel(CH_RING, "צלצול", NotificationManager.IMPORTANCE_HIGH);
         ring.setSound(null, null);
         ring.enableVibration(false);
+        ring.setShowBadge(false);
         ring.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
         nm.createNotificationChannel(ring);
         NotificationChannel learn = new NotificationChannel(CH_LEARN, "תזכורות לימוד", NotificationManager.IMPORTANCE_HIGH);
+        learn.setShowBadge(false);
         nm.createNotificationChannel(learn);
         NotificationChannel info = new NotificationChannel(CH_INFO, "תזכורות והתראות", NotificationManager.IMPORTANCE_DEFAULT);
+        info.setShowBadge(false);
         nm.createNotificationChannel(info);
     }
 

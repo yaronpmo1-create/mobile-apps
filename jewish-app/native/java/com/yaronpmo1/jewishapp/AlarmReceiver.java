@@ -66,6 +66,9 @@ public class AlarmReceiver extends BroadcastReceiver {
                 .setPriority(learn ? NotificationCompat.PRIORITY_HIGH : NotificationCompat.PRIORITY_DEFAULT)
                 .setCategory(NotificationCompat.CATEGORY_REMINDER)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+        // התראה מקדימה (פינג): נעלמת מהוילון ברגע שההתראה עצמה מגיעה
+        long until = it.optLong("until", 0L);
+        if (until > 0) b.setTimeoutAfter(Math.max(1000L, until - System.currentTimeMillis()));
         if (learn && !it.optString("tid").isEmpty()) {
             Intent done = new Intent(c, ActionReceiver.class).setAction(ActionReceiver.ACT_LEARNED)
                     .putExtra("key", it.optString("dk") + "|" + it.optString("tid")).putExtra("nid", id);

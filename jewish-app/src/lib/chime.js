@@ -1,5 +1,6 @@
 // צליל עדין בסימון לימוד: קצר מאוד לסימון אחד, ומעט מלא יותר כשכל משימות היום הושלמו
 import { get } from './store.js';
+import { isNative, playPing } from './native.js';
 
 let ac = null;
 function audio() {
@@ -20,6 +21,7 @@ function tone(a, freq, t0, dur, vol) {
 }
 export function chime(kind) {
   if (get().settings.markSound === false) return;
+  if (isNative()) { playPing(kind); return; }
   const a = audio();
   if (!a) return;
   const t = a.currentTime + 0.01;

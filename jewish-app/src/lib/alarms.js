@@ -90,7 +90,7 @@ export function buildInstances(st, now = new Date(), days = 60, max = 480, withP
       if (a.noRest !== false && inRest(t, intervals)) continue;
       push({ id: 'A|' + a.id + '|' + key, t, kind: a.ring === false ? 'notify' : 'ring', title: alarmTitle(a, st), text: a.type === 'zman' && z[a.zman] ? zmanName(a.zman) + ' ב-' + hhmm(z[a.zman], loc.tz) : '', rep: a.repeat ? true : common.rep, snooze: a.repeat || a.snooze === false ? 0 : (a.snoozeMin || s.snoozeMin) });
       const pre = Number(a.pre) || 0;
-      if (pre > 0) push({ id: 'P|' + a.id + '|' + key, t: t - pre * 60000, kind: 'notify', pre: true, title: 'בעוד ' + pre + ' דק׳: ' + alarmTitle(a, st), text: '' });
+      if (pre > 0) push({ id: 'P|' + a.id + '|' + key, t: t - pre * 60000, kind: 'notify', pre: true, until: t, title: 'בעוד ' + pre + ' דק׳: ' + alarmTitle(a, st), text: '' });
     }
     // תזכורות לימוד: רק אם לא סומן
     for (const { track, r, alarm } of learnAlarms) {
@@ -109,7 +109,7 @@ export function buildInstances(st, now = new Date(), days = 60, max = 480, withP
       try { sub = learnInfo(track, parseKey(dk), st).sub; } catch (e) { /* */ }
       push({ id: 'L|' + track.id + '|' + dk, t, kind: (alarm ? alarm.ring : r.ring) ? 'ring' : 'learn', title: 'זמן לימוד', text: 'עכשיו ' + track.name + (sub ? ': ' + sub : '') + ' - עדיין לא סומן היום', dk, tid: track.id });
       const lpre = Number(alarm ? alarm.pre : r.pre) || 0;
-      if (lpre > 0) push({ id: 'LP|' + track.id + '|' + dk, t: t - lpre * 60000, kind: 'notify', pre: true, title: 'בעוד ' + lpre + ' דק׳: זמן לימוד', text: track.name + (sub ? ': ' + sub : '') });
+      if (lpre > 0) push({ id: 'LP|' + track.id + '|' + dk, t: t - lpre * 60000, kind: 'notify', pre: true, until: t, title: 'בעוד ' + lpre + ' דק׳: זמן לימוד', text: track.name + (sub ? ': ' + sub : '') });
     }
     // תזכורות אוטומטיות
     const au = s.auto || {}, at = s.autoTimes || {};

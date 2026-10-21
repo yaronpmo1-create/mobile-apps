@@ -2,7 +2,6 @@
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { Share } from '@capacitor/share';
 import { Filesystem, Directory } from '@capacitor/filesystem';
-import { Browser } from '@capacitor/browser';
 import { buildInstances } from './alarms.js';
 import { get } from './store.js';
 
@@ -14,7 +13,7 @@ const safe = async (fn, fb) => { try { return await fn(); } catch (e) { return f
 function timerPre() {
   try {
     const t = JSON.parse(localStorage.getItem('jewish-app-timer') || 'null');
-    if (t && t.end && t.pre > 0 && t.end - t.pre * 60000 > Date.now() + 1000) return { id: 'TP|' + t.end, t: t.end - t.pre * 60000, kind: 'notify', pre: true, title: 'הטיימר מסתיים בקרוב', text: 'בעוד ' + t.pre + ' דקות' };
+    if (t && t.end && t.pre > 0 && t.end - t.pre * 60000 > Date.now() + 1000) return { id: 'TP|' + t.end, t: t.end - t.pre * 60000, kind: 'notify', pre: true, until: t.end, title: 'הטיימר מסתיים בקרוב', text: 'בעוד ' + t.pre + ' דקות' };
   } catch (e) { /* */ }
   return null;
 }
@@ -42,6 +41,7 @@ export const requestFullScreen = () => isNative() && safe(() => JA.requestFullSc
 export const startTimer = async (ms, title, text) => isNative() && safe(() => JA.startTimer({ ms, title, text, snd: get().settings.soundUri || '' }));
 export const timerState = async () => (isNative() ? safe(async () => { const r = await JA.timerState(); return { end: Number(r.end) || 0, dismissed: !!r.dismissed }; }, null) : null);
 export const cancelTimer = async () => isNative() && safe(() => JA.cancelTimer());
+export const playPing = (kind) => (isNative() ? safe(() => JA.playPing({ kind })) : null);
 export const requestOverlay = () => isNative() && safe(() => JA.requestOverlay());
 export const testAlarm = async (kind) => isNative() && safe(() => JA.testAlarm({ kind, snd: get().settings.soundUri || '' }));
 export const getPending = async () => (isNative() ? safe(() => JA.getPending(), { count: 0 }) : { count: 0 });
@@ -81,8 +81,8 @@ export async function saveFile(name, text) {
 export async function openLink(url) {
   if (!url) return 'none';
   if (isNative()) {
-    const r = await safe(() => Browser.open({ url }), 'fail');
-    if (r !== 'fail') return 'opened';
+    const r = await safe(() => JA.openUrl({ url }), null);
+    if (r && r.opened) return 'opened';
   } else { window.open(url, '_blank'); return 'opened'; }
   return (await copyText(url)) ? 'copied' : 'fail';
 }

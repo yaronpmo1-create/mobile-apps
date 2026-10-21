@@ -188,6 +188,7 @@ ok(hebrewDate(new Date(2026, 9, 18)).includes('מרחשון'), 'marcheshvan name
   const main0 = buildInstances(s18, now18, 3, 500).find((i) => i.id === 'A|' + al.id + '|2026-12-03');
   eq(pre[0].t, main0.t - 600000, 'pre is 10 minutes before');
   eq(pre[0].kind, 'notify', 'pre is a quiet notification');
+  eq(pre[0].until, main0.t, 'pre disappears when the alarm fires');
   const s19 = defaults(); addTemplate(s19, 'chitas');
   const tk = s19.tracks[0]; tk.remind = { mode: 'time', time: '21:00', zman: 'shkiah', rel: 'before', mins: 30, ring: false };
   const li = buildInstances(s19, new Date(2026, 9, 21, 8, 0), 1, 100).find((i) => i.id.startsWith('L|' + tk.id));

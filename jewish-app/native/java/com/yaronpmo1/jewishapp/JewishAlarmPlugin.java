@@ -6,6 +6,9 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.app.Activity;
+import android.media.AudioAttributes;
+import android.media.AudioFormat;
+import android.media.AudioTrack;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
@@ -261,6 +264,54 @@ public class JewishAlarmPlugin extends Plugin {
         r.put("uri", uri == null ? "" : uri.toString());
         r.put("name", uri == null ? "" : name);
         call.resolve(r);
+    }
+
+    /** פתיחת קישור בדפדפן; אם אין דפדפן במכשיר מחזיר opened=false (בלי לפתוח מסך ריק) */
+    @PluginMethod
+    public void openUrl(PluginCall call) {
+        JSObject r = new JSObject();
+        boolean ok = false;
+        try {
+            Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(call.getString("url", ""))).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (i.resolveActivity(ctx().getPackageManager()) != null) {
+                ctx().startActivity(i);
+                ok = true;
+            }
+        } catch (Exception ignored) { }
+        r.put("opened", ok);
+        call.resolve(r);
+    }
+
+    /** צליל עדין קצר לסימון לימוד: kind=one (קצר מאוד) או all (מעט מלא יותר, כשכל המשימות הושלמו) */
+    @PluginMethod
+    public void playPing(PluginCall call) {
+        final boolean all = "all".equals(call.getString("kind", "one"));
+        call.resolve();
+        new Thread(() -> {
+            try {
+                int sr = 22050;
+                double[][] notes = all ? new double[][]{{659, 0.30, 0.0}, {880, 0.36, 0.14}, {1319, 0.55, 0.30}} : new double[][]{{988, 0.16, 0.0}};
+                double total = all ? 0.90 : 0.20, vol = all ? 0.30 : 0.18;
+                short[] buf = new short[(int) (sr * total)];
+                for (double[] nt : notes) {
+                    int start = (int) (nt[2] * sr), len = (int) (nt[1] * sr);
+                    for (int k = 0; k < len && start + k < buf.length; k++) {
+                        double t = k / (double) sr;
+                        double env = Math.min(1.0, t / 0.02) * Math.exp(-5.0 * t / nt[1]);
+                        int v = buf[start + k] + (int) (vol * 32767 * env * Math.sin(2 * Math.PI * nt[0] * t));
+                        buf[start + k] = (short) Math.max(-32767, Math.min(32767, v));
+                    }
+                }
+                AudioTrack at = new AudioTrack.Builder()
+                        .setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
+                        .setAudioFormat(new AudioFormat.Builder().setEncoding(AudioFormat.ENCODING_PCM_16BIT).setSampleRate(sr).setChannelMask(AudioFormat.CHANNEL_OUT_MONO).build())
+                        .setBufferSizeInBytes(buf.length * 2).setTransferMode(AudioTrack.MODE_STATIC).build();
+                at.write(buf, 0, buf.length);
+                at.play();
+                Thread.sleep((long) (total * 1000) + 150);
+                at.release();
+            } catch (Exception ignored) { }
+        }).start();
     }
 
     @PluginMethod
