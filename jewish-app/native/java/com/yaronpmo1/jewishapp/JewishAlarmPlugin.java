@@ -282,48 +282,28 @@ public class JewishAlarmPlugin extends Plugin {
         call.resolve(r);
     }
 
-    /** צליל עדין קצר לסימון לימוד: kind=one (קצר מאוד) או all (מעט מלא יותר, כשכל המשימות הושלמו). קובץ WAV מנוגן ב-MediaPlayer בעוצמת מדיה */
+    /** צליל סימון לימוד (קבצי res/raw, מבוססים על הצליל שבחר המשתמש): kind=one (מסלול אחד: נמוך וחלש יותר, רבע למטה) או all (כל המסלולים: הצליל המקורי, גבוה וחזק יותר). עוצמת מדיה */
     @PluginMethod
     public void playPing(PluginCall call) {
         final boolean all = "all".equals(call.getString("kind", "one"));
         call.resolve();
-        new Thread(() -> {
+        try {
+            int id = ctx().getResources().getIdentifier(all ? "ja_ping_all" : "ja_ping_one", "raw", ctx().getPackageName());
+            android.content.res.AssetFileDescriptor fd = ctx().getResources().openRawResourceFd(id);
+            final android.media.MediaPlayer mp = new android.media.MediaPlayer();
+            mp.setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
+            mp.setDataSource(fd.getFileDescriptor(), fd.getStartOffset(), fd.getLength());
+            fd.close();
+            mp.setOnCompletionListener(m -> m.release());
+            mp.setOnErrorListener((m, w, e) -> { m.release(); return true; });
+            mp.setOnPreparedListener(m -> { m.setVolume(1f, 1f); m.start(); });
+            mp.prepareAsync();
+        } catch (Exception e) {
+            android.util.Log.e("JewishPing", "ping failed", e);
             try {
-                int sr = 22050;
-                double[][] notes = all ? new double[][]{{659, 0.30, 0.0}, {880, 0.36, 0.14}, {1319, 0.55, 0.30}} : new double[][]{{988, 0.20, 0.0}};
-                double total = all ? 0.90 : 0.26, vol = all ? 0.55 : 0.50;
-                short[] buf = new short[(int) (sr * total)];
-                for (double[] nt : notes) {
-                    int start = (int) (nt[2] * sr), len = (int) (nt[1] * sr);
-                    for (int k = 0; k < len && start + k < buf.length; k++) {
-                        double t = k / (double) sr;
-                        double env = Math.min(1.0, t / 0.01) * Math.exp(-4.0 * t / nt[1]);
-                        int v = buf[start + k] + (int) (vol * 32767 * env * Math.sin(2 * Math.PI * nt[0] * t));
-                        buf[start + k] = (short) Math.max(-32767, Math.min(32767, v));
-                    }
-                }
-                int n = buf.length * 2;
-                java.nio.ByteBuffer bb = java.nio.ByteBuffer.allocate(44 + n).order(java.nio.ByteOrder.LITTLE_ENDIAN);
-                bb.put("RIFF".getBytes()).putInt(36 + n).put("WAVEfmt ".getBytes()).putInt(16).putShort((short) 1).putShort((short) 1)
-                        .putInt(sr).putInt(sr * 2).putShort((short) 2).putShort((short) 16).put("data".getBytes()).putInt(n);
-                for (short x : buf) bb.putShort(x);
-                java.io.File f = new java.io.File(ctx().getCacheDir(), "ping_" + (all ? "all" : "one") + ".wav");
-                try (java.io.FileOutputStream fo = new java.io.FileOutputStream(f)) { fo.write(bb.array()); }
-                final android.media.MediaPlayer mp = new android.media.MediaPlayer();
-                mp.setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
-                mp.setDataSource(f.getAbsolutePath());
-                mp.setOnCompletionListener(m -> m.release());
-                mp.setOnErrorListener((m, w, e) -> { m.release(); return true; });
-                mp.prepare();
-                mp.setVolume(1f, 1f);
-                mp.start();
-            } catch (Exception e) {
-                android.util.Log.e("JewishPing", "ping failed", e);
-                try {
-                    new android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 80).startTone(android.media.ToneGenerator.TONE_PROP_ACK, 200);
-                } catch (Exception ignored) { }
-            }
-        }).start();
+                new android.media.ToneGenerator(android.media.AudioManager.STREAM_MUSIC, 80).startTone(android.media.ToneGenerator.TONE_PROP_ACK, 200);
+            } catch (Exception ignored) { }
+        }
     }
 
     @PluginMethod

@@ -25,6 +25,7 @@ export function chime(kind) {
   const a = audio();
   if (!a) return;
   const t = a.currentTime + 0.01;
-  if (kind === 'all') { tone(a, 659, t, 0.3, 0.09); tone(a, 880, t + 0.14, 0.36, 0.09); tone(a, 1319, t + 0.3, 0.55, 0.07); }
-  else tone(a, 988, t, 0.14, 0.035);
+  // כמו ב-native: כל המסלולים = סי (988Hz), מסלול אחד = פה דיאז (רבע למטה, 741Hz) וחלש יותר
+  if (kind === 'all') tone(a, 988, t, 0.7, 0.12);
+  else tone(a, 741, t, 0.7, 0.07);
 }
