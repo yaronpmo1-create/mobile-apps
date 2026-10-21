@@ -276,6 +276,10 @@ public class JewishAlarmPlugin extends Plugin {
             if (i.resolveActivity(ctx().getPackageManager()) != null) {
                 ctx().startActivity(i);
                 ok = true;
+            } else if (ReaderActivity.allowed(call.getString("url", ""))) {
+                ctx().startActivity(new Intent(ctx(), ReaderActivity.class).putExtra("url", call.getString("url", "")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                ok = true;
+                r.put("reader", true);
             }
         } catch (Exception ignored) { }
         r.put("opened", ok);

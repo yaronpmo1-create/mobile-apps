@@ -35,6 +35,7 @@ mf = mf.replace('android:launchMode="singleTask"', 'android:launchMode="singleTa
 const comps = `
         <activity android:name=".AlarmActivity" android:exported="false" android:showWhenLocked="true" android:turnScreenOn="true"
             android:launchMode="singleInstance" android:excludeFromRecents="true" android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity android:name=".ReaderActivity" android:exported="false" android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
         <service android:name=".AlarmService" android:exported="false" android:foregroundServiceType="mediaPlayback" />
         <receiver android:name=".AlarmReceiver" android:exported="false" />
         <receiver android:name=".ActionReceiver" android:exported="false" />
