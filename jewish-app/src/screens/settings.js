@@ -7,7 +7,7 @@ import { saveFile, shareText, copyText, pickSound, testAlarm } from '../lib/nati
 import { chabadList, HMONTHS, monthName } from '../lib/chabad.js';
 import { uid } from '../lib/store.js';
 import { openLocation, openHealth, openYahrzeits, openCompass } from './extras.js';
-import { dayStatus, activeTracks, firstKey } from '../lib/tracks.js';
+import { dayStatus, activeTracks, firstKey, learnInfo } from '../lib/tracks.js';
 import { chime } from '../lib/chime.js';
 import { backupNow, listBackups, backupStamp } from '../lib/autobackup.js';
 
@@ -24,6 +24,7 @@ export function settingsMain() {
     ['התראות', 'צליל, נודניק, שעות שקט, תזכורות אוטומטיות', alerts],
     ['ימים מיוחדים', 'שבת וחג, מצב חופשה, יארצייטים וימי הולדת', special],
     ['הרשאות ואמינות', 'בדיקת תקינות ההתראות', openHealth],
+    ['קישורי הלימוד של היום', 'כל קישור להעתקה, לבדיקה בלי דפדפן', links],
     ['נתונים', 'גיבוי, שחזור, ייצוא, איפוס', data],
     ['אודות ועזרה', 'גרסה ושאלות נפוצות', about],
   ];
@@ -148,6 +149,16 @@ function csv(c) {
     rows.push([k, t ? t.name : id, e.s === 'done' ? 'הושלם' : e.s === 'late' ? 'הושלם באיחור' : 'דולג', ((st.notes || {})[k] || {})[id] || '']);
   }
   return '﻿' + rows.map((r) => r.map((x) => '"' + String(x).replace(/"/g, '""') + '"').join(',')).join('\n');
+}
+function links() {
+  openPage('קישורי הלימוד של היום', () => {
+    const c = ctx(), d = parseKey(c.tk);
+    const rows = activeTracks(c.st).map((t) => ({ t, i: learnInfo(t, d, c.st) })).filter((x) => x.i.url);
+    return h('div', null,
+      h('p', { class: 'muted' }, 'נגיעה בשורה מעתיקה את הקישור ללוח, להדבקה בדפדפן. הכפתור בלימוד עצמו פותח אותו ישירות.'),
+      rows.length ? h('div', { class: 'list' }, rows.map((x) => h('div', { class: 'row tap', onclick: async () => toast((await copyText(x.i.url)) ? 'הקישור הועתק ללוח' : 'ההעתקה נכשלה') },
+        h('div', { class: 'grow' }, h('div', { class: 't' }, x.t.name), x.i.sub ? h('div', { class: 's' }, x.i.sub) : null, h('div', { class: 's', style: 'direction:ltr;text-align:left;word-break:break-all' }, x.i.url))))) : h('div', { class: 'card empty-note' }, 'אין מסלולים עם קישור.'));
+  });
 }
 function data() {
   openPage('נתונים', () => {
