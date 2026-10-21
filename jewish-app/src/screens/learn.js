@@ -6,6 +6,7 @@ import { ZMAN_DEFS } from '../lib/zm.js';
 import { WD_LETTER, WEEKDAYS } from '../lib/dates.js';
 import { REL } from '../lib/alarms.js';
 import { uid } from '../lib/store.js';
+import { linkBtn } from '../lib/linkbtn.js';
 
 const FREQ = { daily: 'יומי', days: 'ימים מסוימים', weekly: 'שבועי', monthly: 'חודשי' };
 
@@ -39,6 +40,7 @@ export function learn() {
           h('div', { class: 't' }, t.name, t.paused ? h('span', { class: 'tag blue' }, 'מושהה') : null),
           h('div', { class: 's' }, trackSummary(t, c)),
           pr != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(pr * 100) + '%' })) : null),
+        linkBtn(st, t, c.today),
         h('div', { class: 'mv nodrag' },
           h('button', { 'aria-label': 'הזזה למעלה', onclick: (e) => { e.stopPropagation(); moveTrack(t.id, -1); } }, '▲'),
           h('button', { 'aria-label': 'הזזה למטה', onclick: (e) => { e.stopPropagation(); moveTrack(t.id, 1); } }, '▼')),
@@ -154,6 +156,10 @@ export function editTrack(id, fresh) {
         field('דקות', txt(r.mins, (v) => (r.mins = Number(v) || 0), '', 'number'))));
     }
     if (r.mode !== 'none') root.appendChild(h('div', { class: 'row' }, h('div', { class: 'grow' }, 'מסך צלצול מלא (ולא רק התראה בוילון)'), toggle(r.ring, (v) => { r.ring = v; pg.refresh(); })));
+    if (r.mode !== 'none') {
+      root.appendChild(h('label', { class: 'f' }, 'התראה מקדימה (פינג קטן בוילון, דקות לפני)'));
+      root.appendChild(seg([[0, 'בלי'], [1, '1'], [5, '5'], [10, '10'], [30, '30']], r.pre || 0, (v) => { r.pre = v; pg.refresh(); }));
+    }
     root.appendChild(h('hr'));
     root.appendChild(field('קישור לטקסט (אופציונלי)', txt(d.url, (v) => up('url', v), 'https://...')));
     root.appendChild(field('איפה עצרתי', txt(d.where, (v) => up('where', v))));

@@ -8,6 +8,7 @@ import { chabadList, HMONTHS, monthName } from '../lib/chabad.js';
 import { uid } from '../lib/store.js';
 import { openLocation, openHealth, openYahrzeits, openCompass } from './extras.js';
 import { dayStatus, activeTracks, firstKey } from '../lib/tracks.js';
+import { backupNow, listBackups, backupStamp } from '../lib/autobackup.js';
 
 const row = (label, sub, control, onclick) => h('div', { class: 'row' + (onclick ? ' tap' : ''), onclick }, h('div', { class: 'grow' }, h('div', { class: 't' }, label), sub ? h('div', { class: 's' }, sub) : null), control);
 const sw = (label, sub, obj, key, after) => row(label, sub, toggle(!!obj[key], (v) => { obj[key] = v; commit(); after && after(); }));
@@ -96,6 +97,7 @@ function alerts() {
       h('div', { class: 'list', style: 'margin-top:10px' },
         sw('עוצמה עולה בהדרגה', 'הצלצול מתחיל חלש ועולה', s, 'ramp'),
         sw('רטט', '', s, 'vibrate'),
+        sw('צליל עדין בסימון לימוד', 'צליל קצר בסימון, ומעט מלא יותר כשכל משימות היום הושלמו', s, 'markSound'),
         sw('חוזרת עד כיבוי (ברירת מחדל)', 'צלצול ממשיך עד שמכבים', s, 'repeatUntilOff'),
         sw('שעות שקט', 'צלצול הופך להתראה שקטה', s, 'quiet')),
       s.quiet ? h('div', { class: 'inline' }, field('מ-', txt(s.quietFrom, (v) => { s.quietFrom = v; }, '', 'time')), field('עד', txt(s.quietTo, (v) => { s.quietTo = v; }, '', 'time'))) : null,
@@ -106,6 +108,7 @@ function alerts() {
         sw('ערב שבת / חג', 'ביום שישי וערב חג בצהריים', s.auto, 'erevShabbat'),
         row('הדלקת נרות', 'התראה ' + s.candleBefore + ' דקות לפני ההדלקה · ההדלקה ' + (s.candleMins ? s.candleMins + ' דקות לפני שקיעה' : 'לפי המקום') + ' · לחיצה לשינוי', toggle(!!s.auto.candles, (v) => { s.auto.candles = v; commit(); }), () => candleSheet()),
         sw('ספירת העומר', 'בערבי הספירה', s.auto, 'omer'),
+        sw('נרות חנוכה', 'התראה לפני כל הדלקה, נר 1 עד 8', s.auto, 'chanukah'),
         sw('תאריכי חב״ד', 'מתריע בתאריכים שנבחרו ברשימה', s, 'chabadDates'),
         row('רשימת תאריכי חב״ד', chabadList(s).filter((x) => x.on !== false).length + ' מתוך ' + chabadList(s).length + ' פעילים · בחירה, עריכה והוספה', arrow(), () => openChabad()),
         sw('אבני דרך שקטות', 'הודעה על רצף 7, 30, 100', s, 'milestones')));
@@ -155,6 +158,11 @@ function data() {
       h('p', { class: 'muted' }, 'כל הנתונים נשמרים בטלפון בלבד. מומלץ לגבות מדי פעם.'),
       h('button', { class: 'btn block', onclick: async () => { const r = await saveFile('jewish-app-backup-' + c.tk + '.json', exportJson()); toast(r === 'copied' ? 'אין שיתוף במכשיר - הגיבוי הועתק ללוח' : r === 'fail' ? 'הגיבוי נכשל' : 'הגיבוי מוכן'); } }, 'גיבוי לקובץ ושיתוף'),
       h('button', { class: 'btn sec block', style: 'margin-top:8px', onclick: async () => toast((await copyText(exportJson())) ? 'הגיבוי הועתק ללוח' : 'ההעתקה נכשלה') }, 'העתקת גיבוי ללוח'),
+      h('div', { class: 'section-title' }, 'גיבוי אוטומטי'),
+      h('div', { class: 'list' }, sw('גיבוי אוטומטי שבועי', c.s.lastAutoBackup ? 'הגיבוי האחרון: ' + backupStamp(c.s.lastAutoBackup) : 'עוד לא בוצע גיבוי', c.s, 'autoBackup')),
+      h('button', { class: 'btn sec block', style: 'margin-top:8px', onclick: async () => { const ok = await backupNow(); toast(ok ? 'הגיבוי נשמר' : 'הגיבוי נכשל'); } }, 'גיבוי עכשיו'),
+      listBackups().map((b) => h('button', { class: 'btn ghost block', style: 'margin-top:6px', onclick: () => restoreFrom(b.d) }, 'שחזור מגיבוי אוטומטי מ-' + backupStamp(b.t))),
+      h('p', { class: 'dim small' }, 'העותקים נשמרים בטלפון, וגם בגיבוי של גוגל (אם הוא פעיל במכשיר), כך שבמכשיר חדש הנתונים חוזרים אחרי ההתקנה. לגיבוי שאפשר להעביר לבד: "גיבוי לקובץ ושיתוף".'),
       h('div', { class: 'section-title' }, 'שחזור'),
       h('button', { class: 'btn sec block', onclick: () => fileIn.click() }, 'שחזור מקובץ'), fileIn,
       h('button', { class: 'btn sec block', style: 'margin-top:8px', onclick: () => pasteRestore() }, 'שחזור מטקסט מודבק'),

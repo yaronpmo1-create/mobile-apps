@@ -10,13 +10,23 @@ export const isNative = () => { try { return Capacitor.isNativePlatform(); } cat
 const JA = registerPlugin('JewishAlarm');
 const safe = async (fn, fb) => { try { return await fn(); } catch (e) { return fb; } };
 
+// התראה מקדימה לטיימר שרץ (נשמר ב-localStorage על ידי מסך הטיימר)
+function timerPre() {
+  try {
+    const t = JSON.parse(localStorage.getItem('jewish-app-timer') || 'null');
+    if (t && t.end && t.pre > 0 && t.end - t.pre * 60000 > Date.now() + 1000) return { id: 'TP|' + t.end, t: t.end - t.pre * 60000, kind: 'notify', pre: true, title: 'הטיימר מסתיים בקרוב', text: 'בעוד ' + t.pre + ' דקות' };
+  } catch (e) { /* */ }
+  return null;
+}
 let timer = null;
 export function syncSoon() { clearTimeout(timer); timer = setTimeout(syncNow, 700); }
 export async function syncNow() {
   const st = get();
-  const items = buildInstances(st);
+  const items = buildInstances(st, new Date(), 60, 480, true);
   st.lastPush = Date.now();
-  const nextTxt = items.length ? items[0].title : '';
+  const nextTxt = (items.find((i) => !i.pre) || {}).title || '';
+  const tp = timerPre();
+  if (tp) { items.push(tp); items.sort((x, y) => x.t - y.t); }
   if (!isNative()) return { count: items.length };
   const done = {};
   for (const k in st.entries) for (const id in st.entries[k]) { const s = st.entries[k][id].s; if (s === 'done' || s === 'late' || s === 'skip') done[k + '|' + id] = 1; }

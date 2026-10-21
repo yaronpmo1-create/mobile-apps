@@ -1,8 +1,8 @@
 // בניית רשימת ההתראות העתידיות (עד 60 יום) מחושבת מראש בטלפון, לשליחה ל-Android
 import { HDate } from '@hebcal/core';
-import { dkey, addDays, hhmm, hebrewDayMonth, stripNikud } from './dates.js';
+import { dkey, addDays, hhmm, hebrewDayMonth, stripNikud, parseKey } from './dates.js';
 import { getLoc, zmanimFor, restIntervals, inRest, isRoshChodesh, isRestDay, omerDay, timedOn, todayKey, zmanName } from './zm.js';
-import { isDue, getEntry, isFreeDay, activeTracks } from './tracks.js';
+import { isDue, getEntry, isFreeDay, activeTracks, learnInfo } from './tracks.js';
 import { chabadOn } from './chabad.js';
 
 export const REL = { before: 'לפני', at: 'בזמן', after: 'אחרי' };
@@ -11,7 +11,7 @@ export const DAY_LETTERS = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
 export function newAlarm(type = 'zman') {
   return {
     id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), type, label: '', enabled: true,
-    zman: 'shkiah', rel: 'before', mins: 30, time: '07:30', date: '', days: [0, 1, 2, 3, 4, 5, 6], noRest: true, ring: true, repeat: false, snooze: true,
+    zman: 'shkiah', rel: 'before', mins: 30, time: '07:30', date: '', days: [0, 1, 2, 3, 4, 5, 6], noRest: true, ring: true, repeat: false, snooze: true, pre: 0,
   };
 }
 export const ALARM_TEMPLATES = [
@@ -52,7 +52,8 @@ function inQuiet(st, ms) {
   return f <= t ? cur >= f && cur < t : cur >= f || cur < t;
 }
 
-export function buildInstances(st, now = new Date(), days = 60, max = 480) {
+// withPre: כולל גם התראות מקדימות (פינג בוילון), רק לשליחה ל-Android ולא לרשימות המסך
+export function buildInstances(st, now = new Date(), days = 60, max = 480, withPre = false) {
   const s = st.settings, loc = getLoc(s);
   const out = [];
   const seen = new Set();
@@ -61,7 +62,7 @@ export function buildInstances(st, now = new Date(), days = 60, max = 480) {
   const nowMs = now.getTime();
   const common = { snooze: s.snoozeMin, rep: s.repeatUntilOff, sound: s.sound, snd: s.soundUri || '', ramp: s.ramp, vib: s.vibrate };
   const push = (o) => {
-    if (o.t <= nowMs + 1000 || seen.has(o.id)) return;
+    if (o.t <= nowMs + 1000 || seen.has(o.id) || (o.pre && !withPre)) return;
     if (o.kind === 'ring' && inQuiet(st, o.t)) o.kind = 'notify';
     seen.add(o.id);
     out.push(Object.assign({}, common, o));
@@ -88,6 +89,8 @@ export function buildInstances(st, now = new Date(), days = 60, max = 480) {
       if (t == null) continue;
       if (a.noRest !== false && inRest(t, intervals)) continue;
       push({ id: 'A|' + a.id + '|' + key, t, kind: a.ring === false ? 'notify' : 'ring', title: alarmTitle(a, st), text: a.type === 'zman' && z[a.zman] ? zmanName(a.zman) + ' ב-' + hhmm(z[a.zman], loc.tz) : '', rep: a.repeat ? true : common.rep, snooze: a.repeat || a.snooze === false ? 0 : (a.snoozeMin || s.snoozeMin) });
+      const pre = Number(a.pre) || 0;
+      if (pre > 0) push({ id: 'P|' + a.id + '|' + key, t: t - pre * 60000, kind: 'notify', pre: true, title: 'בעוד ' + pre + ' דק׳: ' + alarmTitle(a, st), text: '' });
     }
     // תזכורות לימוד: רק אם לא סומן
     for (const { track, r, alarm } of learnAlarms) {
@@ -102,7 +105,11 @@ export function buildInstances(st, now = new Date(), days = 60, max = 480) {
       const e = getEntry(st, dk, track.id);
       if (e && (e.s === 'done' || e.s === 'late' || e.s === 'skip')) continue;
       if ((alarm ? alarm.noRest !== false : true) && inRest(t, intervals)) continue;
-      push({ id: 'L|' + track.id + '|' + dk, t, kind: (alarm ? alarm.ring : r.ring) ? 'ring' : 'learn', title: 'זמן לימוד', text: 'עכשיו ' + track.name + ' - עדיין לא סומן היום', dk, tid: track.id });
+      let sub = '';
+      try { sub = learnInfo(track, parseKey(dk), st).sub; } catch (e) { /* */ }
+      push({ id: 'L|' + track.id + '|' + dk, t, kind: (alarm ? alarm.ring : r.ring) ? 'ring' : 'learn', title: 'זמן לימוד', text: 'עכשיו ' + track.name + (sub ? ': ' + sub : '') + ' - עדיין לא סומן היום', dk, tid: track.id });
+      const lpre = Number(alarm ? alarm.pre : r.pre) || 0;
+      if (lpre > 0) push({ id: 'LP|' + track.id + '|' + dk, t: t - lpre * 60000, kind: 'notify', pre: true, title: 'בעוד ' + lpre + ' דק׳: זמן לימוד', text: track.name + (sub ? ': ' + sub : '') });
     }
     // תזכורות אוטומטיות
     const au = s.auto || {}, at = s.autoTimes || {};
@@ -115,6 +122,16 @@ export function buildInstances(st, now = new Date(), days = 60, max = 480) {
     if (au.candles) {
       const tt = timedOn(date, loc, s);
       if (tt.candles) push({ id: 'CN|' + key, t: tt.candles.getTime() - (s.candleBefore || 20) * 60000, kind: 'notify', title: 'הדלקת נרות', text: 'הדלקת נרות ב-' + hhmm(tt.candles, loc.tz) + ' (בעוד ' + (s.candleBefore || 20) + ' דקות)' });
+    }
+    // נרות חנוכה: התראה לפני כל הדלקה, נר 1 עד 8
+    if (au.chanukah !== false) {
+      const hdd = new HDate(date);
+      const night = hdd.abs() - new HDate(24, 'Kislev', hdd.getFullYear()).abs() + 1;
+      if (night >= 1 && night <= 8) {
+        const tt = timedOn(date, loc, s);
+        const lit = dow === 5 && tt.candles ? tt.candles : dow === 6 && tt.havdalah ? tt.havdalah : z.tzeit;
+        if (lit) push({ id: 'CK|' + key, t: lit.getTime() - (s.candleBefore || 20) * 60000, kind: 'notify', title: 'נר ' + night + ' של חנוכה', text: (dow === 5 ? 'לפני הדלקת נרות שבת. ' : '') + 'הדלקה ב-' + hhmm(lit, loc.tz) + ' (בעוד ' + (s.candleBefore || 20) + ' דקות)' });
+      }
     }
     if (au.omer) {
       const n = omerDay(tmr, loc, s);

@@ -8,6 +8,8 @@ import { hebrewDate as _hd } from '../lib/dates.js';
 import { dueTracks, getEntry, setEntry, learnInfo, progressOf, PARTS, markAll, undoMark, missingDays, streak, dayStatus, isFreeDay, isLateMark, beyondWindow } from '../lib/tracks.js';
 import { setDone, openLink } from '../lib/native.js';
 import { chabadOn } from '../lib/chabad.js';
+import { linkBtn } from '../lib/linkbtn.js';
+import { chime } from '../lib/chime.js';
 import { HDate } from '@hebcal/core';
 
 export function nextZman(c) {
@@ -41,6 +43,7 @@ export function markTrack(c, key, track, status) {
   const e = getEntry(c.st, key, track.id);
   setDone(key, track.id, e && (e.s === 'done' || e.s === 'late' || e.s === 'skip'));
   commit();
+  if (e && (e.s === 'done' || e.s === 'late') && !was) chime(dayStatus(c.st, key).kind === 'full' ? 'all' : 'one');
   return { was, e };
 }
 export function checkbox(e, pend) {
@@ -84,7 +87,8 @@ export function trackRow(c, key, track, opts = {}) {
       h('div', { class: 't' }, info.title, e && e.s === 'late' ? h('span', { class: 'tag' }, 'באיחור') : null),
       info.sub ? h('div', { class: 's' }, info.sub) : null,
       info.where ? h('div', { class: 's' }, 'המשך: ' + info.where) : null,
-      pr != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(pr * 100) + '%' })) : null));
+      pr != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(pr * 100) + '%' })) : null),
+    linkBtn(c.st, track, parseKey(key)));
   press(el, () => {
     if (opts.readonly) { toast('אפשר לסמן עד שישה ימים קדימה'); return; }
     if (pend) { if (pend.has(track.id)) pend.delete(track.id); else pend.add(track.id); rerender(); return; }
@@ -119,7 +123,7 @@ function confirmPending(c, key, set = pending) {
   }
   set.clear();
   commit();
-  if (marked) { toast('נשמר: ' + marked + ' לימודים סומנו'); milestone(c); } else toast('השינויים נשמרו');
+  if (marked) { toast('נשמר: ' + marked + ' לימודים סומנו'); chime(dayStatus(c.st, key).kind === 'full' ? 'all' : 'one'); milestone(c); } else toast('השינויים נשמרו');
 }
 
 // הסבר + "סמן הכל" ו"בטל הכל" + שורת אישור. set = קבוצת הבחירה הממתינה, refresh = רענון המסך

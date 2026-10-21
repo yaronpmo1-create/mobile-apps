@@ -164,7 +164,8 @@ function alarmsView(c) {
   return root;
 }
 // תזכורת מהירה: התראה חד-פעמית בעוד זמן שנבחר (נשמרת ברשימה, אפשר למחוק)
-const remSel = { h: 0, m: 10, s: 0 };
+const remSel = { h: 0, m: 10, s: 0, pre: 0 };
+const PRE_OPTS = [[0, 'בלי'], [1, '1'], [5, '5'], [10, '10'], [30, '30']];
 function remindSheet() {
   const c = ctx();
   const make = (sh) => {
@@ -172,11 +173,13 @@ function remindSheet() {
     if (m < 1) { toast('צריך לבחור לפחות דקה'); return; }
     const tm = Math.ceil((Date.now() + m * 60000) / 60000) * 60000, d = new Date(tm);
     const time = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-    c.st.alarms.push(Object.assign(newAlarm('fixed'), { label: 'תזכורת', time, date: dkey(d), noRest: false, ring: true, snooze: true }));
+    c.st.alarms.push(Object.assign(newAlarm('fixed'), { label: 'תזכורת', time, date: dkey(d), noRest: false, ring: true, snooze: true, pre: Math.min(remSel.pre || 0, Math.max(0, m - 1)) }));
     sh.close(); commit(); toast('התזכורת נקבעה לשעה ' + time);
   };
   openSheet('תזכורת מהירה', (sh) => h('div', null,
-    durationPicker(remSel, { seconds: false, chips: [5, 10, 15, 30, 60], refresh: () => sh.refresh() }),
+    durationPicker(remSel, { seconds: false, chips: [5, 10, 15, 30], refresh: () => sh.refresh() }),
+    h('label', { class: 'f' }, 'התראה מקדימה (פינג קטן בוילון, דקות לפני)'),
+    seg(PRE_OPTS, remSel.pre || 0, (v) => { remSel.pre = v; sh.refresh(); }),
     h('button', { class: 'btn block', style: 'margin-top:12px', onclick: () => make(sh) }, 'קביעה')));
 }
 function alarmMenu(a) {
@@ -240,6 +243,8 @@ export function editAlarm(id, type, preset, back) {
     const snOpts = [...new Set([1, 3, 5, 10, c.s.snoozeMin, sn].filter((x) => typeof x === 'number' && x > 0))].sort((a, b) => a - b);
     root.appendChild(h('label', { class: 'f' }, 'נודניק (בחירה אחת)'));
     root.appendChild(seg([[0, 'בלי'], ...snOpts.map((m) => [m, m + ' דק׳']), ['rep', 'עד כיבוי']], sn, (v) => { d.repeat = v === 'rep'; d.snooze = !(v === 0 || v === 'rep'); if (typeof v === 'number' && v > 0) d.snoozeMin = v; pg.refresh(); }));
+    root.appendChild(h('label', { class: 'f' }, 'התראה מקדימה (פינג קטן בוילון, דקות לפני)'));
+    root.appendChild(seg(PRE_OPTS, d.pre || 0, (v) => { d.pre = v; pg.refresh(); }));
     root.appendChild(h('button', { class: 'btn block', onclick: () => {
       if (d.type === 'learning' && !d.trackId) { toast('צריך לבחור מסלול'); return; }
       if (d.date && d.type !== 'learning' && d.date < c.tk) { toast('התאריך כבר עבר'); return; }

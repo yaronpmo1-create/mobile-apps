@@ -167,5 +167,42 @@ ok(hebrewDate(new Date(2026, 9, 18)).includes('מרחשון'), 'marcheshvan name
   const fresh = defaults(); addTemplate(fresh, 'chitas');
   eq(fresh.tracks.length, 5, 'chitas template has 5');
 }
+// ---- סבב 18 ----
+{
+  const { newTrack, tanyaLink } = await import('../src/lib/tracks.js');
+  const s18 = defaults(); addTemplate(s18, 'chitas');
+  const now18 = new Date(2026, 11, 3, 8, 0);
+  const inst = buildInstances(s18, now18, 10, 500);
+  const ck = inst.filter((i) => i.id.startsWith('CK|'));
+  eq(ck.length, 8, 'chanukah 8 candle reminders');
+  eq(ck[0].title, 'נר 1 של חנוכה', 'chanukah night 1 title');
+  eq(ck[0].id, 'CK|2026-12-04', 'chanukah night 1 date');
+  ok(ck.find((i) => i.id === 'CK|2026-12-04').text.startsWith('לפני הדלקת נרות שבת'), 'chanukah friday text');
+  s18.settings.auto.chanukah = false;
+  eq(buildInstances(s18, now18, 10, 500).filter((i) => i.id.startsWith('CK|')).length, 0, 'chanukah toggle off');
+  const al = Object.assign(newAlarm('fixed'), { time: '09:00', pre: 10, days: [0, 1, 2, 3, 4, 5, 6], noRest: false });
+  s18.alarms.push(al);
+  eq(buildInstances(s18, now18, 3, 500).filter((i) => i.id.startsWith('P|')).length, 0, 'pre hidden from lists');
+  const pre = buildInstances(s18, now18, 3, 500, true).filter((i) => i.id.startsWith('P|'));
+  ok(pre.length >= 2, 'pre pings built');
+  const main0 = buildInstances(s18, now18, 3, 500).find((i) => i.id === 'A|' + al.id + '|2026-12-03');
+  eq(pre[0].t, main0.t - 600000, 'pre is 10 minutes before');
+  eq(pre[0].kind, 'notify', 'pre is a quiet notification');
+  const s19 = defaults(); addTemplate(s19, 'chitas');
+  const tk = s19.tracks[0]; tk.remind = { mode: 'time', time: '21:00', zman: 'shkiah', rel: 'before', mins: 30, ring: false };
+  const li = buildInstances(s19, new Date(2026, 9, 21, 8, 0), 1, 100).find((i) => i.id.startsWith('L|' + tk.id));
+  ok(li.text.includes('פרשת'), 'learning reminder includes the day portion: ' + li.text);
+  const tn = s19.tracks.find((x) => x.tpl === 'tanya');
+  const u = learnInfo(tn, new Date(2026, 9, 21, 12), s19).url;
+  ok(u.startsWith('https://www.sefaria.org/Tanya,_Part_IV;_Iggeret_HaKodesh.') && /\.\d+\.\d+$/.test(u), 'tanya sefaria link ' + u);
+  const hy = s19.tracks.find((x) => x.tpl === 'hayomyom');
+  ok(learnInfo(hy, new Date(2026, 9, 21, 12), s19).url.includes('tdate=10/21/2026'), 'chabad link has tdate');
+  const ch = s19.tracks.find((x) => x.tpl === 'chumash');
+  ok(learnInfo(ch, new Date(2026, 9, 21, 12), s19).url.includes('torahreading.asp?tdate='), 'chumash link');
+  eq(tanyaLink('L|x1|1'), 'https://www.sefaria.org/Tanya,_Part_I;_Likkutei_Amarim', 'tanya special page link');
+  eq(newTrack('tefillin').days.length, 6, 'tefillin Sun-Fri');
+  eq(newTrack('tzedaka').freq, 'daily', 'tzedaka daily');
+  for (const tp of ['halacha', 'sefermitzvos', 'shnayim']) { const x = newTrack(tp); ok(learnInfo(x, new Date(2026, 9, 21, 12), s19).sub.length > 3, tp + ' has daily text'); }
+}
 console.log(n + ' בדיקות, ' + fails + ' נכשלו');
 process.exit(fails ? 1 : 0);

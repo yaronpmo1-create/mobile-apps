@@ -9,6 +9,7 @@ import { times, shiftTimesDay } from './screens/times.js';
 import { journal, shiftMonth, consumeSelDrag } from './screens/journal.js';
 import { settingsMain } from './screens/settings.js';
 import { firstRun, openCompass } from './screens/extras.js';
+import { autoBackupIfDue } from './lib/autobackup.js';
 import { syncNow, takeDone, setWidget, setDone } from './lib/native.js';
 import { dueTracks, getEntry, setEntry, addTemplate } from './lib/tracks.js';
 import { hhmm, hebrewDate, hebrewDayLetter, WD_LETTER, dkey, addDays } from './lib/dates.js';
@@ -109,5 +110,5 @@ const showApp = () => {
 };
 setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(showApp)), 1700);
 if (get().first) setTimeout(() => firstRun(() => { render(); }), 2300);
-Promise.all([intake(), syncTimer()]).then(() => { syncNow(); pushWidget(); });
+Promise.all([intake(), syncTimer()]).then(() => { syncNow(); pushWidget(); autoBackupIfDue(); });
 window.__app = { get, render, goTab, ctx, commit };
