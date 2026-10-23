@@ -217,7 +217,7 @@ ok(hebrewDate(new Date(2026, 9, 18)).includes('מרחשון'), 'marcheshvan name
   ok(dayChangeMs(st2.settings, new Date(2026, 9, 22)) === null, 'midnight: no flip');
   st2.settings.dayChange = 'sunset';
   const f = dayChangeMs(st2.settings, new Date(2026, 9, 22));
-  ok(f && new Date(f).getHours() >= 16 && new Date(f).getHours() <= 19, 'sunset flip in the afternoon/evening');
+  { const hm = hhmm(new Date(f), loc.tz); ok(f && hm >= '16:00' && hm <= '19:00', 'sunset flip in the afternoon/evening (' + hm + ')'); }
   st2.settings.dayChange = 'time'; st2.settings.dayChangeTime = '20:30';
   eq(new Date(dayChangeMs(st2.settings, new Date(2026, 9, 22))).getHours(), 20, 'fixed time flip');
 }
