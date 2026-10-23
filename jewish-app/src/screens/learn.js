@@ -26,7 +26,7 @@ export function learn() {
   const { st } = c;
   const root = h('div', null);
   root.appendChild(h('button', { class: 'btn block', style: 'margin:6px 0 12px', onclick: () => pickTemplate() }, '+ מסלול חדש'));
-  root.appendChild(h('button', { class: 'btn sec block', style: 'margin:0 0 12px', onclick: () => openExtras() }, 'תוספות'));
+  root.appendChild(h('button', { class: 'btn block', style: 'margin:0 0 12px', onclick: () => openExtras() }, 'תוספות'));
   const act = st.tracks.filter((t) => !t.archived).sort((a, b) => a.order - b.order);
   const arch = st.tracks.filter((t) => t.archived);
   if (!act.length) root.appendChild(h('div', { class: 'card empty-note' }, 'עוד אין מסלולים. אפשר להתחיל מערכת חת״ת מוכנה או מכל תבנית אחרת.'));

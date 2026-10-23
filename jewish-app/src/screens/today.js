@@ -225,7 +225,7 @@ export function today() {
     if (isToday && sk.cur) root.appendChild(h('p', { class: 'h-sub', style: 'text-align:center;margin-top:10px' }, 'רצף נוכחי: ' + sk.cur + ' ימים'));
   }
 
-  const bk = s.showBooklets ? bookletsSection(c, d) : null;
+  const bk = bookletsSection(c, d);
   if (bk) root.appendChild(bk);
   return root;
 }

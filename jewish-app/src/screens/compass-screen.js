@@ -64,12 +64,12 @@ export function openCompass() {
       '<circle id="cring" cx="160" cy="160" r="156" style="fill:var(--card);stroke:var(--line)" stroke-width="3"/>' +
       '<g id="cdial" style="transform-origin:160px 160px;transition:transform .12s linear">' + dialSvg(sun) + '</g>' +
       '<g id="cneedle" style="transform-origin:160px 160px;transition:transform .12s linear">' +
-      '<path d="M160 160 L152 150 L160 66 L168 150Z" style="fill:var(--accent)"/>' +
+      '<path d="M160 160 L152 150 L160 90 L168 150Z" style="fill:var(--accent)"/>' +
       '<path d="M160 160 L153 152 L160 190 L167 152Z" style="fill:var(--line)"/>' +
-      '<circle cx="160" cy="58" r="19" style="fill:var(--card);stroke:var(--accent)" stroke-width="2"/>' +
-      '<g transform="translate(160 58)">' + TEMPLE + '</g>' +
-      '<g id="clabel" style="transform-origin:160px 104px"><rect x="120" y="94" width="80" height="20" rx="10" style="fill:var(--card);stroke:var(--accent)" stroke-width="1.5"/>' +
-      '<text x="160" y="108.5" text-anchor="middle" font-size="12" font-weight="800" style="fill:var(--text)">בית המקדש</text></g>' +
+      '<circle cx="160" cy="44" r="17" style="fill:var(--card);stroke:var(--accent)" stroke-width="2"/>' +
+      '<g transform="translate(160 44)">' + TEMPLE + '</g>' +
+      '<g id="clabel"><rect x="122" y="65" width="76" height="19" rx="9.5" style="fill:var(--card);stroke:var(--accent)" stroke-width="1.5"/>' +
+      '<text x="160" y="78.5" text-anchor="middle" font-size="11.5" font-weight="800" style="fill:var(--text)">בית המקדש</text></g>' +
       '</g>' +
       '<circle cx="160" cy="160" r="9" style="fill:var(--text)"/><circle cx="160" cy="160" r="3.5" style="fill:var(--card)"/></svg>';
     root.appendChild(wrap);
@@ -91,7 +91,6 @@ export function openCompass() {
       startCompass((hd) => {
         const rot = bear - hd;
         el('cneedle').style.transform = 'rotate(' + rot + 'deg)';
-        el('clabel').style.transform = 'rotate(' + -rot + 'deg)';
         el('cdial').style.transform = 'rotate(' + -hd + 'deg)';
         const diff = Math.abs(((rot + 540) % 360) - 180);
         const now = diff < 6;
