@@ -240,7 +240,7 @@ export function tabIcon(k, size = 27) {
 // אייקון מצפן (קו דק, בצבע הנוכחי)
 export function compassIcon(size = 28) {
   const s = h('span', { class: 'ico', 'aria-hidden': 'true' });
-  s.innerHTML = '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2"/><path d="m15.8 8.2-2.1 5.5-5.5 2.1 2.1-5.5z" fill="currentColor" fill-opacity=".18"/></svg>';
+  s.innerHTML = '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 2.8v2M12 19.2v2M2.8 12h2M19.2 12h2"/><path d="M12 6l2.4 6H9.6z" fill="currentColor"/><path d="M12 18l-2.4-6h4.8z"/></svg>';
   return s;
 }
 // כפתור חזרה של המכשיר: סוגר את השכבה העליונה (דף, חלון או לשונית). מחזיר false אם אין שכבה

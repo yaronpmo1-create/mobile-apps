@@ -32,7 +32,7 @@ function render() {
   const st = get();
   applyTheme(st.settings, tab);
   const sc = mainEl ? mainEl.scrollTop : 0;
-  const top = h('div', { class: 'top' }, h('h1', null, TITLES[tab]), h('div', { style: 'display:flex;gap:2px' }, h('button', { class: 'iconbtn', style: 'color:var(--accent)', 'aria-label': 'מצפן לבית המקדש', onclick: () => openCompass() }, compassIcon(30)), h('button', { class: 'iconbtn', 'aria-label': 'הגדרות', onclick: () => settingsMain() }, '⚙')));
+  const top = h('div', { class: 'top' }, h('h1', null, TITLES[tab]), h('div', { style: 'display:flex;gap:2px' }, h('button', { class: 'iconbtn', style: 'color:var(--accent)', 'aria-label': 'מצפן לבית המקדש', onclick: () => openCompass() }, compassIcon(30)), h('button', { class: 'iconbtn', style: 'color:var(--accent)', 'aria-label': 'הגדרות', onclick: () => settingsMain() }, '⚙')));
   let body;
   try { body = SCREENS[tab](); } catch (e) { body = h('pre', { style: 'white-space:pre-wrap;color:var(--bad)' }, 'שגיאה: ' + e.message + '\n' + (e.stack || '')); console.error(e); }
   const main = h('div', { class: 'main' }, body);

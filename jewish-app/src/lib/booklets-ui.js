@@ -14,7 +14,7 @@ function afterHavdalah(c, d) {
 const DL_ICON = '<path d="M12 4v11M7 11l5 5 5-5M5 20h14"/>';
 const dlIcon = (size = 26) => { const e = h('span', { class: 'ico', 'aria-hidden': 'true' }); e.innerHTML = '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + DL_ICON + '</svg>'; return e; };
 const HOLIDAY = /^(שבוע|שמחת|אחרון|חג|פסח|שבועות|ראש|יום|סוכות|שמיני|שביעי|ליל)/;
-const subTitle = (b) => 'החוברת של ' + b.label + ' · ' + (HOLIDAY.test(b.title) ? '' : 'פרשת ') + b.title;
+const subTitle = (b) => (HOLIDAY.test(b.title) ? '' : 'פרשת ') + b.title.replace(/(^|s)תש/, '$1התש');
 const read = async (b) => { if ((await openPdf(b.url, b.title)) === 'fail') toast('לא ניתן לפתוח את החוברת'); };
 const down = async (b) => { if ((await downloadPdf(b.url, 'דבר מלכות - ' + b.title)) === 'fail') toast('ההורדה נכשלה'); };
 const btn = (label, ic, fn) => h('button', { class: 'iconbtn lnk nodrag', 'aria-label': label, onclick: (e) => { e.stopPropagation(); fn(); } }, ic);
@@ -34,12 +34,12 @@ export function bookletsSection(c, d, picker) {
   if (!refreshing) { refreshing = true; refreshDm().then((added) => { refreshing = false; if (added) rerender(); }).catch(() => { refreshing = false; }); }
   const sh = shown(c.s);
   let list = weeklyBooklets(d, !!c.loc.il, afterHavdalah(c, d));
-  if (!picker) list = list.filter((b) => sh[b.label]);
+  if (picker !== true) list = list.filter((b) => sh[b.label]);
   if (!list.length) return null;
   if (picker) {
-    return h('div', { class: 'list' }, list.map((b) => h('div', { class: 'row tap', style: 'padding-block:8px', onclick: () => bookletSheet(b) },
+    return h('div', null, picker === 'learn' ? h('div', { class: 'section-title' }, 'חוברות שבועיות') : null, h('div', { class: 'list' }, list.map((b) => h('div', { class: 'row tap', style: 'padding-block:8px', onclick: () => bookletSheet(b) },
       h('div', { class: 'grow', style: 'min-width:0' }, h('div', { class: 't', style: 'font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis' }, 'חוברת דבר מלכות · ' + b.label), h('div', { class: 's' }, 'להציג במסך היום')),
-      toggle(!!sh[b.label], (v) => { sh[b.label] = v; commit(); }))));
+      toggle(!!sh[b.label], (v) => { sh[b.label] = v; commit(); })))));
   }
   return h('div', null,
     picker ? null : h('div', { class: 'section-title' }, 'חוברות שבועיות'),
