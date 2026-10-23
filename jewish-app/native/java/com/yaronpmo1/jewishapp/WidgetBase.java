@@ -32,10 +32,10 @@ public class WidgetBase extends AppWidgetProvider {
 
     static void updateAll(Context c) {
         AppWidgetManager m = AppWidgetManager.getInstance(c);
-        for (Class<?> k : new Class<?>[]{NextWidget.class, LeftWidget.class, DateWidget.class, DateTallWidget.class}) {
+        for (Class<?> k : new Class<?>[]{NextWidget.class, LeftWidget.class, DateWidget.class}) {
             int[] ids = m.getAppWidgetIds(new ComponentName(c, k));
             if (ids.length == 0) continue;
-            if (k == DateWidget.class || k == DateTallWidget.class) { for (int id : ids) m.updateAppWidget(id, DateWidget.build(c, m.getAppWidgetOptions(id), k == DateTallWidget.class)); continue; }
+            if (k == DateWidget.class) { for (int id : ids) m.updateAppWidget(id, DateWidget.build(c, m.getAppWidgetOptions(id))); continue; }
             WidgetBase w = k == NextWidget.class ? new NextWidget() : new LeftWidget();
             for (int id : ids) m.updateAppWidget(id, w.build(c));
         }

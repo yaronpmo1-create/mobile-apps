@@ -14,7 +14,7 @@
         android:gravity="center"
         android:layoutDirection="rtl"
         android:orientation="vertical"
-        android:padding="2dp">
+        android:padding="4dp">
 
         <TextView
             android:id="@+id/d_wd"
@@ -22,6 +22,7 @@
             android:layout_height="wrap_content"
             android:includeFontPadding="false"
             android:maxLines="1"
+            android:layout_marginTop="5dp"
             android:textColor="#AEB9CC"
             android:textSize="14sp" />
 
@@ -31,6 +32,7 @@
             android:layout_height="wrap_content"
             android:includeFontPadding="false"
             android:maxLines="1"
+            android:layout_marginTop="5dp"
             android:textColor="#E8C26A"
             android:textSize="60sp"
             android:textStyle="bold" />
@@ -41,6 +43,7 @@
             android:layout_height="wrap_content"
             android:includeFontPadding="false"
             android:maxLines="1"
+            android:layout_marginTop="5dp"
             android:textColor="#F3EFE8"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -51,6 +54,7 @@
             android:layout_height="wrap_content"
             android:includeFontPadding="false"
             android:maxLines="1"
+            android:layout_marginTop="5dp"
             android:textColor="#AEB9CC"
             android:textSize="13sp" />
     </LinearLayout>

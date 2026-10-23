@@ -56,10 +56,6 @@ const comps = `
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_date_info" />
         </receiver>
-        <receiver android:name=".DateTallWidget" android:exported="true" android:label="התאריך העברי (גבוה)">
-            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_date_tall_info" />
-        </receiver>
         <receiver android:name=".LeftWidget" android:exported="true" android:label="הלימוד שנשאר">
             <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_left_info" />
