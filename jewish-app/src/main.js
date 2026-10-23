@@ -13,6 +13,7 @@ import { autoBackupIfDue } from './lib/autobackup.js';
 import { syncNow, takeDone, setWidget, setDone } from './lib/native.js';
 import { dueTracks, getEntry, setEntry, addTemplate } from './lib/tracks.js';
 import { hhmm, hebrewDate, hebrewDayLetter, WD_LETTER, dkey, addDays } from './lib/dates.js';
+import { dayChangeMs } from './lib/zm.js';
 import { buildInstances, instTitle } from './lib/alarms.js';
 import { syncTimer } from './screens/clock.js';
 
@@ -73,11 +74,13 @@ function pushWidget() {
     const events = (nz ? 'הזמן הבא: ' + nz.name + ' ' + hhmm(nz.t, c.loc.tz) + ' · בעוד ' + countdown(nz.t - c.now) : '') + (al ? '\nהתראה: ' + instTitle(al) + ' ' + hhmm(new Date(al.t)) : '');
     // 62 ימים קדימה: תאריך עברי לווידג'ט (מתעדכן בחצות גם כשהאפליקציה סגורה)
     const dates = [];
-    for (let i = 0; i < 62; i++) {
+    const mk = (from, d) => { const parts = hebrewDate(d).split(' '); return { from, k: dkey(d), wd: 'יום ' + WD_LETTER[d.getDay()] + '׳', d: hebrewDayLetter(d).replace(/[׳״'"]/g, ''), m: parts.slice(1, -1).join(' '), y: parts[parts.length - 1] }; };
+    // כל יום אזרחי נכנס פעמיים: מחצות עד רגע ההחלפה (שקיעה/צאת/שעה לפי ההגדרות), ומרגע ההחלפה התאריך של מחר
+    for (let i = -1; i < 62; i++) {
       const d = addDays(c.now, i);
-      const parts = hebrewDate(d).split(' ');
-      const letter = hebrewDayLetter(d);
-      dates.push({ k: dkey(d), wd: 'יום ' + WD_LETTER[d.getDay()] + '׳', d: letter.length <= 2 ? letter.replace('׳', '') : letter, m: parts.slice(1, -1).join(' '), y: parts[parts.length - 1] });
+      dates.push(mk(new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 1).getTime(), d));
+      const f = dayChangeMs(c.s, d);
+      if (f) dates.push(mk(f, addDays(d, 1)));
     }
     setWidget(events, due.length ? 'נשאר ללמוד: ' + due.map((t) => t.name).slice(0, 5).join(', ') : 'כל הלימוד של היום הושלם', dates);
   } catch (e) { /* */ }

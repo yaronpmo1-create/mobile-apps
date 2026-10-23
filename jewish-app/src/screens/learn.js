@@ -1,5 +1,5 @@
 import { tishreiKey, dkey } from '../lib/dates.js';
-import { hebDate, dragSort, h, openPage, openSheet, actionSheet, confirmBox, seg, chips, field, sel, txt, toggle, toast } from '../ui.js';
+import { icon, hebDate, dragSort, h, openPage, openSheet, actionSheet, confirmBox, seg, chips, field, sel, txt, toggle, toast } from '../ui.js';
 import { ctx, commit, nav } from '../core.js';
 import { TEMPLATES, AUTO_KINDS, PARTS, addTemplate, newTrack, progressOf, trackPct, streak } from '../lib/tracks.js';
 import { ZMAN_DEFS } from '../lib/zm.js';
@@ -42,8 +42,8 @@ export function learn() {
           pr != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(pr * 100) + '%' })) : null),
         linkBtn(st, t, c.today),
         h('div', { class: 'mv nodrag' },
-          h('button', { 'aria-label': 'הזזה למעלה', onclick: (e) => { e.stopPropagation(); moveTrack(t.id, -1); } }, '▲'),
-          h('button', { 'aria-label': 'הזזה למטה', onclick: (e) => { e.stopPropagation(); moveTrack(t.id, 1); } }, '▼')),
+          h('button', { 'aria-label': 'הזזה למעלה', onclick: (e) => { e.stopPropagation(); moveTrack(t.id, -1); } }, icon('up', 30)),
+          h('button', { 'aria-label': 'הזזה למטה', onclick: (e) => { e.stopPropagation(); moveTrack(t.id, 1); } }, icon('down', 30))),
         h('button', { class: 'iconbtn nodrag', onclick: (e) => { e.stopPropagation(); trackMenu(t); } }, '⋮')));
     });
     if (!gl.length) list.appendChild(h('div', { class: 'ph dim small' }, 'גררו לכאן מסלול'));

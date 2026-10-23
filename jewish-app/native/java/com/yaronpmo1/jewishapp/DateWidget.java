@@ -23,7 +23,7 @@ public class DateWidget extends AppWidgetProvider {
     @Override
     public void onUpdate(Context c, AppWidgetManager m, int[] ids) {
         for (int id : ids) m.updateAppWidget(id, build(c, m.getAppWidgetOptions(id)));
-        scheduleMidnight(c);
+        scheduleNext(c);
     }
 
     @Override
@@ -33,7 +33,7 @@ public class DateWidget extends AppWidgetProvider {
 
     @Override
     public void onEnabled(Context c) {
-        scheduleMidnight(c);
+        scheduleNext(c);
     }
 
     static RemoteViews build(Context c, android.os.Bundle opts) {
@@ -42,13 +42,18 @@ public class DateWidget extends AppWidgetProvider {
         String wd = "", day = "", month = "", year = "";
         try {
             JSONArray a = new JSONArray(Store.p(c).getString("w_dates", "[]"));
+            long now = System.currentTimeMillis(), bestFrom = Long.MIN_VALUE;
+            JSONObject best = null;
             for (int i = 0; i < a.length(); i++) {
                 JSONObject o = a.getJSONObject(i);
-                if (key.equals(o.optString("k"))) {
-                    wd = o.optString("wd"); day = o.optString("d"); month = o.optString("m"); year = o.optString("y");
-                    break;
+                if (o.has("from")) {
+                    long f = (long) o.optDouble("from", 0);
+                    if (f <= now && f > bestFrom) { bestFrom = f; best = o; }
+                } else if (best == null && key.equals(o.optString("k"))) {
+                    best = o;
                 }
             }
+            if (best != null) { wd = best.optString("wd"); day = best.optString("d"); month = best.optString("m"); year = best.optString("y"); }
         } catch (Exception ignored) { }
         if (day.isEmpty()) { wd = "פתחו את"; day = "·"; month = "האפליקציה"; year = ""; }
         // תמיד ריבוע 1:1: הכרטיס הריבועי ממורכז בתוך התא, והכתב גדל עם הגודל
@@ -60,10 +65,10 @@ public class DateWidget extends AppWidgetProvider {
         float dens = c.getResources().getDisplayMetrics().density;
         int padX = Math.max(0, Math.round((w - side) / 2f * dens)), padY = Math.max(0, Math.round((hgt - side) / 2f * dens));
         v.setViewPadding(R.id.w_root, padX, padY, padX, padY);
-        v.setTextViewTextSize(R.id.d_wd, android.util.TypedValue.COMPLEX_UNIT_DIP, side * 0.10f);
-        v.setTextViewTextSize(R.id.d_day, android.util.TypedValue.COMPLEX_UNIT_DIP, side * 0.36f);
-        v.setTextViewTextSize(R.id.d_month, android.util.TypedValue.COMPLEX_UNIT_DIP, side * 0.12f);
-        v.setTextViewTextSize(R.id.d_year, android.util.TypedValue.COMPLEX_UNIT_DIP, side * 0.095f);
+        v.setTextViewTextSize(R.id.d_wd, android.util.TypedValue.COMPLEX_UNIT_DIP, side * 0.085f);
+        v.setTextViewTextSize(R.id.d_day, android.util.TypedValue.COMPLEX_UNIT_DIP, side * 0.27f);
+        v.setTextViewTextSize(R.id.d_month, android.util.TypedValue.COMPLEX_UNIT_DIP, side * 0.10f);
+        v.setTextViewTextSize(R.id.d_year, android.util.TypedValue.COMPLEX_UNIT_DIP, side * 0.075f);
         v.setTextViewText(R.id.d_wd, wd);
         v.setTextViewText(R.id.d_day, day);
         v.setTextViewText(R.id.d_month, month);
@@ -73,7 +78,8 @@ public class DateWidget extends AppWidgetProvider {
         return v;
     }
 
-    static void scheduleMidnight(Context c) {
+    /** מתזמן עדכון ברגע הבא שבו התאריך מתחלף (לפי הרשימה שהאפליקציה שלחה), ולכל היותר בחצות */
+    static void scheduleNext(Context c) {
         try {
             AlarmManager am = (AlarmManager) c.getSystemService(Context.ALARM_SERVICE);
             AppWidgetManager m = AppWidgetManager.getInstance(c);
@@ -81,10 +87,17 @@ public class DateWidget extends AppWidgetProvider {
             Intent i = new Intent(c, DateWidget.class).setAction(AppWidgetManager.ACTION_APPWIDGET_UPDATE).putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids);
             int fl = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0);
             PendingIntent pi = PendingIntent.getBroadcast(c, 77, i, fl);
+            long now = System.currentTimeMillis();
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.DAY_OF_YEAR, 1);
             cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 30); cal.set(Calendar.MILLISECOND, 0);
-            am.setAndAllowWhileIdle(AlarmManager.RTC, cal.getTimeInMillis(), pi);
+            long next = cal.getTimeInMillis();
+            JSONArray a = new JSONArray(Store.p(c).getString("w_dates", "[]"));
+            for (int k = 0; k < a.length(); k++) {
+                long f = (long) a.getJSONObject(k).optDouble("from", 0);
+                if (f > now && f + 5000 < next) next = f + 5000;
+            }
+            am.setAndAllowWhileIdle(AlarmManager.RTC, next, pi);
         } catch (Exception ignored) { }
     }
 }

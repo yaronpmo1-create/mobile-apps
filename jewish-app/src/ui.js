@@ -137,7 +137,9 @@ export const seg = (opts, val, fn) => h('div', { class: 'seg' }, opts.map(([v, l
 export const chips = (opts, vals, fn) => h('div', { class: 'chips' }, opts.map(([v, l]) => h('button', { class: 'chip' + (vals.includes(v) ? ' on' : ''), onclick: () => fn(v) }, l)));
 export const field = (label, input) => h('div', null, h('label', { class: 'f' }, label), input);
 export const sel = (opts, val, fn) => h('select', { onchange: (e) => fn(e.target.value) }, opts.map(([v, l]) => h('option', { value: v, selected: String(v) === String(val) }, l)));
-export const txt = (val, fn, ph, type = 'text') => (type === 'time' ? timeBtn(val, fn) : h('input', { type, value: val == null ? '' : val, placeholder: ph || '', oninput: (e) => fn(e.target.value) }));
+export const txt = (val, fn, ph, type = 'text') => (type === 'time' ? timeBtn(val, fn) : h('input', { type, value: val == null ? '' : val, placeholder: ph || '', enterkeyhint: 'done', oninput: (e) => fn(e.target.value) }));
+// Enter / Go במקלדת בשדה: הערך נשמר והמקלדת נסגרת
+document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target && e.target.tagName === 'INPUT' && e.target.type !== 'file') { e.preventDefault(); e.target.dispatchEvent(new Event('input', { bubbles: true })); e.target.blur(); } });
 
 // לחיצה קצרה / ארוכה
 export function press(el, onTap, onLong) {
@@ -155,7 +157,7 @@ export function press(el, onTap, onLong) {
 // כיוון פיזי על המסך: 'right' מצביע ימינה, 'left' שמאלה (SVG, לא מתהפך ב-RTL)
 export function icon(dir, size = 30) {
   const s = h('span', { class: 'ico', 'aria-hidden': 'true' });
-  const p = dir === 'left' ? 'M15 5 8 12l7 7' : 'M9 5l7 7-7 7';
+  const p = dir === 'left' ? 'M15 5 8 12l7 7' : dir === 'up' ? 'M5 15l7-7 7 7' : dir === 'down' ? 'M5 9l7 7 7-7' : 'M9 5l7 7-7 7';
   s.innerHTML = '<svg viewBox="0 0 24 24" width="' + size + '" height="' + size + '" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="' + p + '"/></svg>';
   return s;
 }

@@ -85,7 +85,7 @@ function zmanim() {
       h('div', { class: 'list' }, row('מיקום', getLoc(s).name, arrow(), () => openLocation(() => commit()))),
       h('label', { class: 'f' }, 'שיטת חישוב'), seg(Object.entries(METHODS), s.method, (v) => { s.method = v; commit(); }),
       h('label', { class: 'f' }, 'צאת הכוכבים'), seg([['method', 'לפי השיטה'], ['min72', '72 דקות אחרי שקיעה']], s.tzeitMode, (v) => { s.tzeitMode = v; commit(); }),
-      h('label', { class: 'f' }, 'מתי מתחלף היום (לסימון הלימוד)'), seg([['midnight', '12 בלילה'], ['sunset', 'שקיעה'], ['tzeit', 'צאת הכוכבים'], ['time', 'שעה מסוימת']], s.dayChange, (v) => { s.dayChange = v; commit(); }),
+      h('label', { class: 'f' }, 'מתי מתחלף היום (לסימון הלימוד)'), seg([['sunset', 'שקיעה'], ['tzeit', 'צאת הכוכבים'], ['midnight', '12 בלילה'], ['time', 'שעה מסוימת']], s.dayChange, (v) => { s.dayChange = v; commit(); }),
       s.dayChange === 'time' ? field('החלפת היום בשעה', txt(s.dayChangeTime || '21:00', (v) => { if (v) { s.dayChangeTime = v; } }, '', 'time')) : null);
   });
 }
@@ -108,9 +108,9 @@ function alerts() {
       h('div', { class: 'section-title' }, 'תזכורות אוטומטיות'),
       h('div', { class: 'list' },
         sw('ראש חודש', '', s.auto, 'roshChodesh'),
-        sw('ערב שבת / חג', 'ביום שישי וערב חג בצהריים', s.auto, 'erevShabbat'),
         row('הדלקת נרות', 'התראה ' + s.candleBefore + ' דקות לפני ההדלקה · ההדלקה ' + (s.candleMins ? s.candleMins + ' דקות לפני שקיעה' : 'לפי המקום') + ' · לחיצה לשינוי', toggle(!!s.auto.candles, (v) => { s.auto.candles = v; commit(); }), () => candleSheet()),
         sw('ספירת העומר', 'בערבי הספירה', s.auto, 'omer'),
+        sw('הבדלה', 'תזכורת בצאת שבת וחג, בזמן ההבדלה', s.auto, 'havdalah'),
         sw('נרות חנוכה', 'התראה לפני כל הדלקה, נר 1 עד 8', s.auto, 'chanukah'),
         sw('תאריכי חב״ד', 'מתריע בתאריכים שנבחרו ברשימה', s, 'chabadDates'),
         row('רשימת תאריכי חב״ד', chabadList(s).filter((x) => x.on !== false).length + ' מתוך ' + chabadList(s).length + ' פעילים · בחירה, עריכה והוספה', arrow(), () => openChabad()),

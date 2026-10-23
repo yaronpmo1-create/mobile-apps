@@ -199,7 +199,7 @@ export function today() {
         h('div', { class: 'muted small' }, 'ההתראה הבאה · ' + (nextAl ? hhmm(new Date(nextAl.t)) : '')),
         h('div', { class: 'big mid wrap' }, nextAl ? nextAl.title : 'אין התראה בקרוב'),
         h('div', { class: 'muted small' }, nextAl ? 'בעוד ' + countdown(nextAl.t - c.now.getTime()) : ''))));
-    if (tt.candles && tt.candles > c.now) root.appendChild(h('div', { class: 'card mini', style: 'margin-top:8px' }, h('span', { class: 'muted small' }, 'הדלקת נרות היום '), h('b', null, hhmm(tt.candles, loc.tz) + ' · בעוד ' + countdown(tt.candles - c.now))));
+    if (tt.candles && tt.candles > c.now) root.appendChild(h('div', { class: 'card mini', style: 'margin-top:8px;border:1px solid var(--accent)' }, h('span', { class: 'muted small' }, 'הדלקת נרות היום '), h('b', null, hhmm(tt.candles, loc.tz) + ' · בעוד ' + countdown(tt.candles - c.now))));
   }
 
   // לימוד יומי

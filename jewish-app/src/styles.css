@@ -187,6 +187,6 @@ button{transition:transform .08s,opacity .08s}
 .card.evt .grow{min-width:0}
 .lnk{color:var(--accent);flex:none}
 .lnk .ico{display:flex}
-.mv{display:flex;flex-direction:column;flex:none;width:30px}
-.mv button{height:22px;line-height:22px;color:var(--muted);font-size:.8rem;text-align:center;width:100%}
+.mv{display:flex;flex-direction:column;flex:none;width:44px}
+.mv button{height:36px;display:flex;align-items:center;justify-content:center;color:var(--accent);text-align:center;width:100%}
 .mv button:active{color:var(--accent);background:var(--card2)}

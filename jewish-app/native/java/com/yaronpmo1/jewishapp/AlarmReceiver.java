@@ -57,7 +57,7 @@ public class AlarmReceiver extends BroadcastReceiver {
         int fl = PendingIntent.FLAG_UPDATE_CURRENT | (Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0);
         PendingIntent openPi = PendingIntent.getActivity(c, id, open, fl);
         NotificationCompat.Builder b = new NotificationCompat.Builder(c, learn ? Scheduler.CH_LEARN : Scheduler.CH_INFO)
-                .setSmallIcon(android.R.drawable.ic_popup_reminder)
+                .setSmallIcon(it.optBoolean("pre", false) ? android.R.drawable.ic_lock_idle_alarm : android.R.drawable.ic_popup_reminder)
                 .setContentTitle(it.optString("title"))
                 .setContentText(it.optString("text"))
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(it.optString("text")))

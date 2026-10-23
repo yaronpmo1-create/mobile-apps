@@ -170,6 +170,20 @@ export function todayKey(st, now = new Date()) {
   return t && now >= t ? dkey(addDays(base, 1)) : dkey(base);
 }
 
+// רגע החלפת היום ההלכתי בתאריך אזרחי (ms), או null כשההחלפה בחצות
+export function dayChangeMs(st, date) {
+  const mode = st.dayChange || 'midnight';
+  if (mode === 'midnight') return null;
+  const base = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
+  if (mode === 'time') {
+    const [hh, mm] = String(st.dayChangeTime || '21:00').split(':').map(Number);
+    return new Date(base.getFullYear(), base.getMonth(), base.getDate(), hh, mm || 0, 0).getTime();
+  }
+  const z = zmanimFor(base, getLoc(st), st.method || 'baal', st.tzeitMode || 'method');
+  const t = mode === 'tzeit' ? z.tzeit : z.shkiah;
+  return t ? t.getTime() : null;
+}
+
 // כיוון ומרחק לבית המקדש (הר הבית)
 export const TEMPLE = { lat: 31.7781, lon: 35.2360 };
 export function bearingTo(lat, lon, to = TEMPLE) {

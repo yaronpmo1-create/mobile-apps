@@ -114,14 +114,15 @@ export function buildInstances(st, now = new Date(), days = 60, max = 480, withP
     // תזכורות אוטומטיות
     const au = s.auto || {}, at = s.autoTimes || {};
     if (au.roshChodesh && isRoshChodesh(date, loc, s)) push({ id: 'RC|' + key, t: toMs(date, at.roshChodesh || '08:00'), kind: 'notify', title: 'ראש חודש', text: 'היום ראש חודש - יעלה ויבוא, הלל' });
-    const tmr = addDays(date, 1);
-    if (au.erevShabbat && !isRestDay(date, loc, s) && isRestDay(tmr, loc, s)) {
-      const tt = timedOn(date, loc, s);
-      push({ id: 'ES|' + key, t: toMs(date, at.erevShabbat || '12:00'), kind: 'notify', title: dow === 5 ? 'ערב שבת' : 'ערב חג', text: tt.candles ? 'הדלקת נרות ב-' + hhmm(tt.candles, loc.tz) : 'מתכוננים לשבת וחג' });
-    }
     if (au.candles) {
       const tt = timedOn(date, loc, s);
       if (tt.candles) push({ id: 'CN|' + key, t: tt.candles.getTime() - (s.candleBefore || 20) * 60000, kind: 'notify', title: 'הדלקת נרות', text: 'הדלקת נרות ב-' + hhmm(tt.candles, loc.tz) + ' (בעוד ' + (s.candleBefore || 20) + ' דקות)' });
+    }
+    const tmr = addDays(date, 1);
+    // הבדלה: במוצאי שבת וחג, בזמן ההבדלה
+    if (au.havdalah !== false) {
+      const tv = timedOn(date, loc, s);
+      if (tv.havdalah) push({ id: 'HV|' + key, t: tv.havdalah.getTime(), kind: 'notify', title: 'הבדלה', text: 'זמן הבדלה ב-' + hhmm(tv.havdalah, loc.tz) });
     }
     // נרות חנוכה: התראה לפני כל הדלקה, נר 1 עד 8
     if (au.chanukah !== false) {

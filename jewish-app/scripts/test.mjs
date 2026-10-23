@@ -97,7 +97,6 @@ ok(inst.every((i) => i.t > now.getTime()), 'all future');
 // שבת וחג: אין התראה בתוך שבת
 const rest = restIntervals(now, addDays(now, 20), loc, s);
 ok(inst.filter((i) => i.id.startsWith('A|')).every((i) => !inRest(i.t, rest)), 'no alarm inside shabbat');
-ok(inst.some((i) => i.id.startsWith('ES|')), 'erev shabbat reminder exists');
 // תזכורת לימוד: מדלגת אם סומן
 tanya.remind = { mode: 'time', time: '21:00', zman: 'shkiah', rel: 'before', mins: 30, ring: false };
 const a1 = buildInstances(st, now, 3).filter((i) => i.id.startsWith('L|'));
@@ -204,6 +203,23 @@ ok(hebrewDate(new Date(2026, 9, 18)).includes('מרחשון'), 'marcheshvan name
   eq(newTrack('tefillin').days.length, 6, 'tefillin Sun-Fri');
   eq(newTrack('tzedaka').freq, 'daily', 'tzedaka daily');
   for (const tp of ['halacha', 'sefermitzvos', 'shnayim']) { const x = newTrack(tp); ok(learnInfo(x, new Date(2026, 9, 21, 12), s19).sub.length > 3, tp + ' has daily text'); }
+}
+// סבב 19: הבדלה, בלי "ערב שבת", ורגע החלפת היום
+{
+  const { dayChangeMs } = await import('../src/lib/zm.js');
+  const st2 = defaults();
+  const items = buildInstances(st2, new Date(2026, 9, 22, 9), 4, 100);
+  ok(items.some((i) => i.id === 'HV|2026-10-24'), 'havdalah reminder on Shabbat');
+  ok(!items.some((i) => i.id.startsWith('ES|')), 'no erev-shabbat reminder');
+  st2.settings.auto.havdalah = false;
+  ok(!buildInstances(st2, new Date(2026, 9, 22, 9), 4, 100).some((i) => i.id.startsWith('HV|')), 'havdalah toggle off');
+  st2.settings.dayChange = 'midnight';
+  ok(dayChangeMs(st2.settings, new Date(2026, 9, 22)) === null, 'midnight: no flip');
+  st2.settings.dayChange = 'sunset';
+  const f = dayChangeMs(st2.settings, new Date(2026, 9, 22));
+  ok(f && new Date(f).getHours() >= 16 && new Date(f).getHours() <= 19, 'sunset flip in the afternoon/evening');
+  st2.settings.dayChange = 'time'; st2.settings.dayChangeTime = '20:30';
+  eq(new Date(dayChangeMs(st2.settings, new Date(2026, 9, 22))).getHours(), 20, 'fixed time flip');
 }
 console.log(n + ' בדיקות, ' + fails + ' נכשלו');
 process.exit(fails ? 1 : 0);
