@@ -182,25 +182,21 @@ export function today() {
   if (tt.candles) extra.push('הדלקת נרות ' + hhmm(tt.candles, loc.tz));
   if (tt.havdalah) extra.push('הבדלה ' + hhmm(tt.havdalah, loc.tz));
   const line = ev.concat(extra);
-  if (line.length) root.appendChild(h('p', { class: 'h-sub' }, line.join(' · ')));
+  if (line.length) root.appendChild(h('p', { class: 'h-sub', style: tt.candles ? 'border:1px solid var(--accent);border-radius:10px;padding:6px 10px;color:var(--text)' : '' }, line.join(' · ')));
 
   // האירוע הבא: זמן והתראה, שני כרטיסים קטנים באותו גובה
   if (isToday) {
-    root.appendChild(secHead('האירוע הבא', []));
     const nz = nextZman(c);
     const al = nz ? alarmFor(c, nz) : null;
     let nextAl = null;
     try { nextAl = buildInstances(st, c.now, 3, 40)[0] || null; } catch (e) { /* */ }
     root.appendChild(h('div', { class: 'pair' },
       h('div', { class: 'card mini tap', onclick: () => { nav.timesView('day'); nav.goTab('times'); } },
-        h('div', { class: 'muted small' }, 'הזמן הבא · ' + (nz ? hhmm(nz.t, loc.tz) : '')),
-        h('div', { class: 'big mid wrap' }, nz ? nz.name : '-'),
-        h('div', { class: 'muted small' }, nz ? 'בעוד ' + countdown(nz.t - c.now) : '')),
+        h('div', { class: 'muted small one' }, 'הזמן הבא · ' + (nz ? hhmm(nz.t, loc.tz) : '')),
+        h('div', { class: 'one', style: 'display:flex;gap:6px;align-items:baseline' }, h('span', { class: 'big mid one' }, nz ? nz.name : '-'), nz ? h('span', { class: 'muted small', style: 'flex:none' }, 'בעוד ' + countdown(nz.t - c.now)) : null)),
       h('div', { class: 'card mini tap', onclick: () => { nav.timesView('alarms'); nav.goTab('times'); } },
-        h('div', { class: 'muted small' }, 'ההתראה הבאה · ' + (nextAl ? hhmm(new Date(nextAl.t)) : '')),
-        h('div', { class: 'big mid wrap' }, nextAl ? nextAl.title : 'אין התראה בקרוב'),
-        h('div', { class: 'muted small' }, nextAl ? 'בעוד ' + countdown(nextAl.t - c.now.getTime()) : ''))));
-    if (tt.candles && tt.candles > c.now) root.appendChild(h('div', { class: 'card mini', style: 'margin-top:8px;border:1px solid var(--accent)' }, h('span', { class: 'muted small' }, 'הדלקת נרות היום '), h('b', null, hhmm(tt.candles, loc.tz) + ' · בעוד ' + countdown(tt.candles - c.now))));
+        h('div', { class: 'muted small one' }, 'ההתראה הבאה · ' + (nextAl ? hhmm(new Date(nextAl.t)) : '')),
+        h('div', { class: 'one', style: 'display:flex;gap:6px;align-items:baseline' }, h('span', { class: 'big mid one' }, nextAl ? nextAl.title : 'אין התראה בקרוב'), nextAl ? h('span', { class: 'muted small', style: 'flex:none' }, 'בעוד ' + countdown(nextAl.t - c.now.getTime())) : null))));
   }
 
   // לימוד יומי
@@ -229,7 +225,7 @@ export function today() {
     if (isToday && sk.cur) root.appendChild(h('p', { class: 'h-sub', style: 'text-align:center;margin-top:10px' }, 'רצף נוכחי: ' + sk.cur + ' ימים'));
   }
 
-  const bk = bookletsSection(c, d);
+  const bk = s.showBooklets ? bookletsSection(c, d) : null;
   if (bk) root.appendChild(bk);
   return root;
 }

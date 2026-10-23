@@ -193,20 +193,20 @@ ok(hebrewDate(new Date(2026, 9, 18)).includes('מרחשון'), 'marcheshvan name
   const li = buildInstances(s19, new Date(2026, 9, 21, 8, 0), 1, 100).find((i) => i.id.startsWith('L|' + tk.id));
   ok(li.text.includes('פרשת'), 'learning reminder includes the day portion: ' + li.text);
   const tn = s19.tracks.find((x) => x.tpl === 'tanya');
-  const u = learnInfo(tn, new Date(2026, 9, 21, 12), s19).url;
+  const u = learnInfo(Object.assign({}, tn, { src: 1 }), new Date(2026, 9, 21, 12), s19).url;
   ok(u.startsWith('https://www.sefaria.org.il/Tanya%2C_Part_IV%3B_Iggeret_HaKodesh.') && /\.\d+\.\d+\?lang=he$/.test(u), 'tanya sefaria link ' + u);
   const hy = s19.tracks.find((x) => x.tpl === 'hayomyom');
-  ok(learnInfo(hy, new Date(2026, 9, 21, 12), s19).url.includes('tdate=10/21/2026'), 'chabad link has tdate');
+  ok(learnInfo(hy, new Date(2026, 9, 21, 12), s19).url.includes('DateParam='), 'chabad israel link has DateParam');
   const ch = s19.tracks.find((x) => x.tpl === 'chumash');
-  ok(learnInfo(ch, new Date(2026, 9, 21, 12), s19).url.includes('torahreading.asp?tdate='), 'chumash link');
+  ok(learnInfo(ch, new Date(2026, 9, 21, 12), s19).url.includes('Chumash.asp?CategoryID=175&DateParam='), 'chumash link');
   eq(tanyaLink('L|x1|1'), 'https://www.sefaria.org.il/Tanya%2C_Part_I%3B_Likkutei_Amarim?lang=he', 'tanya special page link');
 // בורר מקורות לימוד
 {
   const d = new Date(2026, 9, 23, 12);
   const mk = (tpl) => { const t = newTrack(tpl); return t; };
   const info = (tpl, src) => { const t = mk(tpl); if (src != null) t.src = src; return learnInfo(t, d, s19); };
-  eq(info('chumash').url, 'https://he.chabad.org/dailystudy/torahreading.asp?tdate=10/23/2026', 'chumash src0');
-  ok(/chabad\.org\.il\/Lessons\/Chumash\.asp\?CategoryID=175&DateParam=-?\d+$/.test(info('chumash', 1).url), 'chumash src1 DateParam');
+  ok(/chabad\.org\.il\/Lessons\/Chumash\.asp\?CategoryID=175&DateParam=-?\d+$/.test(info('chumash').url), 'chumash src0 is chabad israel');
+  eq(info('chumash', 1).url, 'https://he.chabad.org/dailystudy/torahreading.asp?tdate=10/23/2026', 'chumash src1 beit chabad');
   eq(info('chumash', 2).url, 'https://www.chabad.org/dailystudy/torahreading.asp?tdate=10/23/2026', 'chumash src2');
   eq(info('hayomyom', 2).url, 'https://www.chabad.org/dailystudy/hayomyom.asp?tdate=10/23/2026', 'hayomyom en');
   ok(info('tehilim', 2).url.startsWith('https://www.sefaria.org.il/Psalms.'), 'tehilim sefaria il ' + info('tehilim', 2).url);
@@ -214,9 +214,9 @@ ok(hebrewDate(new Date(2026, 9, 18)).includes('מרחשון'), 'marcheshvan name
   eq(info('nach', 1).url, 'https://he.wikisource.org/wiki/' + encodeURIComponent('שופטים_ג'), 'nach wikisource');
   eq(info('halacha', 1).url, 'https://he.wikisource.org/wiki/' + encodeURIComponent('קיצור_שולחן_ערוך_י'), 'kitzur wikisource');
   eq(info('dafyomi', 1).url, 'https://www.dafyomi.org/index.php?masechta=bechoros&daf=35a&page=insights', 'dafyomi.org');
-  ok(info('shnayim', 2).url.startsWith('https://www.hebcal.com/sedrot/lech-lecha-20261024'), 'shnayim hebcal ' + info('shnayim', 2).url);
-  eq(info('shnayim', 1).url, 'https://www.chabad.org/parshah/torahreading.asp?tdate=10/24/2026', 'shnayim chabad.org');
-  eq(info('rambam3', 0).url, 'https://he.chabad.org/dailystudy/rambam.asp?rambamchapters=3&tdate=10/23/2026', 'rambam3 src0');
+  ok(info('shnayim', 3).url.startsWith('https://www.hebcal.com/sedrot/lech-lecha-20261024'), 'shnayim hebcal ' + info('shnayim', 3).url);
+  eq(info('shnayim', 2).url, 'https://www.chabad.org/parshah/torahreading.asp?tdate=10/24/2026', 'shnayim chabad.org');
+  eq(info('rambam3', 1).url, 'https://he.chabad.org/dailystudy/rambam.asp?rambamchapters=3&tdate=10/23/2026', 'rambam3 src1');
   const tt = mk('chumash'); tt.url = 'https://example.com/x';
   eq(learnInfo(tt, d, s19).url, 'https://example.com/x', 'custom url wins');
 }

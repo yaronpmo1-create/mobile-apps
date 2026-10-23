@@ -16,28 +16,14 @@ function every(el, fn) {
   fn();
 }
 
-// ---- שעון ----
-export function clockView(c) {
-  const root = h('div', null);
+// ---- שעון (כותרת בראש מסך ההתראות) ----
+export function clockHeader(c) {
   const big = h('div', { class: 'clockbig' });
   every(big, () => { const d = new Date(); big.textContent = pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); });
   const d = new Date();
-  root.appendChild(h('div', { style: 'text-align:center;margin:10px 0 14px' }, big,
+  return h('div', { style: 'text-align:center;margin:4px 0 12px' }, big,
     h('div', { class: 'h-date', style: 'margin:6px 0 0' }, weekdayName(d) + ', ' + hebrewDate(d)),
-    h('div', { class: 'muted small' }, d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear() + ' · ' + c.loc.name)));
-  // התראות ותזכורות להיום ולמחר
-  let inst = [];
-  try { inst = buildInstances(c.st, c.now, 2, 300); } catch (e) { /* */ }
-  const todayK = dkey(c.now), tmr = new Date(c.now.getFullYear(), c.now.getMonth(), c.now.getDate() + 1), tmrK = dkey(tmr);
-  for (const [title, k] of [['היום', todayK], ['מחר', tmrK]]) {
-    const rows = inst.filter((i) => dkey(new Date(i.t)) === k);
-    root.appendChild(h('div', { class: 'section-title' }, title));
-    if (!rows.length) root.appendChild(h('div', { class: 'card empty-note', style: 'padding:12px' }, k === todayK ? 'אין עוד התראות או תזכורות להיום' : 'אין התראות או תזכורות למחר'));
-    rows.forEach((i) => root.appendChild(h('div', { class: 'card evt' },
-      h('div', { class: 'ztime' }, hhmm(new Date(i.t))),
-      h('div', { class: 'grow' }, h('div', { class: 'big mid wrap' }, instTitle(i)), h('div', { class: 'muted small' }, 'בעוד ' + countdown(i.t - c.now.getTime()))))));
-  }
-  return root;
+    h('div', { class: 'muted small' }, d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear() + ' · ' + c.loc.name));
 }
 
 // ---- בורר משך (טיימר ותזכורת מהירה): גלגלים וקיצורים בשורה אחת ----

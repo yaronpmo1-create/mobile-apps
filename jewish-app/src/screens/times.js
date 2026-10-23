@@ -8,7 +8,7 @@ import { newAlarm, ALARM_TEMPLATES, alarmTitle, daysLabel, REL, buildInstances, 
 import { activeTracks } from '../lib/tracks.js';
 import { testAlarm } from '../lib/native.js';
 import { openCompass } from './extras.js';
-import { clockView, timerView, durationPicker } from './clock.js';
+import { clockHeader, timerView, durationPicker } from './clock.js';
 
 let view = 'day';
 let offset = 0;
@@ -18,11 +18,11 @@ export function shiftTimesDay(delta) { if (view !== 'day') return false; offset 
 export function times() {
   const c = ctx();
   const root = h('div', null);
-  const other = ['clock', 'alarms', 'timer'].includes(view);
+  if (view === 'clock') view = 'alarms';
+  const other = ['alarms', 'timer'].includes(view);
   root.appendChild(seg([['day', 'היום'], ['week', 'שבוע'], ['month', 'חודש']], other ? '' : view, (v) => { view = v; commit(); }));
-  root.appendChild(h('div', { class: 'inline', style: 'margin-bottom:10px' }, [['clock', 'שעון'], ['alarms', 'התראות'], ['timer', 'טיימר']].map(([k, l]) =>
+  root.appendChild(h('div', { class: 'inline', style: 'margin-bottom:10px' }, [['alarms', 'התראות'], ['timer', 'טיימר']].map(([k, l]) =>
     h('button', { class: view === k ? 'btn' : 'btn ghost', onclick: () => { view = k; commit(); } }, l))));
-  if (view === 'clock') { root.appendChild(clockView(c)); return root; }
   if (view === 'timer') { root.appendChild(timerView()); return root; }
   if (view === 'alarms') { root.appendChild(alarmsView(c)); return root; }
   if (view === 'day') root.appendChild(dayView(c));
@@ -109,6 +109,7 @@ function monthView(c) {
 
 function alarmsView(c) {
   const root = h('div', null);
+  root.appendChild(clockHeader(c));
   root.appendChild(h('div', { class: 'inline', style: 'margin-bottom:12px' }, h('button', { class: 'btn', onclick: () => newAlarmSheet() }, '+ התראה חדשה'), h('button', { class: 'btn sec', onclick: () => remindSheet() }, 'תזכורת מהירה')));
   const nextAt = {}, autos = {};
   for (const i of buildInstances(c.st, c.now, 60, 3000)) {
@@ -143,13 +144,15 @@ function alarmsView(c) {
   };
   const rowOf = (it) => {
     if (it.auto) {
-      return h('div', { class: 'row tap', onclick: () => toast('תזכורת אוטומטית: מנוהלת בהגדרות או בעריכת המסלול') },
-        h('div', { class: 'grow' }, h('div', { class: 't' }, instTitle(it.auto)), h('div', { class: 's' }, 'אוטומטית · ' + hhmm(new Date(it.t)))));
+      return h('div', { class: 'card evt tap', onclick: () => toast('תזכורת אוטומטית: מנוהלת בהגדרות או בעריכת המסלול') },
+        h('div', { class: 'ztime' }, hhmm(new Date(it.t))),
+        h('div', { class: 'grow' }, h('div', { class: 'big mid wrap' }, instTitle(it.auto)), h('div', { class: 'muted small' }, 'אוטומטית')));
     }
     const a = it.a, nt = nextAt[a.id];
-    return h('div', { class: 'row tap', style: a.enabled ? '' : 'opacity:.55', onclick: () => editAlarm(a.id, a.type) },
-      h('div', { class: 'grow' }, h('div', { class: 't' }, alarmTitle(a, c.st)),
-        h('div', { class: 's' }, daysLabel(a.days, a.date) + (a.type === 'fixed' ? ' · ' + a.time : '') + (nt ? ' · הבאה ' + hhmm(new Date(nt)) : '') + (a.noRest !== false ? ' · לא בשבת, חג וערבי חג' : '') + (a.ring === false ? ' · התראה שקטה' : ''))),
+    return h('div', { class: 'card evt tap', style: a.enabled ? '' : 'opacity:.55', onclick: () => editAlarm(a.id, a.type) },
+      h('div', { class: 'ztime' }, hhmm(new Date(it.t))),
+      h('div', { class: 'grow' }, h('div', { class: 'big mid wrap' }, alarmTitle(a, c.st)),
+        h('div', { class: 'muted small' }, daysLabel(a.days, a.date) + (a.type === 'fixed' ? ' · ' + a.time : '') + (nt ? ' · הבאה ' + hhmm(new Date(nt)) : '') + (a.noRest !== false ? ' · לא בשבת, חג וערבי חג' : '') + (a.ring === false ? ' · התראה שקטה' : ''))),
       toggle(a.enabled, (v) => { a.enabled = v; commit(); }),
       h('button', { class: 'iconbtn', 'aria-label': 'מחיקה, שכפול ועוד', onclick: (e) => { e.stopPropagation(); alarmMenu(a); } }, '⋮'));
   };
@@ -159,7 +162,7 @@ function alarmsView(c) {
     const arr = items.filter((it) => bucket(it) === k).sort((a, b) => a.t - b.t);
     if (!arr.length) return;
     root.appendChild(h('div', { class: 'section-title' }, tt));
-    root.appendChild(h('div', { class: 'list' }, arr.map(rowOf)));
+    arr.forEach((it) => root.appendChild(rowOf(it)));
   });
   return root;
 }

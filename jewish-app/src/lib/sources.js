@@ -29,8 +29,8 @@ const DAFYOMI = {
 };
 
 const chabadSet = (he, il, en) => [
-  { id: 'bethchabad', name: 'בית חב״ד', lang: 'עברית', url: he },
   { id: 'chabadil', name: 'חב״ד ישראל', lang: 'עברית', url: il },
+  { id: 'bethchabad', name: 'בית חב״ד', lang: 'עברית', url: he },
   { id: 'chabadorg', name: 'חב״ד.אורג', lang: 'אנגלית', url: en },
 ];
 const sefariaSrc = { id: 'sefaria', name: 'ספריא ישראל', lang: 'עברית ואנגלית', url: (p) => sefariaIl(p.hc) };
@@ -39,8 +39,8 @@ export const SOURCES = {
   chumash: chabadSet((p) => HE + 'torahreading.asp?tdate=' + p.t, (p) => IL + 'Chumash.asp?CategoryID=175&DateParam=' + p.off, (p) => EN + 'torahreading.asp?tdate=' + p.t),
   tehilim: [...chabadSet((p) => HE + 'tehillim.asp?tdate=' + p.t, (p) => IL + 'Thilim.asp?CategoryID=175&DateParam=' + p.off, (p) => EN + 'tehillim.asp?tdate=' + p.t).slice(0, 2), sefariaSrc],
   tanya: [
-    { id: 'sefaria', name: 'ספריא ישראל', lang: 'עברית', url: (p) => p.tanya },
     { id: 'chabadil', name: 'חב״ד ישראל', lang: 'עברית', url: (p) => IL + 'Tanya.asp?CategoryID=175&TanyaType=1&DateParam=' + p.off },
+    { id: 'sefaria', name: 'ספריא ישראל', lang: 'עברית', url: (p) => p.tanya },
     { id: 'bethchabad', name: 'בית חב״ד', lang: 'עברית', url: (p) => HE + 'tanya.asp?tdate=' + p.t },
     { id: 'chabadorg', name: 'חב״ד.אורג', lang: 'אנגלית', url: (p) => EN + 'tanya.asp?tdate=' + p.t },
   ],
@@ -48,8 +48,8 @@ export const SOURCES = {
   rambam1: [...chabadSet((p) => HE + 'rambam.asp?rambamchapters=1&tdate=' + p.t, (p) => IL + 'Rambam1.asp?CategoryID=175&DateParam=' + p.off, (p) => EN + 'rambam.asp?rambamchapters=1&tdate=' + p.t), sefariaSrc],
   rambam3: [...chabadSet((p) => HE + 'rambam.asp?rambamchapters=3&tdate=' + p.t, (p) => IL + 'Rambam3.asp?CategoryID=175&DateParam=' + p.off, (p) => EN + 'rambam.asp?rambamchapters=3&tdate=' + p.t), sefariaSrc],
   sefermitzvos: [
-    { id: 'bethchabad', name: 'בית חב״ד', lang: 'אנגלית', url: (p) => HE + 'seferHamitzvos.asp?tdate=' + p.t },
     { id: 'chabadil', name: 'חב״ד ישראל', lang: 'עברית', url: (p) => IL + 'RambamMitzvot.asp?CategoryID=175&DateParam=' + p.off },
+    { id: 'bethchabad', name: 'בית חב״ד', lang: 'אנגלית', url: (p) => HE + 'seferHamitzvos.asp?tdate=' + p.t },
     { id: 'chabadorg', name: 'חב״ד.אורג', lang: 'אנגלית', url: (p) => EN + 'seferHamitzvos.asp?tdate=' + p.t },
   ],
   dafyomi: [
@@ -69,6 +69,7 @@ export const SOURCES = {
     { id: 'wikisource', name: 'ויקיטקסט', lang: 'עברית', url: (p) => { const c = chapterOf(p.hc, 1); return c ? wiki('קיצור שולחן ערוך ' + letters(c)) : ''; } },
   ],
   shnayim: [
+    { id: 'chabadil', name: 'חב״ד ישראל', lang: 'עברית', url: (p) => IL + 'Chumash.asp?CategoryID=175&DateParam=' + p.satOff },
     { id: 'bethchabad', name: 'בית חב״ד', lang: 'עברית', url: (p) => HE + 'torahreading.asp?tdate=' + p.satT },
     { id: 'chabadorg', name: 'חב״ד.אורג', lang: 'אנגלית', url: (p) => 'https://www.chabad.org/parshah/torahreading.asp?tdate=' + p.satT },
     { id: 'hebcal', name: 'Hebcal', lang: 'אנגלית', url: (p) => p.parshaUrl },
@@ -85,7 +86,7 @@ export function srcParams(date, today, extra = {}) {
   const T = (d) => (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear();
   const off = Math.round((mid(date) - mid(today)) / 86400000);
   const sat = addDays(date, 6 - date.getDay());
-  return Object.assign({ t: T(date), off, sat, satT: T(sat) }, extra);
+  return Object.assign({ t: T(date), off, sat, satT: T(sat), satOff: Math.round((mid(sat) - mid(today)) / 86400000) }, extra);
 }
 // רשימת המקורות עם הקישור של כל אחד (url ריק = אין מקור זמין ליום הזה)
 export function sourceList(track, params) {

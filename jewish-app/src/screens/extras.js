@@ -10,49 +10,8 @@ import { HDate } from '@hebcal/core';
 import { uid } from '../lib/store.js';
 import { deviceTz } from '../lib/cities.js';
 
-// ---- מצפן לבית המקדש ----
-export function openCompass() {
-  const c = ctx();
-  const loc = getLoc(c.s);
-  const bear = bearingTo(loc.lat, loc.lon);
-  const dist = Math.round(distanceKm(loc.lat, loc.lon));
-  let heading = null, st0 = 'wait';
-  openPage('מצפן לבית המקדש', () => {
-    const root = h('div', { style: 'text-align:center' });
-    root.appendChild(h('p', { class: 'h-sub' }, 'מ' + loc.name + ' לבית המקדש (הר הבית): ' + (dist < 2 ? 'ממש כאן' : dist + ' ק״מ') + ' · כיוון ' + Math.round(bear) + '° (' + dirName(bear) + ')'));
-    const dial = h('div', { class: 'dial', id: 'cdial' });
-    const needle = h('div', { class: 'needle', id: 'cneedle' });
-    const box = h('div', { class: 'compass', id: 'cbox' }, dial, needle, h('div', { class: 'hub' }));
-    ['צ', 'מ', 'ד', 'מע'].forEach((l, i) => {
-      const t = h('span', { style: 'transform:rotate(' + i * 90 + 'deg) translateX(-50%);' }, '');
-      t.textContent = '';
-    });
-    // תוויות כיוונים סביב המצפן
-    [['צפון', 0], ['מזרח', 90], ['דרום', 180], ['מערב', 270]].forEach(([n, a]) => {
-      const r = 42;
-      const x = 50 + r * Math.sin((a * Math.PI) / 180), y = 50 - r * Math.cos((a * Math.PI) / 180);
-      dial.appendChild(h('div', { style: 'position:absolute;left:' + x + '%;top:' + y + '%;transform:translate(-50%,-50%) rotate(' + 0 + 'deg);font-weight:800;font-size:.9rem;color:' + (a === 0 ? 'var(--bad)' : 'var(--muted)') }, n));
-    });
-    root.appendChild(box);
-    const msg = h('p', { id: 'cmsg', class: 'muted' }, 'מחפש חיישן כיוון...');
-    root.appendChild(msg);
-    root.appendChild(h('p', { class: 'dim small' }, 'האפליקציה לא מחוברת לאינטרנט; המצפן משתמש בחיישן של המכשיר. הכיוון משתנה בהתאם למיקום שהגדרת (' + loc.name + ').'));
-    root.appendChild(h('p', { class: 'dim small' }, 'כיול: סובבו את הטלפון בצורת 8 באוויר, והתרחקו ממתכת ומגנטים. החץ הזהב מצביע לכיוון הר הבית; כשהמסגרת ירוקה אתם מכוונים נכון.'));
-    root.appendChild(h('p', { class: 'dim small' }, 'אם אין חיישן: פונים לכיוון ' + dirName(bear) + ' (' + Math.round(bear) + '° ממזרח לצפון).'));
-    setTimeout(() => {
-      startCompass((hd) => {
-        heading = hd;
-        const rot = bear - hd;
-        needle.style.transform = 'rotate(' + rot + 'deg)';
-        dial.style.transform = 'rotate(' + -hd + 'deg)';
-        const diff = Math.abs(((rot + 540) % 360) - 180);
-        box.classList.toggle('aligned', diff < 6);
-        msg.textContent = diff < 6 ? 'מכוונים לבית המקדש ✓' : 'כיוון הטלפון: ' + Math.round(hd) + '° (' + dirName(hd) + ')';
-      }, (state) => { msg.textContent = state === 'denied' ? 'אין הרשאה לחיישן.' : 'לא נמצא חיישן כיוון במכשיר. השתמשו בכיוון הכתוב מטה.'; });
-    }, 50);
-    return root;
-  }, { onClose: stopCompass });
-}
+// המצפן עבר ל-compass-screen.js
+export { openCompass } from './compass-screen.js';
 
 // ---- יארצייטים וימי הולדת ----
 const HMONTHS = [[7, 'תשרי'], [8, 'מרחשון'], [9, 'כסלו'], [10, 'טבת'], [11, 'שבט'], [12, 'אדר'], [13, 'אדר ב׳'], [1, 'ניסן'], [2, 'אייר'], [3, 'סיוון'], [4, 'תמוז'], [5, 'אב'], [6, 'אלול']];

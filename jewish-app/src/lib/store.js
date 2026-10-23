@@ -6,7 +6,7 @@ export const PALETTES = {
   gold: ['זהב', '#C99A2E'], blue: ['כחול', '#2F6FB5'], green: ['ירוק', '#2E8B57'],
   purple: ['סגול', '#7B4FB0'], red: ['בורדו', '#A83A48'], teal: ['טורקיז', '#1F8A8A'],
 };
-export const TAB_COLORS = { today: '#C99A2E', learn: '#2E8B57', times: '#2F6FB5', journal: '#7B4FB0' };
+export const TAB_COLORS = { today: '#C99A2E', learn: '#2E8B57', times: '#2F6FB5', journal: '#7B4FB0', more: '#C06A3A' };
 
 export function defaults() {
   return {
@@ -25,6 +25,7 @@ export function defaults() {
       candleBefore: 20,
     },
     tracks: [],
+    more: [],
     entries: {},
     notes: {},
     alarms: [],
@@ -88,6 +89,7 @@ function migrate(s) {
   }
   if (s.v < 8) {
     if (s.settings.dayChange === 'midnight') { s.settings.dayChange = 'time'; s.settings.dayChangeTime = '22:00'; }
+    if (!Array.isArray(s.more)) s.more = [];
     s.v = 8;
   }
   return s;

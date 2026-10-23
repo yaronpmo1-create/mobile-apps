@@ -7,7 +7,7 @@ import { WD_LETTER, WEEKDAYS } from '../lib/dates.js';
 import { REL } from '../lib/alarms.js';
 import { uid } from '../lib/store.js';
 import { linkBtn } from '../lib/linkbtn.js';
-import { bookletsSection } from '../lib/booklets-ui.js';
+import { openExtras } from '../lib/booklets-ui.js';
 
 const FREQ = { daily: 'יומי', days: 'ימים מסוימים', weekly: 'שבועי', monthly: 'חודשי' };
 
@@ -26,6 +26,7 @@ export function learn() {
   const { st } = c;
   const root = h('div', null);
   root.appendChild(h('button', { class: 'btn block', style: 'margin:6px 0 12px', onclick: () => pickTemplate() }, '+ מסלול חדש'));
+  root.appendChild(h('button', { class: 'btn sec block', style: 'margin:0 0 12px', onclick: () => openExtras() }, 'תוספות'));
   const act = st.tracks.filter((t) => !t.archived).sort((a, b) => a.order - b.order);
   const arch = st.tracks.filter((t) => t.archived);
   if (!act.length) root.appendChild(h('div', { class: 'card empty-note' }, 'עוד אין מסלולים. אפשר להתחיל מערכת חת״ת מוכנה או מכל תבנית אחרת.'));
@@ -57,8 +58,6 @@ export function learn() {
     commit();
   });
   root.appendChild(wrap);
-  const bk = bookletsSection(c, c.today);
-  if (bk) root.appendChild(bk);
   if (arch.length) {
     root.appendChild(h('div', { class: 'section-title' }, 'ארכיון'));
     root.appendChild(h('div', { class: 'list' }, arch.map((t) => h('div', { class: 'row tap', onclick: () => trackMenu(t) }, h('div', { class: 'grow' }, h('div', { class: 't' }, t.name), h('div', { class: 's' }, 'בארכיון. ההיסטוריה נשמרה'))))));

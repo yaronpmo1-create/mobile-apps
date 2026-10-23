@@ -5,6 +5,7 @@ import { App as CapApp } from '@capacitor/app';
 import { setRender, ctx, commit, nav } from './core.js';
 import { today, nextZman, countdown, shiftDay, resetDay } from './screens/today.js';
 import { learn } from './screens/learn.js';
+import { more } from './screens/more.js';
 import { times, shiftTimesDay } from './screens/times.js';
 import { journal, shiftMonth, consumeSelDrag } from './screens/journal.js';
 import { settingsMain } from './screens/settings.js';
@@ -20,9 +21,9 @@ import { syncTimer } from './screens/clock.js';
 load();
 // תצוגה מקדימה בדפדפן: נתוני דוגמה (ערכת חת״ת) כדי שהמסך הראשי לא יהיה ריק
 if (window.__PREVIEW && !get().tracks.length) { addTemplate(get(), 'chitas'); get().first = false; }
-const TABS = [['today', 'היום'], ['times', 'זמנים\nוהתראות'], ['learn', 'לימוד\nומסלולים'], ['journal', 'יומן\nומעקב']];
-const TITLES = { today: 'אפליקציה יהודית', learn: 'לימוד ומסלולים', times: 'זמנים והתראות', journal: 'יומן ומעקב' };
-const SCREENS = { today, learn, times, journal };
+const TABS = [['today', 'היום'], ['times', 'זמנים\nוהתראות'], ['learn', 'לימוד\nומסלולים'], ['journal', 'יומן\nומעקב'], ['more', 'עוד']];
+const TITLES = { today: 'אפליקציה יהודית', learn: 'לימוד ומסלולים', times: 'זמנים והתראות', journal: 'יומן ומעקב', more: 'עוד' };
+const SCREENS = { today, learn, times, journal, more };
 let tab = 'today';
 const app = document.getElementById('app');
 let mainEl = null;
