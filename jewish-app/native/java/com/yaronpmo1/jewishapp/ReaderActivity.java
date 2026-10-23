@@ -29,7 +29,7 @@ public class ReaderActivity extends Activity {
             Uri u = Uri.parse(url);
             String h = u.getHost() == null ? "" : u.getHost().toLowerCase();
             if (!"https".equals(u.getScheme())) return false;
-            for (String d : new String[]{"sefaria.org", "sefaria.org.il", "chabad.org"}) {
+            for (String d : new String[]{"sefaria.org", "sefaria.org.il", "chabad.org", "chabad.org.il", "wikisource.org", "dafyomi.org", "hebcal.com"}) {
                 if (h.equals(d) || h.endsWith("." + d)) return true;
             }
         } catch (Exception ignored) {

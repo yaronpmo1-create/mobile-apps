@@ -323,4 +323,60 @@ public class JewishAlarmPlugin extends Plugin {
         WidgetBase.updateAll(ctx());
         call.resolve();
     }
+
+    // ---- חוברות דבר מלכות: משיכת דף הבית, קורא PDF פנימי והורדה ----
+    private static boolean dmHost(String url) {
+        try {
+            Uri u = Uri.parse(url);
+            String h = u.getHost() == null ? "" : u.getHost().toLowerCase();
+            return "https".equals(u.getScheme()) && (h.equals("dvarmalchus.com") || h.equals("www.dvarmalchus.com"));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** הורדת טקסט (דף הבית של דבר מלכות) כדי לרענן את רשימת החוברות. מוגבל לאתר דבר מלכות */
+    @PluginMethod
+    public void fetchText(final PluginCall call) {
+        final String url = call.getString("url", "");
+        if (!dmHost(url)) { call.reject("host"); return; }
+        new Thread(() -> {
+            try {
+                java.net.HttpURLConnection c = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+                c.setConnectTimeout(10000);
+                c.setReadTimeout(15000);
+                c.setRequestProperty("User-Agent", "Mozilla/5.0");
+                java.io.InputStream in = c.getInputStream();
+                java.io.ByteArrayOutputStream bo = new java.io.ByteArrayOutputStream();
+                byte[] buf = new byte[8192];
+                int n;
+                while ((n = in.read(buf)) > 0 && bo.size() < 3000000) bo.write(buf, 0, n);
+                in.close();
+                JSObject r = new JSObject();
+                r.put("text", bo.toString("UTF-8"));
+                call.resolve(r);
+            } catch (Exception e) {
+                call.reject("fetch failed");
+            }
+        }).start();
+    }
+
+    /** קורא PDF פנימי (PdfRenderer) */
+    @PluginMethod
+    public void openPdf(PluginCall call) {
+        String url = call.getString("url", "");
+        if (!dmHost(url)) { call.reject("host"); return; }
+        ctx().startActivity(new Intent(ctx(), PdfReaderActivity.class).putExtra("url", url).putExtra("title", call.getString("title", "")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        call.resolve();
+    }
+
+    /** הורדה לתיקיית ההורדות; בסיום מנסה לפתוח באפליקציית PDF אם קיימת */
+    @PluginMethod
+    public void downloadFile(PluginCall call) {
+        String url = call.getString("url", "");
+        String name = call.getString("name", "dvar-malchus.pdf");
+        if (!dmHost(url)) { call.reject("host"); return; }
+        PdfReaderActivity.download(ctx(), url, name);
+        call.resolve();
+    }
 }

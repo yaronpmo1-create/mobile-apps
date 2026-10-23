@@ -87,6 +87,17 @@ export async function openLink(url) {
   return (await copyText(url)) ? 'copied' : 'fail';
 }
 
+// חוברות דבר מלכות: משיכת טקסט מהאתר, קורא PDF פנימי והורדה לתיקיית ההורדות
+export const fetchText = async (url) => (isNative() ? safe(async () => (await JA.fetchText({ url })).text || '', '') : '');
+export async function openPdf(url, title) {
+  if (!isNative()) { window.open(url, '_blank'); return 'opened'; }
+  return (await safe(() => JA.openPdf({ url, title }).then(() => 'opened'), 'fail'));
+}
+export async function downloadPdf(url, name) {
+  if (!isNative()) { window.open(url, '_blank'); return 'opened'; }
+  return (await safe(() => JA.downloadFile({ url, name }).then(() => 'started'), 'fail'));
+}
+
 // בחירת צליל התראה מרשימת הצלילים של המכשיר. מחזיר {uri, name} או {cancelled:true}
 export async function pickSound(current) {
   if (!isNative()) return { uri: '', name: 'צליל לדוגמה (בדפדפן אין בחירה אמיתית)' };

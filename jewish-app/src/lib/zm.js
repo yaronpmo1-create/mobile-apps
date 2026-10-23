@@ -131,16 +131,17 @@ export function isRoshChodesh(date, loc, st = {}) {
   return (yearData(date.getFullYear(), loc, st).byDay[dkey(date)] || []).some((e) => e.getFlags() & flags.ROSH_CHODESH);
 }
 // הפרשה של השבוע הנוכחי (השבת הקרובה שיש בה פרשה)
-export function parshaOfWeek(date, loc, st = {}) {
+export function parshaWeek(date, loc, st = {}) {
   let sat = addDays(date, 6 - date.getDay());
   for (let i = 0; i < 6; i++) {
     const evs = yearData(sat.getFullYear(), loc, st).byDay[dkey(sat)] || [];
     const p = evs.find((e) => e.getFlags() & flags.PARSHA_HASHAVUA);
-    if (p) return stripNikud(p.render('he')).replace(/^פרשת\s*/, '');
+    if (p) return { name: stripNikud(p.render('he')).replace(/^פרשת\s*/, ''), url: p.url ? p.url() : '' };
     sat = addDays(sat, 7);
   }
-  return '';
+  return { name: '', url: '' };
 }
+export const parshaOfWeek = (date, loc, st = {}) => parshaWeek(date, loc, st).name;
 // הדלקת נרות והבדלה ביום מסוים
 export function timedOn(date, loc, st = {}) {
   const k = dkey(date);

@@ -30,12 +30,13 @@ const perms = ['SCHEDULE_EXACT_ALARM', 'USE_EXACT_ALARM', 'POST_NOTIFICATIONS', 
   'RECEIVE_BOOT_COMPLETED', 'WAKE_LOCK', 'VIBRATE', 'ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION', 'REQUEST_IGNORE_BATTERY_OPTIMIZATIONS', 'SYSTEM_ALERT_WINDOW']
   .filter((p) => !mf.includes('android.permission.' + p))
   .map((p) => '    <uses-permission android:name="android.permission.' + p + '" />\n').join('');
-mf = mf.replace('</manifest>', perms + '    <queries><intent><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="https" /></intent></queries>\n</manifest>');
+mf = mf.replace('</manifest>', perms + '    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />\n' + '    <queries><intent><action android:name="android.intent.action.VIEW" /><category android:name="android.intent.category.BROWSABLE" /><data android:scheme="https" /></intent></queries>\n</manifest>');
 mf = mf.replace('android:launchMode="singleTask"', 'android:launchMode="singleTask"\n            android:windowSoftInputMode="adjustResize"');
 const comps = `
         <activity android:name=".AlarmActivity" android:exported="false" android:showWhenLocked="true" android:turnScreenOn="true"
             android:launchMode="singleInstance" android:excludeFromRecents="true" android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
         <activity android:name=".ReaderActivity" android:exported="false" android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+        <activity android:name=".PdfReaderActivity" android:exported="false" android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
         <service android:name=".AlarmService" android:exported="false" android:foregroundServiceType="mediaPlayback" />
         <receiver android:name=".AlarmReceiver" android:exported="false" />
         <receiver android:name=".ActionReceiver" android:exported="false" />

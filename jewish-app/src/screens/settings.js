@@ -8,6 +8,7 @@ import { chabadList, HMONTHS, monthName } from '../lib/chabad.js';
 import { uid } from '../lib/store.js';
 import { openLocation, openHealth, openYahrzeits, openCompass } from './extras.js';
 import { dayStatus, activeTracks, firstKey, learnInfo } from '../lib/tracks.js';
+import { sourceList, customUrl } from '../lib/sources.js';
 import { chime } from '../lib/chime.js';
 import { backupNow, listBackups, backupStamp } from '../lib/autobackup.js';
 
@@ -153,11 +154,21 @@ function csv(c) {
 function links() {
   openPage('קישורי הלימוד של היום', () => {
     const c = ctx(), d = parseKey(c.tk);
-    const rows = activeTracks(c.st).map((t) => ({ t, i: learnInfo(t, d, c.st) })).filter((x) => x.i.url);
+    const rows = activeTracks(c.st).map((t) => ({ t, i: learnInfo(t, d, c.st) })).filter((x) => x.i.url || x.i.params);
     return h('div', null,
-      h('p', { class: 'muted' }, 'נגיעה בשורה מעתיקה את הקישור ללוח, להדבקה בדפדפן. הכפתור בלימוד עצמו פותח אותו ישירות.'),
-      rows.length ? h('div', { class: 'list' }, rows.map((x) => h('div', { class: 'row tap', onclick: async () => toast((await copyText(x.i.url)) ? 'הקישור הועתק ללוח' : 'ההעתקה נכשלה') },
-        h('div', { class: 'grow' }, h('div', { class: 't' }, x.t.name), x.i.sub ? h('div', { class: 's' }, x.i.sub) : null, h('div', { class: 's', style: 'direction:ltr;text-align:left;word-break:break-all' }, x.i.url))))) : h('div', { class: 'card empty-note' }, 'אין מסלולים עם קישור.'));
+      h('p', { class: 'muted' }, 'לכל מסלול אפשר לבחור מאיפה ללמוד. המקור הראשון הוא ברירת המחדל, ובחירה נשמרת במסלול. נגיעה בקישור מעתיקה אותו ללוח.'),
+      rows.length ? h('div', { class: 'list' }, rows.map((x) => {
+        const list = x.i.params && !customUrl(x.t) ? sourceList(x.t, x.i.params) : [];
+        const cur = list.find((l) => l.url === x.i.url);
+        return h('div', { class: 'row', style: 'display:block' },
+          h('div', { class: 't' }, x.t.name),
+          x.i.sub ? h('div', { class: 's' }, x.i.sub) : null,
+          list.length ? h('div', { class: 'chips', style: 'margin:6px 0' }, list.map((l) => h('button', {
+            class: 'chip' + (cur && cur.i === l.i ? ' on' : ''), disabled: !l.url, style: l.url ? '' : 'opacity:.4',
+            onclick: () => { x.t.src = l.i; commit(); },
+          }, l.name + ' (' + l.lang + ')'))) : null,
+          h('div', { class: 's tap', style: 'direction:ltr;text-align:left;word-break:break-all', onclick: async () => toast((await copyText(x.i.url)) ? 'הקישור הועתק ללוח' : 'ההעתקה נכשלה') }, x.i.url));
+      })) : h('div', { class: 'card empty-note' }, 'אין מסלולים עם קישור.'));
   });
 }
 function data() {

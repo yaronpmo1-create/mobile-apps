@@ -2,7 +2,8 @@
 import { HDate, DailyLearning } from '@hebcal/core';
 import '@hebcal/learning';
 import { dkey, parseKey, addDays, hebrewDayMonth, stripNikud, tishreiKey, gematria, hebrewDayLetter } from './dates.js';
-import { getLoc, isRestDay, parshaOfWeek } from './zm.js';
+import { getLoc, isRestDay, parshaOfWeek, parshaWeek } from './zm.js';
+import { hasSources, customUrl, srcParams, pickSource } from './sources.js';
 import { uid } from './store.js';
 import { TANYA_DAYS } from './tanya-data.js';
 
@@ -25,8 +26,8 @@ export function tanyaText(code) {
 const T_TITLE = { L: 'Tanya, Part I; Likkutei Amarim', S: 'Tanya, Part II; Shaar HaYichud VehaEmunah', T: 'Tanya, Part III; Iggeret HaTeshuvah', K: 'Tanya, Part IV; Iggeret HaKodesh', A: 'Tanya, Part V; Kuntres Acharon' };
 export function tanyaLink(code) {
   const [b, n, para] = code.split('|');
-  const base = 'https://www.sefaria.org/' + (T_TITLE[b] || T_TITLE.L).replace(/ /g, '_');
-  return T_SPECIAL[n] ? base : base + '.' + n + '.' + para;
+  const base = 'https://www.sefaria.org.il/' + encodeURIComponent((T_TITLE[b] || T_TITLE.L).replace(/ /g, '_'));
+  return (T_SPECIAL[n] ? base : base + '.' + n + '.' + para) + '?lang=he';
 }
 export const ALIYOT = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שביעי'];
 export const PARTS = { morning: 'בוקר', afternoon: 'אחר הצהריים', evening: 'ערב ולילה', any: 'במהלך היום' };
@@ -34,10 +35,10 @@ export const PARTS = { morning: 'בוקר', afternoon: 'אחר הצהריים', 
 const CH = 'https://www.chabad.org/dailystudy/';
 // auto = סוג חישוב אוטומטי; counter = מונה ידני; weekly = שיעור שבועי
 export const TEMPLATES = [
-  { tpl: 'chumash', name: 'חומש עם רש״י', auto: 'chumash', freq: 'daily', part: 'morning', url: CH + 'torahreading.asp' },
-  { tpl: 'tehilim', name: 'תהילים יומי', auto: 'psalms', freq: 'daily', part: 'morning', url: CH + 'tehillim.asp' },
-  { tpl: 'tanya', name: 'תניא יומי', auto: 'tanyaYomi', freq: 'daily', part: 'morning', url: CH + 'tanya.asp' },
-  { tpl: 'hayomyom', name: 'היום יום', auto: 'hayomyom', freq: 'daily', part: 'morning', url: CH + 'hayomyom.asp' },
+  { tpl: 'chumash', name: 'חומש עם רש״י', auto: 'chumash', freq: 'daily', part: 'morning' },
+  { tpl: 'tehilim', name: 'תהילים יומי', auto: 'psalms', freq: 'daily', part: 'morning' },
+  { tpl: 'tanya', name: 'תניא יומי', auto: 'tanyaYomi', freq: 'daily', part: 'morning' },
+  { tpl: 'hayomyom', name: 'היום יום', auto: 'hayomyom', freq: 'daily', part: 'morning' },
   { tpl: 'moshiach', name: 'משיח וגאולה יומי', freq: 'daily', part: 'morning' },
   { tpl: 'rambam1', name: 'רמב״ם - פרק אחד ביום', auto: 'rambam1', freq: 'daily', part: 'afternoon' },
   { tpl: 'rambam3', name: 'רמב״ם - שלושה פרקים ביום', auto: 'rambam3', freq: 'daily', part: 'afternoon' },
@@ -48,7 +49,7 @@ export const TEMPLATES = [
   { tpl: 'maamarRebbe', name: 'מאמר הרבי השבועי', freq: 'weekly', weeklyDay: 6, part: 'any' },
   { tpl: 'maamarZaken', name: 'מאמר אדמו״ר הזקן', freq: 'weekly', weeklyDay: 6, part: 'any' },
   { tpl: 'maamarOther', name: 'מאמר אדמו״ר אחר', freq: 'weekly', weeklyDay: 6, part: 'any' },
-  { tpl: 'shnayim', name: 'שניים מקרא ואחד תרגום', auto: 'parsha', freq: 'weekly', weeklyDay: 5, part: 'any', url: 'https://www.sefaria.org/calendars' },
+  { tpl: 'shnayim', name: 'שניים מקרא ואחד תרגום', auto: 'parsha', freq: 'weekly', weeklyDay: 5, part: 'any' },
   { tpl: 'halacha', name: 'הלכה יומית (קיצור שולחן ערוך)', auto: 'kitzurShulchanAruch', freq: 'daily', part: 'evening' },
   { tpl: 'sefermitzvos', name: 'ספר המצוות', auto: 'seferHaMitzvot', freq: 'daily', part: 'afternoon' },
   { tpl: 'tzedaka', name: 'צדקה', freq: 'daily', part: 'morning' },
@@ -87,6 +88,7 @@ export const activeTracks = (st) => st.tracks.filter((t) => !t.archived).sort((a
 export function learnInfo(track, date, st) {
   const loc = getLoc(st.settings);
   const out = { title: track.name, sub: '', url: track.url || '' };
+  const P = {};
   try {
     if (track.auto === 'chumash') {
       const p = parshaOfWeek(date, loc, st.settings);
@@ -94,16 +96,19 @@ export function learnInfo(track, date, st) {
     } else if (track.auto === 'tanyaYomi') {
       const code = TANYA_DAYS[dkey(date)];
       out.sub = code ? tanyaText(code) : 'לוח התניא לתאריך הזה יתווסף בעדכון';
-      if (code) out.url = tanyaLink(code);
+      if (code) { out.url = tanyaLink(code); P.tanya = out.url; }
     } else if (track.auto === 'hayomyom') {
       out.sub = hebrewDayMonth(date);
     } else if (track.auto === 'parsha') {
-      const p = parshaOfWeek(date, loc, st.settings);
-      if (p) out.sub = 'פרשת ' + p;
+      const pw = parshaWeek(date, loc, st.settings);
+      P.parshaUrl = pw.url;
+      if (pw.name) out.sub = 'פרשת ' + pw.name;
     } else if (track.auto) {
       const noon = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12);
       const r = DailyLearning.lookup(track.auto, new HDate(noon));
       if (r) {
+        P.hc = r.url ? r.url() : '';
+        P.hcText = stripNikud(r.render ? r.render('he') : '');
         out.sub = stripNikud(r.render ? r.render('he') : String(r.name || '')).replace(/^דף יומי:\s*/, '');
         if (track.auto === 'psalms') {
           const rng = out.sub.replace(/^תה[יל]*ים/, '').replace(/\s+/g, ' ').trim();
@@ -117,6 +122,13 @@ export function learnInfo(track, date, st) {
       out.sub = track.tpl === 'tanya' ? tanyaPos(track.pos) : (track.unit || 'מקום') + ' ' + track.pos + (track.total ? ' מתוך ' + track.total : '');
     }
   } catch (e) { /* ממשיך בלי פירוט */ }
+  if (hasSources(track) && !customUrl(track)) {
+    const params = srcParams(date, new Date(), P);
+    const s = pickSource(track, params);
+    out.params = params;
+    out.url = s ? s.url : '';
+    out.srcName = s ? s.name : '';
+  }
   if (out.url && out.url.startsWith(CH) && !/tdate=/.test(out.url)) out.url += (out.url.includes('?') ? '&' : '?') + 'tdate=' + (date.getMonth() + 1) + '/' + date.getDate() + '/' + date.getFullYear();
   if (track.where) out.where = track.where;
   return out;

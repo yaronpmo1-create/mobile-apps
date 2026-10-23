@@ -8,6 +8,6 @@ export function linkBtn(st, track, date) {
   if (!url) return null;
   return h('button', {
     class: 'iconbtn lnk nodrag', 'aria-label': 'פתיחת הטקסט של היום',
-    onclick: async (e) => { e.stopPropagation(); const r = await openLink(url); if (r === 'copied') toast('אין דפדפן במכשיר - הקישור הועתק ללוח'); else if (r === 'fail') toast('לא ניתן לפתוח את הקישור'); },
+    onclick: async (e) => { e.stopPropagation(); const r = await openLink(learnInfo(track, date, st).url || url); if (r === 'copied') toast('אין דפדפן במכשיר - הקישור הועתק ללוח'); else if (r === 'fail') toast('לא ניתן לפתוח את הקישור'); },
   }, tabIcon('learn', 26));
 }

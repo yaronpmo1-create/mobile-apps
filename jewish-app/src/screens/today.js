@@ -9,6 +9,7 @@ import { dueTracks, getEntry, setEntry, learnInfo, progressOf, PARTS, markAll, u
 import { setDone, openLink } from '../lib/native.js';
 import { chabadOn } from '../lib/chabad.js';
 import { linkBtn } from '../lib/linkbtn.js';
+import { bookletsSection } from '../lib/booklets-ui.js';
 import { chime } from '../lib/chime.js';
 import { HDate } from '@hebcal/core';
 
@@ -228,5 +229,7 @@ export function today() {
     if (isToday && sk.cur) root.appendChild(h('p', { class: 'h-sub', style: 'text-align:center;margin-top:10px' }, 'רצף נוכחי: ' + sk.cur + ' ימים'));
   }
 
+  const bk = bookletsSection(c, d);
+  if (bk) root.appendChild(bk);
   return root;
 }

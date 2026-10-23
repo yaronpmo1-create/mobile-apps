@@ -7,6 +7,7 @@ import { WD_LETTER, WEEKDAYS } from '../lib/dates.js';
 import { REL } from '../lib/alarms.js';
 import { uid } from '../lib/store.js';
 import { linkBtn } from '../lib/linkbtn.js';
+import { bookletsSection } from '../lib/booklets-ui.js';
 
 const FREQ = { daily: 'יומי', days: 'ימים מסוימים', weekly: 'שבועי', monthly: 'חודשי' };
 
@@ -56,6 +57,8 @@ export function learn() {
     commit();
   });
   root.appendChild(wrap);
+  const bk = bookletsSection(c, c.today);
+  if (bk) root.appendChild(bk);
   if (arch.length) {
     root.appendChild(h('div', { class: 'section-title' }, 'ארכיון'));
     root.appendChild(h('div', { class: 'list' }, arch.map((t) => h('div', { class: 'row tap', onclick: () => trackMenu(t) }, h('div', { class: 'grow' }, h('div', { class: 't' }, t.name), h('div', { class: 's' }, 'בארכיון. ההיסטוריה נשמרה'))))));

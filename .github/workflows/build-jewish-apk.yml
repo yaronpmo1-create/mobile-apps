@@ -27,6 +27,7 @@ jobs:
       - name: Build web and Android project
         working-directory: jewish-app
         run: |
+          node scripts/make-dm.mjs
           node scripts/build.mjs
           npx cap add android
           node scripts/patch-android.mjs

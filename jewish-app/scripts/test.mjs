@@ -2,7 +2,7 @@
 import { defaults, replaceAll, get } from '../src/lib/store.js';
 import { getLoc, zmanimFor, parshaOfWeek, isRestDay, restIntervals, inRest, todayKey, bearingTo, dayEvents } from '../src/lib/zm.js';
 import { gematria, tishreiKey, hhmm, dkey, parseKey, hebrewDate, addDays } from '../src/lib/dates.js';
-import { addTemplate, dueTracks, setEntry, dayStatus, streak, learnInfo, isLateMark, missingDays, markAll, undoMark, getEntry } from '../src/lib/tracks.js';
+import { newTrack, addTemplate, dueTracks, setEntry, dayStatus, streak, learnInfo, isLateMark, missingDays, markAll, undoMark, getEntry } from '../src/lib/tracks.js';
 import { buildInstances, newAlarm } from '../src/lib/alarms.js';
 
 let fails = 0, n = 0;
@@ -194,12 +194,32 @@ ok(hebrewDate(new Date(2026, 9, 18)).includes('מרחשון'), 'marcheshvan name
   ok(li.text.includes('פרשת'), 'learning reminder includes the day portion: ' + li.text);
   const tn = s19.tracks.find((x) => x.tpl === 'tanya');
   const u = learnInfo(tn, new Date(2026, 9, 21, 12), s19).url;
-  ok(u.startsWith('https://www.sefaria.org/Tanya,_Part_IV;_Iggeret_HaKodesh.') && /\.\d+\.\d+$/.test(u), 'tanya sefaria link ' + u);
+  ok(u.startsWith('https://www.sefaria.org.il/Tanya%2C_Part_IV%3B_Iggeret_HaKodesh.') && /\.\d+\.\d+\?lang=he$/.test(u), 'tanya sefaria link ' + u);
   const hy = s19.tracks.find((x) => x.tpl === 'hayomyom');
   ok(learnInfo(hy, new Date(2026, 9, 21, 12), s19).url.includes('tdate=10/21/2026'), 'chabad link has tdate');
   const ch = s19.tracks.find((x) => x.tpl === 'chumash');
   ok(learnInfo(ch, new Date(2026, 9, 21, 12), s19).url.includes('torahreading.asp?tdate='), 'chumash link');
-  eq(tanyaLink('L|x1|1'), 'https://www.sefaria.org/Tanya,_Part_I;_Likkutei_Amarim', 'tanya special page link');
+  eq(tanyaLink('L|x1|1'), 'https://www.sefaria.org.il/Tanya%2C_Part_I%3B_Likkutei_Amarim?lang=he', 'tanya special page link');
+// בורר מקורות לימוד
+{
+  const d = new Date(2026, 9, 23, 12);
+  const mk = (tpl) => { const t = newTrack(tpl); return t; };
+  const info = (tpl, src) => { const t = mk(tpl); if (src != null) t.src = src; return learnInfo(t, d, s19); };
+  eq(info('chumash').url, 'https://he.chabad.org/dailystudy/torahreading.asp?tdate=10/23/2026', 'chumash src0');
+  ok(/chabad\.org\.il\/Lessons\/Chumash\.asp\?CategoryID=175&DateParam=-?\d+$/.test(info('chumash', 1).url), 'chumash src1 DateParam');
+  eq(info('chumash', 2).url, 'https://www.chabad.org/dailystudy/torahreading.asp?tdate=10/23/2026', 'chumash src2');
+  eq(info('hayomyom', 2).url, 'https://www.chabad.org/dailystudy/hayomyom.asp?tdate=10/23/2026', 'hayomyom en');
+  ok(info('tehilim', 2).url.startsWith('https://www.sefaria.org.il/Psalms.'), 'tehilim sefaria il ' + info('tehilim', 2).url);
+  eq(info('mishna', 1).url, 'https://he.wikisource.org/wiki/' + encodeURIComponent('משנה_אהלות_יב'), 'mishna wikisource');
+  eq(info('nach', 1).url, 'https://he.wikisource.org/wiki/' + encodeURIComponent('שופטים_ג'), 'nach wikisource');
+  eq(info('halacha', 1).url, 'https://he.wikisource.org/wiki/' + encodeURIComponent('קיצור_שולחן_ערוך_י'), 'kitzur wikisource');
+  eq(info('dafyomi', 1).url, 'https://www.dafyomi.org/index.php?masechta=bechoros&daf=35a&page=insights', 'dafyomi.org');
+  ok(info('shnayim', 2).url.startsWith('https://www.hebcal.com/sedrot/lech-lecha-20261024'), 'shnayim hebcal ' + info('shnayim', 2).url);
+  eq(info('shnayim', 1).url, 'https://www.chabad.org/parshah/torahreading.asp?tdate=10/24/2026', 'shnayim chabad.org');
+  eq(info('rambam3', 0).url, 'https://he.chabad.org/dailystudy/rambam.asp?rambamchapters=3&tdate=10/23/2026', 'rambam3 src0');
+  const tt = mk('chumash'); tt.url = 'https://example.com/x';
+  eq(learnInfo(tt, d, s19).url, 'https://example.com/x', 'custom url wins');
+}
   eq(newTrack('tefillin').days.length, 6, 'tefillin Sun-Fri');
   eq(newTrack('tzedaka').freq, 'daily', 'tzedaka daily');
   for (const tp of ['halacha', 'sefermitzvos', 'shnayim']) { const x = newTrack(tp); ok(learnInfo(x, new Date(2026, 9, 21, 12), s19).sub.length > 3, tp + ' has daily text'); }
@@ -220,6 +240,21 @@ ok(hebrewDate(new Date(2026, 9, 18)).includes('מרחשון'), 'marcheshvan name
   { const hm = hhmm(new Date(f), loc.tz); ok(f && hm >= '16:00' && hm <= '19:00', 'sunset flip in the afternoon/evening (' + hm + ')'); }
   st2.settings.dayChange = 'time'; st2.settings.dayChangeTime = '20:30';
   eq(new Date(dayChangeMs(st2.settings, new Date(2026, 9, 22))).getHours(), 20, 'fixed time flip');
+}
+// חוברות דבר מלכות
+{
+  const { weeklyBooklets } = await import('../src/lib/dm.js');
+  const fri = weeklyBooklets(new Date(2026, 9, 23, 12), true, false);
+  eq(fri.length, 2, 'dm two links');
+  ok(fri[0].title.startsWith('לך לך') && fri[0].label === 'השבוע', 'dm this week ' + fri[0].title);
+  ok(fri[1].title.startsWith('נח') && fri[1].label === 'השבוע שעבר', 'dm last week ' + fri[1].title);
+  const sat = weeklyBooklets(new Date(2026, 9, 24, 12), true, true);
+  ok(sat[0].title.startsWith('וירא') && sat[0].label === 'השבוע הבא' && sat[1].title.startsWith('לך לך') && sat[1].label === 'השבוע', 'dm motzei shabbat ' + sat.map((x) => x.title));
+  ok(fri[0].url.startsWith('https://dvarmalchus.com/Download/') && fri[0].url.endsWith('.pdf'), 'dm url');
+  const bk = weeklyBooklets(new Date(2026, 9, 6, 12), true, false);
+  ok(bk[0].title.includes('בארץ הקודש'), 'dm bereshit il ' + bk[0].title);
+  const bw = weeklyBooklets(new Date(2026, 9, 6, 12), false, false);
+  ok(bw[0].title.includes('בכל העולם'), 'dm bereshit world ' + bw[0].title);
 }
 console.log(n + ' בדיקות, ' + fails + ' נכשלו');
 process.exit(fails ? 1 : 0);
