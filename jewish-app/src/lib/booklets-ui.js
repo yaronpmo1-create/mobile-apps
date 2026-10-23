@@ -26,7 +26,7 @@ export function bookletsSection(c, d) {
   return h('div', null,
     h('div', { class: 'section-title' }, 'חוברות שבועיות'),
     h('div', { class: 'list' }, list.map((b) => h('div', { class: 'row tap', onclick: () => read(b) },
-      h('div', { class: 'grow' }, h('div', { class: 't', style: 'font-size:.9rem' }, 'חוברת דבר מלכות לקריאה / הורדה'), h('div', { class: 's' }, subTitle(b))),
+      h('div', { class: 'grow' }, h('div', { class: 't', style: 'font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis' }, 'חוברת דבר מלכות לקריאה / הורדה'), h('div', { class: 's' }, subTitle(b))),
       btn('קריאה באפליקציה', tabIcon('learn', 26), () => read(b)),
       btn('הורדה לטלפון', dlIcon(), () => down(b))))));
 }
