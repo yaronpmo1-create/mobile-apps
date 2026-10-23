@@ -10,13 +10,13 @@ export const TAB_COLORS = { today: '#C99A2E', learn: '#2E8B57', times: '#2F6FB5'
 
 export function defaults() {
   return {
-    v: 7,
+    v: 8,
     first: true,
     settings: {
       theme: 'auto', palette: 'gold', fontScale: 1, density: 'normal', contrast: false, tabColors: false, corners: 'round',
       countLate: true, lateWindow: 14, partMorning: 12, partAfternoon: 18, partEvening: 24,
       loc: { mode: 'city', cityId: 'jerusalem', lat: 0, lon: 0, name: '', tz: '' },
-      method: 'baal', tzeitMode: 'method', dayChange: 'midnight', dayChangeTime: '21:00', candleMins: 0,
+      method: 'baal', tzeitMode: 'method', dayChange: 'time', dayChangeTime: '22:00', candleMins: 0,
       sound: 'alarm', soundUri: '', soundName: '', ramp: true, vibrate: true, snoozeMin: 10, repeatUntilOff: false, quiet: false, quietFrom: '23:00', quietTo: '05:00',
       vacation: false, chabadDates: true, chabadList: null, milestones: true,
       auto: { roshChodesh: true, candles: true, omer: true, havdalah: true, chanukah: true },
@@ -86,10 +86,14 @@ function migrate(s) {
     for (const t of s.tracks) if (t.tpl === 'moshiach' && t.name === 'משיח וגאולה') t.name = 'משיח וגאולה יומי';
     s.v = 7;
   }
+  if (s.v < 8) {
+    if (s.settings.dayChange === 'midnight') { s.settings.dayChange = 'time'; s.settings.dayChangeTime = '22:00'; }
+    s.v = 8;
+  }
   return s;
 }
 // הגנה על מידע עבר: לפני שדרוג מבנה נתונים נשמר עותק של הנתונים הישנים, ונתונים שלא ניתן לקרוא לא נמחקים אלא נשמרים בצד
-const CUR_V = 7;
+const CUR_V = 8;
 export function load() {
   const base = defaults();
   try {

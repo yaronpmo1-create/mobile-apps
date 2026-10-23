@@ -43,8 +43,8 @@ export function learn() {
           pr != null ? h('div', { class: 'bar' }, h('i', { style: 'width:' + Math.round(pr * 100) + '%' })) : null),
         linkBtn(st, t, c.today),
         h('div', { class: 'mv nodrag' },
-          h('button', { 'aria-label': 'הזזה למעלה', onclick: (e) => { e.stopPropagation(); moveTrack(t.id, -1); } }, icon('up', 30)),
-          h('button', { 'aria-label': 'הזזה למטה', onclick: (e) => { e.stopPropagation(); moveTrack(t.id, 1); } }, icon('down', 30))),
+          h('button', { 'aria-label': 'הזזה למעלה', onclick: (e) => { e.stopPropagation(); moveTrack(t.id, -1); } }, icon('up', 20)),
+          h('button', { 'aria-label': 'הזזה למטה', onclick: (e) => { e.stopPropagation(); moveTrack(t.id, 1); } }, icon('down', 20))),
         h('button', { class: 'iconbtn nodrag', onclick: (e) => { e.stopPropagation(); trackMenu(t); } }, '⋮')));
     });
     if (!gl.length) list.appendChild(h('div', { class: 'ph dim small' }, 'גררו לכאן מסלול'));

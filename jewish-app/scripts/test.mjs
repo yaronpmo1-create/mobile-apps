@@ -116,7 +116,7 @@ eq(defaults().settings.auto.omer, true, 'omer default on');
 // גימטריה, מרחשון, החלפת יום
 eq(gematria(26), 'כ״ו', 'gematria 26'); eq(gematria(15), 'ט״ו', 'gematria 15'); eq(gematria(7), 'ז׳', 'gematria 7');
 ok(hebrewDate(new Date(2026, 9, 18)).includes('מרחשון'), 'marcheshvan name');
-{ const sx = defaults().settings; sx.dayChange = 'time'; sx.dayChangeTime = '21:00'; eq(todayKey(sx, new Date(2026, 9, 18, 21, 30)), '2026-10-19', 'day changes at custom time'); eq(todayKey(sx, new Date(2026, 9, 18, 20, 30)), '2026-10-18', 'before custom time'); eq(todayKey(defaults().settings, new Date(2026, 9, 18, 23, 30)), '2026-10-18', 'default change at midnight'); }
+{ const sx = defaults().settings; sx.dayChange = 'time'; sx.dayChangeTime = '21:00'; eq(todayKey(sx, new Date(2026, 9, 18, 21, 30)), '2026-10-19', 'day changes at custom time'); eq(todayKey(sx, new Date(2026, 9, 18, 20, 30)), '2026-10-18', 'before custom time'); eq(todayKey(defaults().settings, new Date(2026, 9, 18, 22, 30)), '2026-10-19', 'default change at 22:00'); }
 // לוח התניא היומי
 { const st3 = defaults(); addTemplate(st3, 'tanya'); const tn = st3.tracks[0];
   eq(learnInfo(tn, new Date(2026, 9, 18, 12), st3).sub, 'אגרת הקודש, אגרת כ״ו, מפסקה כ׳', 'tanya 18.10.2026');

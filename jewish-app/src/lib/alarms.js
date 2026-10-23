@@ -19,7 +19,6 @@ export const ALARM_TEMPLATES = [
   { name: '15 דקות לפני סוף זמן ק״ש', a: { type: 'zman', zman: 'shma', rel: 'before', mins: 15 } },
   { name: 'מנחה גדולה', a: { type: 'zman', zman: 'gedola', rel: 'at', mins: 0 } },
   { name: 'חצות היום', a: { type: 'zman', zman: 'chatzot', rel: 'at', mins: 0 } },
-  { name: 'ערב שבת: 70 דקות לפני שקיעה (ימי שישי)', a: { type: 'zman', zman: 'shkiah', rel: 'before', mins: 70, days: [5] } },
 ];
 
 export function alarmTitle(a, st) {
