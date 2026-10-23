@@ -3,6 +3,7 @@ import { h, openSheet, actionSheet, confirmBox, field, txt, toast } from '../ui.
 import { ctx, commit } from '../core.js';
 import { uid } from '../lib/store.js';
 import { openLink } from '../lib/native.js';
+import { settingsMain } from './settings.js';
 
 const maps = (q) => 'https://www.google.com/maps/search/' + encodeURIComponent(q);
 // קישורי חיפוש (נפתחים בדפדפן או במפות; בלי דפדפן הקישור מועתק ללוח)
@@ -72,6 +73,8 @@ function maaser() {
 export function more() {
   const c = ctx(), st = c.st;
   const root = h('div', null);
+  root.appendChild(h('div', { class: 'list', style: 'margin-bottom:10px' }, h('div', { class: 'row tap', onclick: () => settingsMain() },
+    h('span', { style: 'font-size:1.5rem;color:var(--accent);flex:none' }, '⚙'), h('div', { class: 'grow' }, h('div', { class: 't' }, 'הגדרות'), h('div', { class: 's' }, 'מראה, זמנים, התראות, נתונים וגיבוי')), h('span', { class: 'muted' }, '›'))));
   root.appendChild(h('p', { class: 'h-sub' }, 'מדריך אישי: הרשומות נשמרות בטלפון ובגיבוי. הקישורים נפתחים בדפדפן או במפות.'));
   for (const s of SECTIONS) {
     root.appendChild(h('div', { class: 'section-title' }, s.title));

@@ -1,9 +1,9 @@
 // כרטיסי "חוברות שבועיות" (דבר מלכות) למסך הלימוד ולמסך היום
-import { h, toast, tabIcon, openPage, toggle } from '../ui.js';
+import { h, toast, tabIcon, openPage, openSheet, toggle } from '../ui.js';
 import { rerender, ctx, commit } from '../core.js';
 import { weeklyBooklets, refreshDm } from './dm.js';
 import { timedOn, zmanimFor } from './zm.js';
-import { openPdf, downloadPdf } from './native.js';
+import { openPdf, downloadPdf, copyText } from './native.js';
 
 function afterHavdalah(c, d) {
   if (d.getDay() !== 6 || d.toDateString() !== c.today.toDateString()) return false;
@@ -22,6 +22,12 @@ const shown = (s) => {
   if (!s.bkShow) s.bkShow = s.showBooklets ? { 'השבוע': true, 'השבוע שעבר': true, 'השבוע הבא': true } : {};
   return s.bkShow;
 };
+function bookletSheet(b) {
+  openSheet('חוברת דבר מלכות · ' + b.label, (sh) => h('div', null,
+    h('button', { class: 'opt', onclick: () => { sh.close(); read(b); } }, h('b', null, 'קריאה באפליקציה')),
+    h('button', { class: 'opt', onclick: () => { sh.close(); down(b); } }, h('b', null, 'הורדה לטלפון')),
+    h('button', { class: 'opt', onclick: async () => { sh.close(); toast((await copyText(b.url)) ? 'הקישור הועתק ללוח' : 'ההעתקה נכשלה'); } }, 'העתקת קישור')));
+}
 let refreshing = false;
 // picker = דף "תוספות": לכל חוברת מתג "להציג במסך היום"; בלי picker (מסך היום): רק החוברות שנבחרו
 export function bookletsSection(c, d, picker) {
@@ -30,6 +36,11 @@ export function bookletsSection(c, d, picker) {
   let list = weeklyBooklets(d, !!c.loc.il, afterHavdalah(c, d));
   if (!picker) list = list.filter((b) => sh[b.label]);
   if (!list.length) return null;
+  if (picker) {
+    return h('div', { class: 'list' }, list.map((b) => h('div', { class: 'row tap', style: 'padding-block:8px', onclick: () => bookletSheet(b) },
+      h('div', { class: 'grow', style: 'min-width:0' }, h('div', { class: 't', style: 'font-size:.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis' }, 'חוברת דבר מלכות · ' + b.label), h('div', { class: 's' }, 'להציג במסך היום')),
+      toggle(!!sh[b.label], (v) => { sh[b.label] = v; commit(); }))));
+  }
   return h('div', null,
     picker ? null : h('div', { class: 'section-title' }, 'חוברות שבועיות'),
     h('div', { class: 'list' }, list.map((b) => h('div', { class: 'row tap', onclick: () => read(b) },
@@ -44,7 +55,7 @@ export function openExtras() {
   openPage('תוספות', () => {
     const c = ctx();
     return h('div', null,
-      h('p', { class: 'muted' }, 'חוברות שבועיות של "דבר מלכות": קריאה באפליקציה או הורדה. לכל חוברת אפשר לבחור אם להציג אותה גם במסך היום.'),
+      h('p', { class: 'muted' }, 'חוברות שבועיות של "דבר מלכות": קריאה באפליקציה או הורדה. לכל חוברת אפשר לבחור אם להציג אותה גם במסך היום. נגיעה בחוברת פותחת קריאה או הורדה.'),
       bookletsSection(c, c.today, true));
   });
 }
